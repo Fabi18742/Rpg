@@ -245,13 +245,18 @@ const UI = {
         if (inventory.length === 0) {
             inventoryHTML = '<div class="no-items">Dein Inventar ist leer</div>';
         } else {
-            inventoryHTML = inventory.map(item => `
-                <div class="inventory-item">
-                    <div class="item-name">${item.name}</div>
-                    <div class="item-quantity">x${item.quantity}</div>
-                    <div class="item-desc">${item.description}</div>
-                </div>
-            `).join('');
+            inventoryHTML = inventory.map(item => {
+                const itemDef = Game.items[item.id];
+                const isConsumable = itemDef && itemDef.type === 'consumable';
+                return `
+                    <div class="inventory-item" data-item-id="${item.id}">
+                        <div class="item-name">${item.name}</div>
+                        <div class="item-quantity">x${item.quantity}</div>
+                        <div class="item-desc">${item.description}</div>
+                        ${isConsumable ? `<button class="item-use-btn-small" data-item-id="${item.id}">Nutzen</button>` : ''}
+                    </div>
+                `;
+            }).join('');
         }
 
         this.elements.sceneContent.innerHTML = `
@@ -270,6 +275,16 @@ const UI = {
         document.getElementById('btn-back').addEventListener('click', () => {
             Game.showScreen('hideout');
         });
+
+        // Event Listeners für Nutzen-Buttons
+        document.querySelectorAll('.item-use-btn-small').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const itemId = btn.dataset.itemId;
+                Game.useItem(itemId);
+                // Inventar neu laden
+                this.showInventory();
+            });
+        });
     },
 
     // Shop Screen anzeigen
@@ -281,8 +296,20 @@ const UI = {
             existingPanel.classList.remove('visible');
         }
         
+        const merchants = Game.merchants;
+        
         this.elements.sceneContent.innerHTML = `
-            <p class="placeholder-text">PLATZHALTER: Shop Bild</p>
+            <div class="shop-container">
+                <h2>Shop - Wähle einen Händler</h2>
+                <div class="merchant-list">
+                    ${Object.values(merchants).map(merchant => `
+                        <div class="merchant-card" data-merchant-id="${merchant.id}">
+                            <div class="merchant-name">${merchant.name}</div>
+                            <div class="merchant-description">${merchant.description}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
         `;
 
         this.elements.buttonGrid.innerHTML = `
@@ -291,6 +318,112 @@ const UI = {
 
         document.getElementById('btn-back').addEventListener('click', () => {
             Game.showScreen('hideout');
+        });
+
+        // Event Listeners für Händler
+        document.querySelectorAll('.merchant-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const merchantId = card.dataset.merchantId;
+                this.showMerchantOffers(merchantId);
+            });
+        });
+    },
+
+    // Händler-Angebote anzeigen
+    showMerchantOffers(merchantId) {
+        const merchant = Game.merchants[merchantId];
+        if (!merchant) return;
+
+        // Glitzer zählen
+        const glitzerCount = Game.state.player.inventory.filter(i => i.id === 'glitzer').reduce((sum, i) => sum + (i.quantity || 1), 0);
+
+        this.elements.sceneContent.innerHTML = `
+            <div class="shop-container">
+                <h2>${merchant.name}</h2>
+                <p class="merchant-description">${merchant.description}</p>
+                <div class="glitzer-display">Glitzer: ${glitzerCount}</div>
+                <div class="offers-list">
+                    ${merchant.offers.map((offer, index) => {
+                        const item = Game.items[offer.itemId];
+                        const canAfford = glitzerCount >= offer.price;
+                        return `
+                            <div class="offer-card" data-merchant-id="${merchantId}" data-offer-index="${index}" data-price="${offer.price}" data-glitzer="${glitzerCount}">
+                                <div class="offer-header">
+                                    <span class="item-name">${item.name}</span>
+                                    <span class="item-price-dynamic">${offer.price} Glitzer (1 Stück)</span>
+                                </div>
+                                <div class="item-description">${item.description}</div>
+                                <div class="buy-controls">
+                                    <button class="quantity-btn minus">-</button>
+                                    <span class="quantity-display">1</span>
+                                    <button class="quantity-btn plus">+</button>
+                                    <button class="buy-btn ${!canAfford ? 'disabled' : ''}" ${!canAfford ? 'disabled' : ''}>Kaufen</button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+
+        this.elements.buttonGrid.innerHTML = `
+            <button class="game-button" id="btn-back-shop">Zurück</button>
+        `;
+
+        document.getElementById('btn-back-shop').addEventListener('click', () => {
+            this.showShop();
+        });
+
+        // Quantity Controls
+        document.querySelectorAll('.offer-card').forEach(card => {
+            let quantity = 1;
+            const quantityDisplay = card.querySelector('.quantity-display');
+            const minusBtn = card.querySelector('.minus');
+            const plusBtn = card.querySelector('.plus');
+            const buyBtn = card.querySelector('.buy-btn');
+            const priceDisplay = card.querySelector('.item-price-dynamic');
+            const unitPrice = parseInt(card.dataset.price);
+            const availableGlitzer = parseInt(card.dataset.glitzer);
+
+            const updatePrice = () => {
+                const totalPrice = unitPrice * quantity;
+                priceDisplay.textContent = `${totalPrice} Glitzer (${quantity} Stück)`;
+                
+                // Kaufen-Button aktivieren/deaktivieren basierend auf Glitzer
+                if (availableGlitzer >= totalPrice) {
+                    buyBtn.disabled = false;
+                    buyBtn.classList.remove('disabled');
+                } else {
+                    buyBtn.disabled = true;
+                    buyBtn.classList.add('disabled');
+                }
+            };
+
+            minusBtn.addEventListener('click', () => {
+                if (quantity > 1) {
+                    quantity--;
+                    quantityDisplay.textContent = quantity;
+                    updatePrice();
+                }
+            });
+
+            plusBtn.addEventListener('click', () => {
+                if (quantity < 99) {
+                    quantity++;
+                    quantityDisplay.textContent = quantity;
+                    updatePrice();
+                }
+            });
+
+            buyBtn.addEventListener('click', () => {
+                const merchantId = card.dataset.merchantId;
+                const offerIndex = parseInt(card.dataset.offerIndex);
+                const success = Game.buyItem(merchantId, offerIndex, quantity);
+                if (success) {
+                    // Shop neu laden
+                    this.showMerchantOffers(merchantId);
+                }
+            });
         });
     },
 
@@ -377,7 +510,14 @@ const UI = {
             </div>
         `;
 
-        this.elements.buttonGrid.innerHTML = '';
+        this.elements.buttonGrid.innerHTML = `
+            <button class="game-button" id="btn-inventory-crawl">Inventar</button>
+        `;
+
+        // Inventar-Button
+        document.getElementById('btn-inventory-crawl').addEventListener('click', () => {
+            this.showInventoryUsable('crawl');
+        });
 
         // Event Listeners für Event-Karten
         document.querySelectorAll('.event-card').forEach(card => {
@@ -409,6 +549,14 @@ const UI = {
         const boss = battle.boss;
         const player = Game.state.player;
         const equippedAbilities = Game.getEquippedAbilities();
+
+        // Stats-Panel aktualisieren falls sichtbar
+        const statsPanel = this.elements.visualArea.querySelector('.stats-panel');
+        if (statsPanel) {
+            // Panel entfernen und neu rendern
+            statsPanel.remove();
+            this.elements.visualArea.insertAdjacentHTML('beforeend', this.renderStatsPanel());
+        }
 
         // Letzte 3 Log-Einträge
         const recentLogs = battle.log.slice(-3);
@@ -463,6 +611,7 @@ const UI = {
             
             this.elements.buttonGrid.innerHTML = `
                 <button class="game-button" id="btn-battle-stats">Stats</button>
+                <button class="game-button" id="btn-battle-inventory">Inventar</button>
                 ${abilityButtons}
                 ${blockButton}
             `;
@@ -470,6 +619,11 @@ const UI = {
             // Event Listener für Stats-Button
             document.getElementById('btn-battle-stats').addEventListener('click', () => {
                 this.toggleStatsPanel();
+            });
+
+            // Event Listener für Inventar-Button
+            document.getElementById('btn-battle-inventory').addEventListener('click', () => {
+                this.showInventoryUsable('battle');
             });
 
             // Event Listener für Block-Button
@@ -638,5 +792,72 @@ const UI = {
         } else {
             // Item nicht akzeptiert - nichts tun
         }
+    },
+
+    // Inventar für nutzbare Items anzeigen
+    showInventoryUsable(returnContext) {
+        const inventory = Game.state.player.inventory;
+        const usableItems = inventory.filter(item => {
+            const itemDef = Game.items[item.id];
+            return itemDef && itemDef.type === 'consumable';
+        });
+
+        this.elements.sceneContent.innerHTML = `
+            <div class="inventory-container">
+                <h2>Inventar - Nutzbare Items</h2>
+                <div class="items-list">
+                    ${usableItems.length > 0 ? usableItems.map(item => {
+                        const itemDef = Game.items[item.id];
+                        return `
+                            <div class="usable-item-card" data-item-id="${item.id}">
+                                <div class="item-header">
+                                    <span class="item-name">${item.name}</span>
+                                    <span class="item-quantity">x${item.quantity || 1}</span>
+                                </div>
+                                <div class="item-description">${itemDef.description}</div>
+                                <button class="use-btn">Nutzen</button>
+                            </div>
+                        `;
+                    }).join('') : '<p class="no-items">Keine nutzbaren Items im Inventar</p>'}
+                </div>
+            </div>
+        `;
+
+        this.elements.buttonGrid.innerHTML = `
+            <button class="game-button" id="btn-back-inventory">Zurück</button>
+        `;
+
+        // Zurück-Button
+        document.getElementById('btn-back-inventory').addEventListener('click', () => {
+            if (returnContext === 'battle') {
+                this.updateBattleScreen();
+            } else if (returnContext === 'crawl') {
+                this.showCrawlEventSelection();
+            } else if (returnContext === 'hideout') {
+                this.showHideout();
+            }
+        });
+
+        // Nutzen-Buttons
+        document.querySelectorAll('.usable-item-card').forEach(card => {
+            const useBtn = card.querySelector('.use-btn');
+            useBtn.addEventListener('click', () => {
+                const itemId = card.dataset.itemId;
+                const healed = Game.useItem(itemId);
+                
+                if (healed !== false) {
+                    // Item wurde genutzt, Inventar neu laden
+                    this.showInventoryUsable(returnContext);
+                    
+                    // Bei Kampf auch Battle-Screen aktualisieren
+                    if (returnContext === 'battle') {
+                        // HP-Änderung ins Battle-Log schreiben
+                        if (Game.state.currentBattle && healed > 0) {
+                            Game.state.currentBattle.log.push(`Heiltrank genutzt! +${healed} HP`);
+                        }
+                    }
+                }
+            });
+        });
     }
 };

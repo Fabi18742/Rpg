@@ -8,6 +8,7 @@ const Game = {
     bosses: Definitions.bosses,
     bossWorlds: Definitions.bossWorlds,
     crawlEvents: Definitions.crawlEvents,
+    merchants: Definitions.merchants,
 
     state: {
         currentScreen: 'hideout',
@@ -467,6 +468,62 @@ const Game = {
         }
         
         console.log('Item nicht im Inventar gefunden');
+        return false;
+    },
+
+    // ===== SHOP-SYSTEM =====
+
+    // Item kaufen
+    buyItem(merchantId, offerIndex, quantity = 1) {
+        const merchant = this.merchants[merchantId];
+        if (!merchant || !merchant.offers[offerIndex]) return false;
+
+        const offer = merchant.offers[offerIndex];
+        const item = this.items[offer.itemId];
+        const totalCost = offer.price * quantity;
+
+        // Glitzer zählen
+        const glitzerCount = this.state.player.inventory.filter(i => i.id === 'glitzer').reduce((sum, i) => sum + (i.quantity || 1), 0);
+
+        if (glitzerCount < totalCost) {
+            console.log('Nicht genug Glitzer!');
+            return false;
+        }
+
+        // Glitzer abziehen
+        this.removeItemFromInventory('glitzer', totalCost);
+
+        // Items hinzufügen
+        for (let i = 0; i < quantity; i++) {
+            this.addItemToInventory(item);
+        }
+
+        console.log(`${quantity}x ${item.name} für ${totalCost} Glitzer gekauft`);
+        return true;
+    },
+
+    // Item nutzen (z.B. Heiltrank)
+    useItem(itemId) {
+        const itemInInventory = this.state.player.inventory.find(i => i.id === itemId);
+        if (!itemInInventory) return false;
+
+        const item = this.items[itemId];
+        
+        // Heiltrank
+        if (item.type === 'consumable' && item.healAmount) {
+            const healAmount = item.healAmount;
+            const oldHp = this.state.player.hp;
+            this.state.player.hp = Math.min(this.state.player.maxHp, this.state.player.hp + healAmount);
+            const actualHeal = this.state.player.hp - oldHp;
+            
+            // Item aus Inventar entfernen
+            this.removeItemFromInventory(itemId, 1);
+            this.save();
+            
+            console.log(`${item.name} genutzt! +${actualHeal} HP`);
+            return actualHeal;
+        }
+
         return false;
     },
 

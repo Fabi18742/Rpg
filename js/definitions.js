@@ -34,6 +34,13 @@ const Definitions = {
             name: 'Glitzer',
             type: 'currency',
             description: 'Funkelnder Glitzer, wertvoll und selten'
+        },
+        heiltrank: {
+            id: 'heiltrank',
+            name: 'Heiltrank',
+            type: 'consumable',
+            description: 'Heilt 5 HP',
+            healAmount: 5
         }
     },
 
@@ -85,14 +92,14 @@ const Definitions = {
             name: 'Test Boss 1',
             hp: 5,
             maxHp: 5,
-            actionPoints: 1,             // Aktionspunkte pro Zug
+            actionPoints: 2,             // Aktionspunkte pro Zug
             stats: {
                 strength: 0,
                 defense: 0,
                 magic: 0,
                 speed: 0
             },
-            ability: 'testAbility',    // Welche Fähigkeit der Boss verwendet
+            ability: 'powerPunch',    // Welche Fähigkeit der Boss verwendet
             drops: ['testseed']              // Item-IDs die gedroppt werden
         },
         testBoss2: {
@@ -158,6 +165,35 @@ const Definitions = {
             description: 'Etwas Unheimliches geschieht',
             type: 'event',              // 'event' oder 'fight'
             securityDecrease: 50        // Wie viel Prozent die Sicherheit sinkt (0-100)
+        }
+    },
+
+    // ===== SHOP-SYSTEM =====
+    // Händler und ihre Angebote
+    merchants: {
+        testhaendler: {
+            id: 'testhaendler',
+            name: 'Testhändler',
+            description: 'Ein mysteriöser Händler mit nützlichen Waren',
+            offers: [
+                {
+                    itemId: 'heiltrank',
+                    price: 1,           // Kosten in Glitzer
+                    currency: 'glitzer'
+                }
+            ]
+        },
+        testhaendler2: {
+            id: 'testhaendler2',
+            name: 'Testhändler 2',
+            description: 'Ein mysteriöser Händler mit nützlichen Waren',
+            offers: [
+                {
+                    itemId: 'heiltrank',
+                    price: 1,           // Kosten in Glitzer
+                    currency: 'glitzer'
+                }
+            ]
         }
     }
 };
