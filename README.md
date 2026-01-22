@@ -126,19 +126,13 @@ Hosting: Cloudflare Pages (Files direkt hochladen)
 - Blocken soll sich logisch mit dem defense stat verrechnen und 1 AP kosten (Wenn man Blockt ist der Zug abgeschlossen wie als hätte man keine AP mehr, wenn man blockt und AP übrig hat soll das den Blockwert verhältnismäßig stärken).
 - Wenn man eine Fähigkeit bekommt die man schon hat soll man anderes Item bekommen was man zB Verkaufen kann.
 
-+ Verbesserte Challenge wenn man Boss welt betritt. (Gameplay)
-+ Verbesserte Challenge wenn man Tier welt betritt. (Gameplay)
-+ Shop
-
-+ Vernünftige Button anordnung wenn alle Funtkionen implementiert sind
-
-+ Wenn Durch eine Fähigkeit zb der Schaden ehöht wird soll das im Statspanel angezeigt werden zB 5 (+2)
-+ Passive Fähigkeiten die zB Blocken oder Dmg verstärken
-+ Fähigkeit die sich auf geblockten Schaden bezieht
 
 ---
 
 - Crawlsystem: Wenn man eine Bosswelt betritt soll man 100% Sicherheit haben. Nun Kann man aus Events wählen. Belohnende Events lassen die Sicherheit sinken. Kämpfe lassen sie im vergleich weniger sinken. Nach jedem Event wird gewürfelt ob der Boss nun erscheint. Es wird also über Zeit warscheinlicher das der Boss angreift. Bei großem Pech greift er auch früh an. Die Events sind zufallgeneriert für einen immer unterschiedlichen Ablauf. Wenn man stirbt dann soll man wieder im Hideout aufwachen. Mit hören Leveln sollen bessere Events erscheinen. 
 
-+ Fight Event
-+ Glitzer Event
+---
+
+Wenn man ein Ritual macht kombiniert man zB 6 Objekte in eine Fähigkeit. Wenn man 3 Feuer und 3 Eis Items kombiniert dann ist es 50% welche Art die Fähigkeit wird. Bei 2 Feuer 4 Eis dementsprechend 30% Feuer und 70% Eis. Außerdem hat jedes Item eine MagieValue die bestimmt wie wertvoll das Item zum kombinieren ist. Alle Values der 6 Items werden zusammengerechnet und bestimmen wie hoch der Wert der Fähigkeit ca wird. Wenn ich also 6 Items mit der Value 1 verbinde kann nur eine Fähigkeit entstehen die sehr schwach ist. Wenn ich 6 Items mit Value 10 verbinde dann kommt eine sehr starke Fähigkeit raus weil der kombinierte wert 60 (maximum) ist.
+
+Ein eigenes Waffen feld wird abgeschaffen und dafür sind die 4 Fähigkeiten Waffen / Zauber Slots. So bekommt man anstatt fähigkeiten waffen die man dann ausrüsten kann. die waffen gibts dann in unterschiedlichen zuständen für builds

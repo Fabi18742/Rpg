@@ -40,7 +40,7 @@ const UI = {
 
         this.elements.buttonGrid.innerHTML = `
             <button class="game-button" id="btn-stats">Stats</button>
-            <button class="game-button" id="btn-abilities">Fähigkeiten</button>
+            <button class="game-button" id="btn-weapons">Waffen</button>
             <button class="game-button" id="btn-inventory">Inventar</button>
             <button class="game-button" id="btn-shop">Shop</button>
             <button class="game-button" id="btn-boss">Boss-Kämpfe</button>
@@ -57,8 +57,8 @@ const UI = {
             this.toggleStatsPanel();
         });
 
-        document.getElementById('btn-abilities').addEventListener('click', () => {
-            this.showAbilityManagement();
+        document.getElementById('btn-weapons').addEventListener('click', () => {
+            this.showWeaponManagement();
         });
 
         document.getElementById('btn-inventory').addEventListener('click', () => {
@@ -129,8 +129,8 @@ const UI = {
         }
     },
 
-    // Fähigkeiten-Management anzeigen
-    showAbilityManagement() {
+    // Waffen-Management anzeigen
+    showWeaponManagement() {
         // Stats Panel schließen falls offen
         this.statsVisible = false;
         const existingPanel = this.elements.visualArea.querySelector('.stats-panel');
@@ -140,37 +140,36 @@ const UI = {
         
         const player = Game.state.player;
         
-        // Nur nicht-ausgerüstete Fähigkeiten anzeigen
-        const unequippedAbilities = player.abilities.filter(ability => 
-            !player.equippedAbilities.includes(ability.id)
-        );
+        // Nur nicht-ausgewählte Waffen anzeigen
+        const unequippedWeapons = player.weapons.map((weapon, index) => ({ weapon, index }))
+            .filter(data => !player.equippedWeapons.includes(data.index));
         
-        let abilitiesHTML = unequippedAbilities.map(ability => {
+        let weaponsHTML = unequippedWeapons.map(data => {
             return `
-                <div class="ability-item" data-ability-id="${ability.id}">
-                    <div class="ability-name">${ability.name}</div>
-                    <div class="ability-damage">Schaden: ${ability.damage} | Kosten: ${ability.actionCost} AP</div>
-                    <div class="ability-desc">${ability.description}</div>
+                <div class="weapon-item" data-weapon-index="${data.index}">
+                    <div class="weapon-name">${data.weapon.name}</div>
+                    <div class="weapon-damage">Schaden: ${data.weapon.damage} | Kosten: ${data.weapon.actionCost} AP</div>
+                    <div class="weapon-desc">${data.weapon.description}</div>
                 </div>
             `;
         }).join('');
         
-        if (unequippedAbilities.length === 0) {
-            abilitiesHTML = '<div class="no-abilities">Alle Fähigkeiten sind ausgerüstet</div>';
+        if (unequippedWeapons.length === 0) {
+            weaponsHTML = '<div class="no-weapons">Alle Waffen sind ausgewählt</div>';
         }
 
         let slotsHTML = '';
         for (let i = 0; i < 4; i++) {
-            const abilityId = player.equippedAbilities[i];
-            const ability = abilityId ? player.abilities.find(a => a.id === abilityId) : null;
+            const weaponIndex = player.equippedWeapons[i];
+            const weapon = typeof weaponIndex === 'number' ? player.weapons[weaponIndex] : null;
             
             slotsHTML += `
-                <div class="ability-slot ${ability ? 'filled' : 'empty'}" data-slot="${i}">
+                <div class="weapon-slot ${weapon ? 'filled' : 'empty'}" data-slot="${i}">
                     <div class="slot-number">Slot ${i + 1}</div>
-                    ${ability ? `
-                        <div class="slot-ability">
-                            <div>${ability.name}</div>
-                            <div class="slot-cost">${ability.actionCost} AP</div>
+                    ${weapon ? `
+                        <div class="slot-weapon">
+                            <div>${weapon.name}</div>
+                            <div class="slot-cost">${weapon.actionCost} AP</div>
                         </div>
                     ` : '<div class="slot-empty">Leer</div>'}
                 </div>
@@ -178,17 +177,17 @@ const UI = {
         }
 
         this.elements.sceneContent.innerHTML = `
-            <div class="ability-management">
-                <div class="ability-slots-section">
-                    <h3>Ausgerüstete Fähigkeiten</h3>
-                    <div class="ability-slots">
+            <div class="weapon-management">
+                <div class="weapon-slots-section">
+                    <h3>Ausgewählte Angriffe</h3>
+                    <div class="weapon-slots">
                         ${slotsHTML}
                     </div>
                 </div>
-                <div class="ability-list-section">
-                    <h3>Verfügbare Fähigkeiten</h3>
-                    <div class="ability-list">
-                        ${abilitiesHTML}
+                <div class="weapon-list-section">
+                    <h3>Verfügbare Angriffe</h3>
+                    <div class="weapon-list">
+                        ${weaponsHTML}
                     </div>
                 </div>
             </div>
@@ -203,29 +202,27 @@ const UI = {
             Game.showScreen('hideout');
         });
 
-        // Ability Click to Equip
-        document.querySelectorAll('.ability-item').forEach(item => {
+        // Weapon Click to Equip
+        document.querySelectorAll('.weapon-item').forEach(item => {
             item.addEventListener('click', (e) => {
-                const abilityId = item.dataset.abilityId;
+                const weaponIndex = parseInt(item.dataset.weaponIndex);
                 const player = Game.state.player;
                 
                 // Finde ersten freien Slot
-                const freeSlot = player.equippedAbilities.indexOf(null);
+                const freeSlot = player.equippedWeapons.indexOf(null);
                 if (freeSlot !== -1) {
-                    Game.equipAbility(abilityId, freeSlot);
-                    this.showAbilityManagement(); // Refresh
-                } else {
-                    alert('Alle Slots sind belegt! Klicke auf einen Slot um die Fähigkeit zu entfernen.');
+                    Game.equipWeapon(weaponIndex, freeSlot);
+                    this.showWeaponManagement(); // Refresh
                 }
             });
         });
 
         // Click auf gefüllten Slot = Unequip
-        document.querySelectorAll('.ability-slot.filled').forEach(slot => {
+        document.querySelectorAll('.weapon-slot.filled').forEach(slot => {
             slot.addEventListener('click', (e) => {
                 const slotIndex = parseInt(slot.dataset.slot);
-                Game.unequipAbility(slotIndex);
-                this.showAbilityManagement(); // Refresh
+                Game.unequipWeapon(slotIndex);
+                this.showWeaponManagement(); // Refresh
             });
         });
     },
@@ -368,10 +365,15 @@ const UI = {
 
         this.elements.buttonGrid.innerHTML = `
             <button class="game-button" id="btn-back-shop">Zurück</button>
+            <button class="game-button" id="btn-sell-inventory">Inventar (Verkaufen)</button>
         `;
 
         document.getElementById('btn-back-shop').addEventListener('click', () => {
             this.showShop();
+        });
+
+        document.getElementById('btn-sell-inventory').addEventListener('click', () => {
+            this.showSellInventory(merchantId);
         });
 
         // Quantity Controls
@@ -483,10 +485,24 @@ const UI = {
 
         const bossWorld = Game.bossWorlds[crawl.bossWorldId];
 
-        // Sicherheit nur in Console ausgeben
-        console.log('Sicherheit:', crawl.security + '%');
+        // Sicherheit und Chaoslevel in Console ausgeben
+        console.log('Sicherheit:', crawl.security + '%', '| Chaoslevel:', crawl.chaosLevel);
 
         this.elements.sceneContent.innerHTML = `
+            <div class="boss-bar">
+                <div class="boss-bar-label">Sicherheit</div>
+                <div class="boss-bar-container">
+                    <div class="boss-bar-fill" style="width: ${crawl.security}%"></div>
+                    <span class="boss-bar-text">${crawl.security}%</span>
+                </div>
+            </div>
+            <div class="chaos-bar">
+                <div class="chaos-bar-label">Chaoslevel</div>
+                <div class="chaos-bar-container">
+                    <div class="chaos-bar-fill" style="width: ${Math.min(100, (crawl.chaosLevel / 15) * 100)}%"></div>
+                    <span class="chaos-bar-text">${crawl.chaosLevel}</span>
+                </div>
+            </div>
             <div class="crawl-container">
                 <div class="crawl-header">
                     <h2>${bossWorld.name}</h2>
@@ -548,7 +564,7 @@ const UI = {
 
         const boss = battle.boss;
         const player = Game.state.player;
-        const equippedAbilities = Game.getEquippedAbilities();
+        const equippedWeapons = Game.getEquippedWeapons();
 
         // Stats-Panel aktualisieren falls sichtbar
         const statsPanel = this.elements.visualArea.querySelector('.stats-panel');
@@ -585,15 +601,16 @@ const UI = {
             return;
         }
 
-        // Fähigkeiten-Buttons (nur im Spieler-Zug)
+        // Waffen-Buttons (nur im Spieler-Zug)
         if (battle.turn === 'player') {
-            const abilityButtons = equippedAbilities.map(ability => {
-                const canUse = battle.playerActionPoints >= ability.actionCost;
+            const weaponButtons = equippedWeapons.map((weapon, slotIndex) => {
+                const weaponIndex = player.equippedWeapons[slotIndex];
+                const canUse = battle.playerActionPoints >= weapon.actionCost;
                 const disabledClass = canUse ? '' : 'disabled';
                 return `
-                    <button class="game-button ability-btn ${disabledClass}" data-ability-id="${ability.id}" ${canUse ? '' : 'disabled'}>
-                        ${ability.name}<br>
-                        <small>Schaden: ${ability.damage} | Kosten: ${ability.actionCost} AP</small>
+                    <button class="game-button weapon-btn ${disabledClass}" data-weapon-index="${weaponIndex}" ${canUse ? '' : 'disabled'}>
+                        ${weapon.name}<br>
+                        <small>Schaden: ${weapon.damage} | Kosten: ${weapon.actionCost} AP</small>
                     </button>
                 `;
             }).join('');
@@ -612,7 +629,7 @@ const UI = {
             this.elements.buttonGrid.innerHTML = `
                 <button class="game-button" id="btn-battle-stats">Stats</button>
                 <button class="game-button" id="btn-battle-inventory">Inventar</button>
-                ${abilityButtons}
+                ${weaponButtons}
                 ${blockButton}
             `;
 
@@ -632,13 +649,13 @@ const UI = {
                 Game.playerBlock();
             });
 
-            // Event Listeners für Fähigkeiten
-            document.querySelectorAll('.ability-btn').forEach(btn => {
+            // Event Listeners für Waffen
+            document.querySelectorAll('.weapon-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
-                    const abilityId = btn.dataset.abilityId;
+                    const weaponIndex = parseInt(btn.dataset.weaponIndex);
                     // Button sofort deaktivieren um Mehrfach-Klicks zu verhindern
                     btn.disabled = true;
-                    Game.playerAttack(abilityId);
+                    Game.playerAttack(weaponIndex);
                 });
             });
         } else {
@@ -764,24 +781,11 @@ const UI = {
         if (creature.acceptsItems.includes(itemId)) {
             Game.removeItemFromInventory(itemId, 1);
             
-            // Belohnung: Fähigkeit hinzufügen
-            if (creature.rewardAbility) {
-                const ability = Game.abilities[creature.rewardAbility];
-                if (ability) {
-                    const result = Game.addAbility(ability);
-                    
-                    // Zeige Nachricht basierend auf Ergebnis
-                    if (result === 'duplicate') {
-                        this.elements.sceneContent.innerHTML = `
-                            <div class="creature-encounter">
-                                <div class="creature-sprite">
-                                    <div style="width: 150px; height: 150px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: 3px solid #5a67d8; border-radius: 8px;"></div>
-                                </div>
-                                <div class="creature-name">${creature.name}</div>
-                                <div class="creature-hint">Du hattest ${ability.name} bereits!<br>+${ability.glitzerValue} Glitzer erhalten!</div>
-                            </div>
-                        `;
-                    }
+            // Belohnung: Waffe hinzufügen
+            if (creature.rewardWeapon) {
+                const weapon = Game.weapons[creature.rewardWeapon];
+                if (weapon) {
+                    Game.addWeapon(weapon);
                 }
             }
             
@@ -792,6 +796,91 @@ const UI = {
         } else {
             // Item nicht akzeptiert - nichts tun
         }
+    },
+
+    // Verkaufs-Inventar anzeigen
+    showSellInventory(merchantId) {
+        const merchant = Game.merchants[merchantId];
+        const weapons = Game.state.player.weapons;
+        const items = Game.state.player.inventory;
+
+        // Nur Items mit glitzerValue > 0 anzeigen
+        const sellableWeapons = weapons.map((weapon, index) => ({
+            type: 'weapon',
+            index: index,
+            weapon: weapon,
+            isEquipped: Game.state.player.equippedWeapons.includes(index)
+        })).filter(w => !w.isEquipped && (w.weapon.glitzerValue || 0) > 0);
+
+        const sellableItems = items.filter(item => {
+            const itemDef = Game.items[item.id];
+            return itemDef && itemDef.id !== 'glitzer' && (itemDef.glitzerValue || 0) > 0;
+        });
+
+        this.elements.sceneContent.innerHTML = `
+            <div class="inventory-container">
+                <h2>${merchant.name} - Verkaufen</h2>
+                <div class="glitzer-display">Glitzer: ${items.filter(i => i.id === 'glitzer').reduce((sum, i) => sum + (i.quantity || 1), 0)}</div>
+                <div class="items-list">
+                    ${sellableWeapons.length === 0 && sellableItems.length === 0 ? '<p class="no-items">Keine verkaufbaren Items</p>' : ''}
+                    ${sellableWeapons.map(data => `
+                        <div class="sellable-item-card" data-type="weapon" data-index="${data.index}">
+                            <div class="item-header">
+                                <span class="item-name">${data.weapon.name}</span>
+                                <span class="item-price">+${data.weapon.glitzerValue || 0} Glitzer</span>
+                            </div>
+                            <div class="item-description">${data.weapon.description}</div>
+                            <button class="sell-btn">Verkaufen</button>
+                        </div>
+                    `).join('')}
+                    ${sellableItems.map(item => {
+                        const itemDef = Game.items[item.id];
+                        const glitzerValue = itemDef.glitzerValue || 0;
+                        return `
+                            <div class="sellable-item-card" data-type="item" data-item-id="${item.id}">
+                                <div class="item-header">
+                                    <span class="item-name">${item.name}</span>
+                                    <span class="item-price">+${glitzerValue} Glitzer</span>
+                                </div>
+                                <div class="item-quantity">x${item.quantity || 1}</div>
+                                <div class="item-description">${itemDef.description}</div>
+                                <button class="sell-btn">Verkaufen</button>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+
+        this.elements.buttonGrid.innerHTML = `
+            <button class="game-button" id="btn-back-merchant">Zurück</button>
+        `;
+
+        document.getElementById('btn-back-merchant').addEventListener('click', () => {
+            this.showMerchantOffers(merchantId);
+        });
+
+        // Verkaufen-Buttons
+        document.querySelectorAll('.sellable-item-card').forEach(card => {
+            const sellBtn = card.querySelector('.sell-btn');
+            sellBtn.addEventListener('click', () => {
+                const type = card.dataset.type;
+                
+                if (type === 'weapon') {
+                    const weaponIndex = parseInt(card.dataset.index);
+                    const success = Game.sellWeapon(weaponIndex);
+                    if (success) {
+                        this.showSellInventory(merchantId);
+                    }
+                } else if (type === 'item') {
+                    const itemId = card.dataset.itemId;
+                    const success = Game.sellItem(itemId);
+                    if (success) {
+                        this.showSellInventory(merchantId);
+                    }
+                }
+            });
+        });
     },
 
     // Inventar für nutzbare Items anzeigen

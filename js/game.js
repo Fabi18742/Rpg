@@ -3,7 +3,7 @@
 const Game = {
     // Referenzen zu zentralen Definitionen
     items: Definitions.items,
-    abilities: Definitions.abilities,
+    weapons: Definitions.weapons,
     creatures: Definitions.creatures,
     bosses: Definitions.bosses,
     bossWorlds: Definitions.bossWorlds,
@@ -27,10 +27,10 @@ const Game = {
                 speed: Definitions.player.stats.speed,
                 vitality: Definitions.player.stats.vitality
             },
-            // Alle verfügbaren Fähigkeiten
-            abilities: [],
-            // 4 ausgrüstete Fähigkeiten für Kampf
-            equippedAbilities: [null, null, null, null],
+            // Alle verfügbaren Waffen
+            weapons: [],
+            // 4 ausgewählte Waffen für Kampf
+            equippedWeapons: [null, null, null, null],
             inventory: []
         },
         defeatedBosses: [],
@@ -44,37 +44,30 @@ const Game = {
     init() {
         console.log('Game wird initialisiert...');
         
-        // DEBUG: LocalStorage zurücksetzen falls alte Struktur
-        try {
-            const savedState = Storage.loadGameState();
-            if (savedState && !savedState.player.stats) {
-                console.log('Alte Spielstand-Struktur erkannt - wird zurückgesetzt');
-                Storage.clearGameState();
-            }
-            // Aktionspunkte hinzufügen falls nicht vorhanden (Legacy Support)
-            if (savedState && savedState.player && !savedState.player.hasOwnProperty('actionPoints')) {
-                console.log('Füge Aktionspunkte zu bestehendem Spielstand hinzu');
-                savedState.player.actionPoints = Definitions.player.actionPoints;
-                savedState.player.maxActionPoints = Definitions.player.maxActionPoints;
-            }
-        } catch (error) {
-            console.log('Fehler beim Laden - LocalStorage wird zurückgesetzt');
-            Storage.clearGameState();
-        }
-        
         // Spielstand laden falls vorhanden
         const savedState = Storage.loadGameState();
         if (savedState) {
             this.state = savedState;
+            
+            // Alte equippedWeapons bereinigen (alte IDs zu null konvertieren)
+            if (this.state.player.equippedWeapons) {
+                this.state.player.equippedWeapons = this.state.player.equippedWeapons.map(val => {
+                    // Wenn es eine Zahl ist, behalten
+                    if (typeof val === 'number') return val;
+                    // Alles andere (IDs, undefined, etc.) zu null
+                    return null;
+                });
+            }
+            
             console.log('Spielstand geladen');
         } else {
             console.log('Neues Spiel gestartet');
-            // Start-Fähigkeit aus Definitions hinzufügen
-            const startAbility = this.abilities[Definitions.player.startAbility];
-            if (startAbility) {
-                this.addAbility(startAbility);
+            // Start-Waffe aus Definitions hinzufügen
+            const startWeapon = this.weapons[Definitions.player.startWeapon];
+            if (startWeapon) {
+                this.addWeapon(startWeapon);
                 // Automatisch ausrüsten
-                this.equipAbility(startAbility.id, 0);
+                this.equipWeapon(0, 0);
             }
         }
 
@@ -114,66 +107,50 @@ const Game = {
         Storage.saveGameState(this.state);
     },
 
-    // Fähigkeit hinzufügen
-    addAbility(ability) {
-        if (!this.state.player.abilities.find(a => a.id === ability.id)) {
-            this.state.player.abilities.push(ability);
-            this.save();
-            console.log('Fähigkeit erlernt:', ability.name);
-            return true;
-        } else {
-            // Fähigkeit bereits vorhanden - Glitzer als Entschädigung
-            const glitzerValue = ability.glitzerValue || 0;
-            if (glitzerValue > 0) {
-                // Glitzer-Item ins Inventar hinzufügen
-                const glitzerItem = this.items.glitzer;
-                for (let i = 0; i < glitzerValue; i++) {
-                    this.addItemToInventory(glitzerItem);
-                }
-                this.save();
-                console.log(`${ability.name} bereits vorhanden! +${glitzerValue} Glitzer erhalten`);
-                return 'duplicate';
-            }
-            console.log('Fähigkeit bereits vorhanden');
-            return false;
-        }
+    // Waffe hinzufügen
+    addWeapon(weapon) {
+        this.state.player.weapons.push(weapon);
+        this.save();
+        console.log('Waffe erlernt:', weapon.name);
+        return true;
     },
 
-    // Fähigkeit ausrüsten (slot 0-3)
-    equipAbility(abilityId, slot) {
+    // Waffe ausrüsten (slot 0-3) - verwendet Array-Index statt weapon.id
+    equipWeapon(weaponIndex, slot) {
         if (slot < 0 || slot > 3) return false;
+        if (weaponIndex < 0 || weaponIndex >= this.state.player.weapons.length) return false;
         
-        // Prüfe ob Fähigkeit bereits ausgerüstet ist
-        if (this.state.player.equippedAbilities.includes(abilityId)) {
-            console.log('Fähigkeit ist bereits ausgerüstet!');
+        // Prüfe ob diese Waffen-Instanz bereits ausgewählt ist
+        if (this.state.player.equippedWeapons.includes(weaponIndex)) {
+            console.log('Diese Waffe ist bereits ausgewählt!');
             return false;
         }
         
-        const ability = this.state.player.abilities.find(a => a.id === abilityId);
-        if (ability) {
-            this.state.player.equippedAbilities[slot] = abilityId;
+        const weapon = this.state.player.weapons[weaponIndex];
+        if (weapon) {
+            this.state.player.equippedWeapons[slot] = weaponIndex;
             this.save();
-            console.log(`${ability.name} in Slot ${slot + 1} ausgerüstet`);
+            console.log(`${weapon.name} in Slot ${slot + 1} ausgewählt`);
             return true;
         }
         return false;
     },
 
-    // Fähigkeit aus Slot entfernen
-    unequipAbility(slot) {
+    // Waffe aus Slot entfernen
+    unequipWeapon(slot) {
         if (slot >= 0 && slot <= 3) {
-            this.state.player.equippedAbilities[slot] = null;
+            this.state.player.equippedWeapons[slot] = null;
             this.save();
             return true;
         }
         return false;
     },
 
-    // Ausgerüstete Fähigkeiten für Kampf holen
-    getEquippedAbilities() {
-        return this.state.player.equippedAbilities
-            .map(id => id ? this.state.player.abilities.find(a => a.id === id) : null)
-            .filter(a => a !== null);
+    // Ausgewählte Waffen für Kampf holen
+    getEquippedWeapons() {
+        return this.state.player.equippedWeapons
+            .map(index => typeof index === 'number' ? this.state.player.weapons[index] : null)
+            .filter(w => w !== null);
     },
 
     // Kampf starten
@@ -191,42 +168,42 @@ const Game = {
     },
 
     // Spieler-Angriff
-    playerAttack(abilityId) {
-        console.log('playerAttack aufgerufen', abilityId, 'Turn:', this.state.currentBattle?.turn);
+    playerAttack(weaponIndex) {
+        console.log('playerAttack aufgerufen', weaponIndex, 'Turn:', this.state.currentBattle?.turn);
         
         if (!this.state.currentBattle || this.state.currentBattle.turn !== 'player') {
             console.log('Abbruch: Kein Battle oder nicht am Zug');
             return;
         }
 
-        const ability = this.state.player.abilities.find(a => a.id === abilityId);
-        if (!ability) {
-            console.log('Abbruch: Fähigkeit nicht gefunden');
+        const weapon = this.state.player.weapons[weaponIndex];
+        if (!weapon) {
+            console.log('Abbruch: Waffe nicht gefunden');
             return;
         }
 
         const battle = this.state.currentBattle;
         
         // Prüfe ob genug Aktionspunkte vorhanden sind
-        if (battle.playerActionPoints < ability.actionCost) {
+        if (battle.playerActionPoints < weapon.actionCost) {
             console.log('Nicht genug Aktionspunkte!');
             return;
         }
         
         // Aktionspunkte abziehen
-        battle.playerActionPoints -= ability.actionCost;
+        battle.playerActionPoints -= weapon.actionCost;
         
         const boss = battle.boss;
         
         console.log('Boss HP vor Angriff:', boss.hp);
         
         // Schaden berechnen: Basis-Schaden + Stärke - Gegner-Verteidigung
-        const baseDamage = ability.damage;
+        const baseDamage = weapon.damage;
         const playerStrength = this.state.player.stats.strength;
         const bossDefense = boss.stats.defense;
         let damage = baseDamage + playerStrength - bossDefense;
         
-        console.log(`[SCHADEN] ${ability.name}: Basis=${baseDamage} + Stärke=${playerStrength} - Verteidigung=${bossDefense} = ${damage}`);
+        console.log(`[SCHADEN] ${weapon.name}: Basis=${baseDamage} + Stärke=${playerStrength} - Verteidigung=${bossDefense} = ${damage}`);
         
         if (damage < 0) {
             console.log(`[SCHADEN] Schaden unter 0, setze auf 0`);
@@ -234,7 +211,7 @@ const Game = {
         }
 
         boss.hp -= damage;
-        battle.log.push(`${ability.name} = ${damage} (dmg)`);
+        battle.log.push(`${weapon.name} = ${damage} (dmg)`);
         
         console.log('Boss HP nach Angriff:', boss.hp);
 
@@ -311,11 +288,11 @@ const Game = {
         const battle = this.state.currentBattle;
         const boss = battle.boss;
 
-        // Boss-Fähigkeit aus Definitionen holen
-        const bossAbility = this.abilities[boss.ability];
-        const attackDamage = bossAbility ? bossAbility.damage : 0;
-        const attackName = bossAbility ? bossAbility.name : 'Angriff';
-        const actionCost = bossAbility ? bossAbility.actionCost : 1;
+        // Boss-Waffe aus Definitionen holen
+        const bossWeapon = this.weapons[boss.weapon];
+        const attackDamage = bossWeapon ? bossWeapon.damage : 0;
+        const attackName = bossWeapon ? bossWeapon.name : 'Angriff';
+        const actionCost = bossWeapon ? bossWeapon.actionCost : 1;
 
         // Prüfe ob Boss noch Aktionspunkte hat
         if (battle.bossActionPoints >= actionCost) {
@@ -502,6 +479,77 @@ const Game = {
         return true;
     },
 
+    // Waffe verkaufen
+    sellWeapon(weaponIndex) {
+        if (weaponIndex < 0 || weaponIndex >= this.state.player.weapons.length) {
+            console.log('Ungültiger Waffen-Index');
+            return false;
+        }
+
+        const weapon = this.state.player.weapons[weaponIndex];
+        const glitzerValue = weapon.glitzerValue || 0;
+
+        // Prüfe ob Waffe ausgerüstet ist
+        const equippedSlot = this.state.player.equippedWeapons.indexOf(weaponIndex);
+        if (equippedSlot !== -1) {
+            console.log('Waffe ist ausgerüstet und kann nicht verkauft werden!');
+            return false;
+        }
+
+        // Waffe aus Array entfernen
+        this.state.player.weapons.splice(weaponIndex, 1);
+
+        // Alle equippedWeapons Indices anpassen (die größer als weaponIndex sind)
+        for (let i = 0; i < this.state.player.equippedWeapons.length; i++) {
+            const idx = this.state.player.equippedWeapons[i];
+            if (typeof idx === 'number' && idx > weaponIndex) {
+                this.state.player.equippedWeapons[i] = idx - 1;
+            }
+        }
+
+        // Glitzer hinzufügen
+        if (glitzerValue > 0) {
+            const glitzerItem = this.items.glitzer;
+            for (let i = 0; i < glitzerValue; i++) {
+                this.addItemToInventory(glitzerItem);
+            }
+        }
+
+        this.save();
+        console.log(`${weapon.name} für ${glitzerValue} Glitzer verkauft`);
+        return true;
+    },
+
+    // Item verkaufen
+    sellItem(itemId) {
+        const itemInInventory = this.state.player.inventory.find(i => i.id === itemId);
+        if (!itemInInventory) {
+            console.log('Item nicht im Inventar gefunden');
+            return false;
+        }
+
+        const itemDef = this.items[itemId];
+        const glitzerValue = itemDef.glitzerValue || 0;
+
+        if (glitzerValue === 0) {
+            console.log('Item kann nicht verkauft werden (kein Glitzer-Wert)');
+            return false;
+        }
+
+        // 1 Item entfernen
+        this.removeItemFromInventory(itemId, 1);
+
+        // Glitzer hinzufügen
+        const glitzerItem = this.items.glitzer;
+        for (let i = 0; i < glitzerValue; i++) {
+            this.addItemToInventory(glitzerItem);
+        }
+
+        this.save();
+        console.log(`${itemDef.name} für ${glitzerValue} Glitzer verkauft`);
+        return true;
+    },
+
     // Item nutzen (z.B. Heiltrank)
     useItem(itemId) {
         const itemInInventory = this.state.player.inventory.find(i => i.id === itemId);
@@ -548,9 +596,13 @@ const Game = {
             bossWorldId: bossWorldId,
             bossId: bossWorld.boss,
             security: 100,  // Startet bei 100% Sicherheit
-            availableEvents: this.generateRandomEvents(),
+            chaosLevel: 0,  // Startet bei 0 Chaos
+            availableEvents: [],  // Wird gleich gefüllt
             eventHistory: []
         };
+
+        // Events generieren (nachdem currentCrawl existiert)
+        this.state.currentCrawl.availableEvents = this.generateRandomEvents();
 
         this.save();
         UI.showCrawlEventSelection();
@@ -558,8 +610,27 @@ const Game = {
 
     // 3 zufällige Events generieren
     generateRandomEvents() {
+        const crawl = this.state.currentCrawl;
+        if (!crawl) return [];
+
+        // Schwierigkeit basierend auf Chaoslevel bestimmen
+        let difficulty;
+        if (crawl.chaosLevel < 5) {
+            difficulty = 1;
+        } else if (crawl.chaosLevel < 10) {
+            difficulty = 2;
+        } else {
+            difficulty = 3;
+        }
+
+        // Nur Events mit passender Schwierigkeit wählen
         const allEvents = Object.values(this.crawlEvents);
-        const shuffled = [...allEvents].sort(() => Math.random() - 0.5);
+        const filteredEvents = allEvents.filter(event => event.difficulty === difficulty);
+        
+        // Falls keine Events vorhanden, alle nehmen (Fallback)
+        const eventsToChooseFrom = filteredEvents.length > 0 ? filteredEvents : allEvents;
+        
+        const shuffled = [...eventsToChooseFrom].sort(() => Math.random() - 0.5);
         const selected = shuffled.slice(0, 3);
         return selected;
     },
@@ -568,7 +639,7 @@ const Game = {
     showEventSelection() {
         if (!this.state.currentCrawl) return;
         const crawl = this.state.currentCrawl;
-        console.log('Sicherheit:', crawl.security + '%');
+        console.log('Sicherheit:', crawl.security + '%', '| Chaoslevel:', crawl.chaosLevel);
     },
 
     // Event auswählen
@@ -590,10 +661,14 @@ const Game = {
         // Sicherheit verringern
         crawl.security = Math.max(0, crawl.security - event.securityDecrease);
 
+        // Chaoslevel erhöhen
+        crawl.chaosLevel += 1;
+
         // Event zur Historie hinzufügen
         crawl.eventHistory.push({
             event: event.name,
-            securityAfter: crawl.security
+            securityAfter: crawl.security,
+            chaosLevelAfter: crawl.chaosLevel
         });
 
         this.save();

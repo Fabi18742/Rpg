@@ -18,7 +18,7 @@ const Definitions = {
             speed: 0,         // Geschwindigkeit
             vitality: 0       // Vitalität
         },
-        startAbility: 'basicPunch'  // Fähigkeit mit der der Spieler startet
+        startWeapon: 'dagger'  // Waffe mit der der Spieler startet
     },
 
     // ===== ITEMS =====
@@ -27,7 +27,8 @@ const Definitions = {
             id: 'testseed',
             name: 'Testseed',
             type: 'seed',
-            description: 'Ein mysteriöser Testsamen'
+            description: 'Ein mysteriöser Testsamen',
+            glitzerValue: 1
         },
         glitzer: {
             id: 'glitzer',
@@ -40,37 +41,38 @@ const Definitions = {
             name: 'Heiltrank',
             type: 'consumable',
             description: 'Heilt 5 HP',
-            healAmount: 5
+            healAmount: 5,
+            glitzerValue: 1
         }
     },
 
-    // ===== FÄHIGKEITEN =====
-    abilities: {
-        basicPunch: {
-            id: 'basic_punch',
-            name: 'Schlag',
+    // ===== WAFFEN =====
+    weapons: {
+        dagger: {
+            id: 'dagger',
+            name: 'Dolch',
             type: 'physical',
             damage: 1,
             actionCost: 1,
-            description: 'Ein einfacher physischer Angriff',
+            description: 'Ein einfacher Dolch für schnelle Angriffe',
             glitzerValue: 0  // Keine Glitzer bei Duplikat
         },
-        powerPunch: {
-            id: 'power_punch',
-            name: 'Powerschlag',
+        sword: {
+            id: 'sword',
+            name: 'Schwert',
             type: 'physical',
             damage: 5,
             actionCost: 2,
-            description: 'Ein kraftvoller physischer Angriff',
+            description: 'Ein kraftvolles Schwert für starke Angriffe',
             glitzerValue: 2  // 2 Glitzer bei Duplikat
         },
-        testAbility: {
-            id: 'test_ability',
-            name: 'Testfähigkeit',
+        rubberSword: {
+            id: 'rubber_sword',
+            name: 'Gummischwert',
             type: 'physical',
             damage: 0,
             actionCost: 1,
-            description: 'Eine mysteriöse Testfähigkeit',
+            description: 'Ein harmloses Gummischwert',
             glitzerValue: 0  // Keine Glitzer bei Duplikat
         }
     },
@@ -81,7 +83,7 @@ const Definitions = {
             id: 'testwesen',
             name: 'Testwesen',
             acceptsItems: ['testseed'],      // Welche Items akzeptiert werden
-            rewardAbility: 'powerPunch'     // Welche Fähigkeit als Belohnung gegeben wird
+            rewardWeapon: 'sword'           // Welche Waffe als Belohnung gegeben wird
         }
     },
 
@@ -99,8 +101,8 @@ const Definitions = {
                 magic: 0,
                 speed: 0
             },
-            ability: 'powerPunch',    // Welche Fähigkeit der Boss verwendet
-            drops: ['testseed']              // Item-IDs die gedroppt werden
+            weapon: 'rubberSword',      // Welche Waffe der Boss verwendet
+            drops: ['testseed']         // Item-IDs die gedroppt werden
         },
         testBoss2: {
             id: 'test_boss2',
@@ -114,8 +116,8 @@ const Definitions = {
                 magic: 0,
                 speed: 0
             },
-            ability: 'testAbility',    // Welche Fähigkeit der Boss verwendet
-            drops: ['testseed']              // Item-IDs die gedroppt werden
+            weapon: 'rubberSword',      // Welche Waffe der Boss verwendet
+            drops: ['testseed']         // Item-IDs die gedroppt werden
         }
     },
 
@@ -143,28 +145,72 @@ const Definitions = {
             name: 'Testevent 1',
             description: 'Ein mysteriöses Ereignis tritt auf',
             type: 'event',              // 'event' oder 'fight'
-            securityDecrease: 15        // Wie viel Prozent die Sicherheit sinkt (0-100)
+            difficulty: 1,              // Schwierigkeitsstufe (1-3)
+            securityDecrease: 2        // Wie viel Prozent die Sicherheit sinkt (0-100)
         },
         testevent2: {
             id: 'testevent2',
             name: 'Testevent 2',
             description: 'Ein weiteres seltsames Ereignis',
             type: 'event',              // 'event' oder 'fight'
-            securityDecrease: 20        // Wie viel Prozent die Sicherheit sinkt (0-100)
+            difficulty: 1,              // Schwierigkeitsstufe (1-3)
+            securityDecrease: 5        // Wie viel Prozent die Sicherheit sinkt (0-100)
         },
         testevent3: {
             id: 'testevent3',
             name: 'Testevent 3',
             description: 'Etwas Unheimliches geschieht',
             type: 'event',              // 'event' oder 'fight'
-            securityDecrease: 25        // Wie viel Prozent die Sicherheit sinkt (0-100)
+            difficulty: 1,              // Schwierigkeitsstufe (1-3)
+            securityDecrease: 8        // Wie viel Prozent die Sicherheit sinkt (0-100)
         },
-            testevent4: {
+        testevent4: {
             id: 'testevent4',
             name: 'Testevent 4',
-            description: 'Etwas Unheimliches geschieht',
+            description: 'Die Spannung steigt',
             type: 'event',              // 'event' oder 'fight'
-            securityDecrease: 50        // Wie viel Prozent die Sicherheit sinkt (0-100)
+            difficulty: 2,              // Schwierigkeitsstufe (1-3)
+            securityDecrease: 2        // Wie viel Prozent die Sicherheit sinkt (0-100)
+        },
+        testevent5: {
+            id: 'testevent5',
+            name: 'Testevent 5',
+            description: 'Gefährliche Zeichen mehren sich',
+            type: 'event',              // 'event' oder 'fight'
+            difficulty: 2,              // Schwierigkeitsstufe (1-3)
+            securityDecrease: 5        // Wie viel Prozent die Sicherheit sinkt (0-100)
+        },
+        testevent6: {
+            id: 'testevent6',
+            name: 'Testevent 6',
+            description: 'Das Chaos nimmt bedrohliche Züge an',
+            type: 'event',              // 'event' oder 'fight'
+            difficulty: 2,              // Schwierigkeitsstufe (1-3)
+            securityDecrease: 8        // Wie viel Prozent die Sicherheit sinkt (0-100)
+        },
+        testevent7: {
+            id: 'testevent7',
+            name: 'Testevent 7',
+            description: 'Unheilvolle Mächte erwachen',
+            type: 'event',              // 'event' oder 'fight'
+            difficulty: 3,              // Schwierigkeitsstufe (1-3)
+            securityDecrease: 2        // Wie viel Prozent die Sicherheit sinkt (0-100)
+        },
+        testevent8: {
+            id: 'testevent8',
+            name: 'Testevent 8',
+            description: 'Der Abgrund starrt zurück',
+            type: 'event',              // 'event' oder 'fight'
+            difficulty: 3,              // Schwierigkeitsstufe (1-3)
+            securityDecrease: 5        // Wie viel Prozent die Sicherheit sinkt (0-100)
+        },
+        testevent9: {
+            id: 'testevent9',
+            name: 'Testevent 9',
+            description: 'Das pure Chaos bricht herein',
+            type: 'event',              // 'event' oder 'fight'
+            difficulty: 3,              // Schwierigkeitsstufe (1-3)
+            securityDecrease: 8        // Wie viel Prozent die Sicherheit sinkt (0-100)
         }
     },
 
@@ -178,7 +224,7 @@ const Definitions = {
             offers: [
                 {
                     itemId: 'heiltrank',
-                    price: 1,           // Kosten in Glitzer
+                    price: 2,           // Kosten in Glitzer
                     currency: 'glitzer'
                 }
             ]
@@ -190,7 +236,7 @@ const Definitions = {
             offers: [
                 {
                     itemId: 'heiltrank',
-                    price: 1,           // Kosten in Glitzer
+                    price: 2,           // Kosten in Glitzer
                     currency: 'glitzer'
                 }
             ]

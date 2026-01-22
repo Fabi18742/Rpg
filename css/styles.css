@@ -27,6 +27,10 @@ body {
     align-items: center;
     min-height: 100vh;
     padding: 10px;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 .game-container {
@@ -41,6 +45,13 @@ body {
         0 0 40px rgba(0, 0, 0, 0.8),
         inset 0 0 30px rgba(0, 0, 0, 0.5);
     background: var(--wood-dark);
+}
+
+/* Bilder und SVGs nicht ziehbar machen */
+img, svg {
+    -webkit-user-drag: none;
+    user-drag: none;
+    pointer-events: none;
 }
 
 /* Obere 2/3: Visual Area */
@@ -321,7 +332,8 @@ body {
     font-weight: bold;
 }
 
-/* Ability Management */
+/* Weapon/Ability Management */
+.weapon-management,
 .ability-management {
     width: 100%;
     height: 100%;
@@ -333,6 +345,8 @@ body {
     color: var(--text-color);
 }
 
+.weapon-slots-section,
+.weapon-list-section,
 .ability-slots-section,
 .ability-list-section {
     background-color: rgba(44, 24, 16, 0.8);
@@ -341,6 +355,7 @@ body {
     padding: 15px;
 }
 
+.weapon-management h3,
 .ability-management h3 {
     margin-bottom: 15px;
     text-align: center;
@@ -349,12 +364,14 @@ body {
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
 }
 
+.weapon-slots,
 .ability-slots {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
 }
 
+.weapon-slot,
 .ability-slot {
     background-color: rgba(107, 68, 35, 0.5);
     border: 3px solid var(--border-color);
@@ -367,17 +384,20 @@ body {
     transition: all 0.2s;
 }
 
+.weapon-slot.filled,
 .ability-slot.filled {
     cursor: pointer;
     background-color: rgba(139, 90, 43, 0.6);
 }
 
+.weapon-slot.filled:hover,
 .ability-slot.filled:hover {
     background-color: rgba(160, 103, 50, 0.7);
     transform: scale(1.02);
     box-shadow: 0 0 10px rgba(139, 90, 43, 0.5);
 }
 
+.weapon-slot.empty,
 .ability-slot.empty {
     cursor: default;
 }
@@ -394,6 +414,7 @@ body {
     text-align: center;
 }
 
+.slot-weapon,
 .slot-ability {
     display: flex;
     justify-content: space-between;
@@ -402,6 +423,7 @@ body {
     font-weight: bold;
 }
 
+.weapon-list,
 .ability-list {
     display: flex;
     flex-direction: column;
@@ -410,6 +432,7 @@ body {
     overflow-y: auto;
 }
 
+.weapon-item,
 .ability-item {
     background-color: rgba(107, 68, 35, 0.5);
     border: 3px solid var(--border-color);
@@ -420,29 +443,34 @@ body {
     position: relative;
 }
 
+.weapon-item:hover,
 .ability-item:hover {
     background-color: rgba(139, 90, 43, 0.6);
     box-shadow: 0 0 10px rgba(139, 90, 43, 0.5);
 }
 
+.weapon-name,
 .ability-name {
     font-weight: bold;
     font-size: 16px;
     margin-bottom: 5px;
 }
 
+.weapon-damage,
 .ability-damage {
     font-size: 14px;
     color: #ff6b6b;
     margin-bottom: 3px;
 }
 
+.weapon-desc,
 .ability-desc {
     font-size: 12px;
     color: var(--placeholder-color);
     font-style: italic;
 }
 
+.no-weapons,
 .no-abilities {
     text-align: center;
     color: var(--placeholder-color);
@@ -770,6 +798,7 @@ body {
     font-weight: bold;
 }
 
+.weapon-btn.disabled,
 .ability-btn.disabled {
     opacity: 0.4;
     cursor: not-allowed;
@@ -789,6 +818,7 @@ body {
     padding: 20px;
 }
 
+.weapon-btn small,
 .ability-btn small {
     font-size: 12px;
     opacity: 0.8;
@@ -814,6 +844,106 @@ body {
 }
 
 /* ===== CRAWL-SYSTEM STYLES ===== */
+
+.boss-bar {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 100;
+    background-color: rgba(0, 0, 0, 0.7);
+    border: 3px solid #dc2626;
+    border-radius: 8px;
+    padding: 10px 15px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+}
+
+.boss-bar-label {
+    font-size: 14px;
+    font-weight: bold;
+    color: #fca5a5;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.boss-bar-container {
+    position: relative;
+    width: 200px;
+    height: 25px;
+    background-color: rgba(0, 0, 0, 0.5);
+    border: 2px solid #991b1b;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.boss-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #dc2626, #991b1b, #7f1d1d);
+    transition: width 0.5s ease;
+    box-shadow: 0 0 10px rgba(220, 38, 38, 0.8);
+}
+
+.boss-bar-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-weight: bold;
+    font-size: 14px;
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+    z-index: 1;
+}
+
+.chaos-bar {
+    position: absolute;
+    top: 90px;
+    left: 20px;
+    z-index: 100;
+    background-color: rgba(0, 0, 0, 0.7);
+    border: 3px solid #a855f7;
+    border-radius: 8px;
+    padding: 10px 15px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+}
+
+.chaos-bar-label {
+    font-size: 14px;
+    font-weight: bold;
+    color: #e9d5ff;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.chaos-bar-container {
+    position: relative;
+    width: 200px;
+    height: 25px;
+    background-color: rgba(0, 0, 0, 0.5);
+    border: 2px solid #7c3aed;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.chaos-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #a855f7, #7c3aed, #6d28d9);
+    transition: width 0.5s ease;
+    box-shadow: 0 0 10px rgba(168, 85, 247, 0.8);
+}
+
+.chaos-bar-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-weight: bold;
+    font-size: 14px;
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+    z-index: 1;
+}
 
 .crawl-container {
     width: 100%;
@@ -1225,7 +1355,8 @@ body {
     padding: 10px;
 }
 
-.usable-item-card {
+.usable-item-card,
+.sellable-item-card {
     background: linear-gradient(135deg, var(--wood-dark), var(--wood-light));
     border: 3px solid var(--border-color);
     border-radius: 10px;
@@ -1233,14 +1364,16 @@ body {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
 
-.usable-item-card .item-header {
+.usable-item-card .item-header,
+.sellable-item-card .item-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 10px;
 }
 
-.usable-item-card .item-name {
+.usable-item-card .item-name,
+.sellable-item-card .item-name {
     font-size: 20px;
     font-weight: bold;
     color: var(--text-color);
@@ -1252,27 +1385,42 @@ body {
     color: #fbbf24;
 }
 
-.usable-item-card .item-description {
+.usable-item-card .item-description,
+.sellable-item-card .item-description {
     font-size: 16px;
     color: var(--placeholder-color);
     margin-bottom: 15px;
 }
 
-.use-btn {
+.use-btn,
+.sell-btn {
     width: 100%;
     padding: 10px 20px;
     font-size: 18px;
     font-weight: bold;
-    background-color: #3b82f6;
     color: white;
-    border: 2px solid #2563eb;
+    border: 2px solid;
     border-radius: 5px;
     cursor: pointer;
     transition: all 0.2s ease;
 }
 
+.use-btn {
+    background-color: #3b82f6;
+    border-color: #2563eb;
+}
+
 .use-btn:hover {
     background-color: #2563eb;
+}
+
+.sell-btn {
+    background-color: #f59e0b;
+    border-color: #d97706;
+}
+
+.sell-btn:hover {
+    background-color: #d97706;
 }
 
 .no-items {
