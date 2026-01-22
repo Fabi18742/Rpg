@@ -136,3 +136,145 @@ Hosting: Cloudflare Pages (Files direkt hochladen)
 Wenn man ein Ritual macht kombiniert man zB 6 Objekte in eine Fähigkeit. Wenn man 3 Feuer und 3 Eis Items kombiniert dann ist es 50% welche Art die Fähigkeit wird. Bei 2 Feuer 4 Eis dementsprechend 30% Feuer und 70% Eis. Außerdem hat jedes Item eine MagieValue die bestimmt wie wertvoll das Item zum kombinieren ist. Alle Values der 6 Items werden zusammengerechnet und bestimmen wie hoch der Wert der Fähigkeit ca wird. Wenn ich also 6 Items mit der Value 1 verbinde kann nur eine Fähigkeit entstehen die sehr schwach ist. Wenn ich 6 Items mit Value 10 verbinde dann kommt eine sehr starke Fähigkeit raus weil der kombinierte wert 60 (maximum) ist.
 
 Ein eigenes Waffen feld wird abgeschaffen und dafür sind die 4 Fähigkeiten Waffen / Zauber Slots. So bekommt man anstatt fähigkeiten waffen die man dann ausrüsten kann. die waffen gibts dann in unterschiedlichen zuständen für builds
+
+---
+
+## 🔮 Das Ritual-System
+
+### Konzept
+Das Ritual ermöglicht es, aus 6 speziellen Ritual-Items eine Waffe mit potenziellen Effekten zu erschaffen. Die Items bestimmen sowohl die Stärke (Tier) der Waffe als auch die Wahrscheinlichkeit für zusätzliche Effekte.
+
+### System-Mechanik
+
+#### 1. Item-Eigenschaften
+Jedes Ritual-Item besitzt zwei wichtige Werte:
+- **value** (1-10): Bestimmt die Power und damit das Tier
+- **modifierType**: Bestimmt die Effekt-Chance ("none", "testdamage", etc.)
+
+#### 2. Power-Score Berechnung
+```
+Power-Score = Summe aller values der 6 Items
+Minimum: 6  (6x value:1)
+Maximum: 60 (6x value:10)
+```
+
+#### 3. Tier-Zuordnung
+Der Power-Score bestimmt das Waffen-Tier:
+
+| Power-Score | Tier | Beschreibung |
+|-------------|------|--------------|
+| 6 - 25      | 1    | Schwache Waffen (z.B. Dolch) |
+| 26 - 45     | 2    | Mittlere Waffen (z.B. Schwert) |
+| 46 - 60     | 3    | Starke Waffen (z.B. Gummischwert) |
+
+#### 4. Waffen-Auswahl
+Jede Waffe hat einen `ritualValue`:
+- Das Ritual wählt automatisch die Waffe aus dem passenden Tier
+- Die Waffe mit dem **nächstliegenden ritualValue** zum Power-Score wird gewählt
+
+**Beispiele:**
+- Power-Score: 15 → Tier 1 → Dolch (ritualValue: 15)
+- Power-Score: 35 → Tier 2 → Schwert (ritualValue: 35)
+- Power-Score: 55 → Tier 3 → Gummischwert (ritualValue: 55)
+
+#### 5. Effekt-Wahrscheinlichkeit
+Die Modifier-Types bestimmen die Chance auf Effekte:
+
+**Formel:**
+```
+Wahrscheinlichkeit = (Anzahl Items mit Typ) ÷ 6
+```
+
+**Beispiele:**
+
+| Items | Testdamage-Chance | Erklärung |
+|-------|------------------|-----------|
+| 0 Testdamage, 6 None | 0% | Keine Effekt-Chance |
+| 1 Testdamage, 5 None | 16.7% (1/6) | 1 von 6 Items |
+| 3 Testdamage, 3 None | 50% (3/6) | Hälfte der Items |
+| 6 Testdamage, 0 None | 100% (6/6) | Alle Items |
+
+**Wichtig:** Items mit `modifierType: "none"` zählen explizit mit und verringern die Effekt-Chance!
+
+#### 6. Mehrere Modifier-Typen
+Wenn verschiedene Modifier-Typen verwendet werden, wird **für jeden Typ separat gewürfelt**:
+
+**Beispiel:**
+- 3 Items "testdamage"
+- 2 Items "poison"
+- 1 Item "none"
+
+Würfel-Chancen:
+- Testdamage: 50% (3/6)
+- Poison: 33.3% (2/6)
+
+Mögliche Ergebnisse:
+- Keine Effekte (beide Würfe scheitern)
+- Nur Testdamage (nur erster Wurf erfolgreich)
+- Nur Poison (nur zweiter Wurf erfolgreich)
+- **Beide Effekte** (beide Würfe erfolgreich)
+
+### Strategien
+
+#### Schwache Tier-1-Waffe ohne Effekt
+```
+6x ritualItem_weak_none
+→ Power-Score: 6
+→ Tier 1
+→ 0% Effekt-Chance
+```
+
+#### Starke Tier-3-Waffe mit garantiertem Effekt
+```
+6x ritualItem_strong_testdamage
+→ Power-Score: 60
+→ Tier 3
+→ 100% Testdamage-Effekt
+```
+
+#### Mittlere Tier-2-Waffe mit 50% Effekt
+```
+3x ritualItem_medium_none
+3x ritualItem_medium_testdamage
+→ Power-Score: 30
+→ Tier 2
+→ 50% Testdamage-Effekt
+```
+
+#### Gemischte Strategie
+```
+2x ritualItem_weak_none (value: 1)
+2x ritualItem_medium_testdamage (value: 5)
+2x ritualItem_strong_testdamage (value: 10)
+→ Power-Score: 32
+→ Tier 2
+→ 66.7% Testdamage-Effekt (4/6)
+```
+
+### Verfügbare Test-Items
+
+| Item | Value | Modifier | Kosten |
+|------|-------|----------|--------|
+| Schwaches Ritual-Item (Neutral) | 1 | none | 0 Glitzer |
+| Schwaches Ritual-Item (Schaden) | 1 | testdamage | 0 Glitzer |
+| Mittleres Ritual-Item (Neutral) | 5 | none | 0 Glitzer |
+| Mittleres Ritual-Item (Schaden) | 5 | testdamage | 0 Glitzer |
+| Starkes Ritual-Item (Neutral) | 10 | none | 0 Glitzer |
+| Starkes Ritual-Item (Schaden) | 10 | testdamage | 0 Glitzer |
+
+**Alle Test-Items sind kostenlos im Shop beim Testhändler erhältlich!**
+
+### Ablauf
+
+1. **"Das Ritual" Button** im Hideout öffnen
+2. **6 Ritual-Items** aus dem Inventar auswählen
+3. **"Ritual durchführen"** klicken
+4. **Items werden verbraucht** (aus Inventar entfernt)
+5. **Waffe wird erschaffen** und automatisch zum Inventar hinzugefügt
+6. **Effekte** werden basierend auf Wahrscheinlichkeiten angewendet
+
+### Zukunftserweiterungen
+- Weitere Modifier-Typen (Poison, Fire, Ice, etc.)
+- Mehr Waffen in jedem Tier-Pool
+- Spezielle Ritual-Events mit Boni
+- Kombinierte Effekt-Synergien

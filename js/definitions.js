@@ -43,11 +43,68 @@ const Definitions = {
             description: 'Heilt 5 HP',
             healAmount: 5,
             glitzerValue: 1
+        },
+        
+        // ===== RITUAL-ITEMS =====
+        ritualItem_weak_none: {
+            id: 'ritualItem_weak_none',
+            name: 'Schwaches Ritual-Item (Neutral)',
+            type: 'ritual',
+            description: 'Ein schwaches Item ohne besonderen Effekt',
+            modifierType: 'none',
+            value: 1,
+            glitzerValue: 1
+        },
+        ritualItem_weak_testdamage: {
+            id: 'ritualItem_weak_testdamage',
+            name: 'Schwaches Ritual-Item (Schaden)',
+            type: 'ritual',
+            description: 'Ein schwaches Item mit Schadensaffinit\u00e4t',
+            modifierType: 'testdamage',
+            value: 1,
+            glitzerValue: 1
+        },
+        ritualItem_medium_none: {
+            id: 'ritualItem_medium_none',
+            name: 'Mittleres Ritual-Item (Neutral)',
+            type: 'ritual',
+            description: 'Ein mittleres Item ohne besonderen Effekt',
+            modifierType: 'none',
+            value: 5,
+            glitzerValue: 1
+        },
+        ritualItem_medium_testdamage: {
+            id: 'ritualItem_medium_testdamage',
+            name: 'Mittleres Ritual-Item (Schaden)',
+            type: 'ritual',
+            description: 'Ein mittleres Item mit Schadensaffinit\u00e4t',
+            modifierType: 'testdamage',
+            value: 5,
+            glitzerValue: 1
+        },
+        ritualItem_strong_none: {
+            id: 'ritualItem_strong_none',
+            name: 'Starkes Ritual-Item (Neutral)',
+            type: 'ritual',
+            description: 'Ein starkes Item ohne besonderen Effekt',
+            modifierType: 'none',
+            value: 10,
+            glitzerValue: 1
+        },
+        ritualItem_strong_testdamage: {
+            id: 'ritualItem_strong_testdamage',
+            name: 'Starkes Ritual-Item (Schaden)',
+            type: 'ritual',
+            description: 'Ein starkes Item mit Schadensaffinit\u00e4t',
+            modifierType: 'testdamage',
+            value: 10,
+            glitzerValue: 1
         }
     },
 
-    // ===== WAFFEN =====
-    weapons: {
+    // ===== WAFFENBASEN =====
+    // Basis-Definitionen ohne Effekte oder Variationen
+    weaponBases: {
         dagger: {
             id: 'dagger',
             name: 'Dolch',
@@ -55,7 +112,8 @@ const Definitions = {
             damage: 1,
             actionCost: 1,
             description: 'Ein einfacher Dolch für schnelle Angriffe',
-            glitzerValue: 0  // Keine Glitzer bei Duplikat
+            baseGlitzerValue: 0,
+            ritualValue: 7  // Tier 1 (6-25)
         },
         sword: {
             id: 'sword',
@@ -64,16 +122,40 @@ const Definitions = {
             damage: 5,
             actionCost: 2,
             description: 'Ein kraftvolles Schwert für starke Angriffe',
-            glitzerValue: 2  // 2 Glitzer bei Duplikat
+            baseGlitzerValue: 2,
+            ritualValue: 35  // Tier 2 (26-45)
         },
         rubberSword: {
-            id: 'rubber_sword',
+            id: 'rubberSword',
             name: 'Gummischwert',
             type: 'physical',
             damage: 0,
             actionCost: 1,
             description: 'Ein harmloses Gummischwert',
-            glitzerValue: 0  // Keine Glitzer bei Duplikat
+            baseGlitzerValue: 0,
+            ritualValue: 6
+        },
+        bigSword: {
+            id: 'bigSword',
+            name: 'Großes Schwert',
+            type: 'physical',
+            damage: 10,
+            actionCost: 2,
+            description: 'Ein dickes Schwert',
+            baseGlitzerValue: 5,
+            ritualValue: 46
+        },
+    },
+
+    // ===== EFFEKT-SYSTEM =====
+    effects: {
+        testdamage: {
+            id: 'testdamage',
+            name: 'Testdamage',
+            description: 'Fügt +3 zusätzlichen Schaden hinzu',
+            glitzerValueMultiplier: 1.5,
+            type: 'damage',
+            value: 3
         }
     },
 
@@ -83,7 +165,10 @@ const Definitions = {
             id: 'testwesen',
             name: 'Testwesen',
             acceptsItems: ['testseed'],      // Welche Items akzeptiert werden
-            rewardWeapon: 'sword'           // Welche Waffe als Belohnung gegeben wird
+            rewardWeapon: {
+                baseId: 'sword',
+                effects: ['testdamage']    // Schwert mit +3 Schaden Effekt
+            }
         }
     },
 
@@ -101,8 +186,11 @@ const Definitions = {
                 magic: 0,
                 speed: 0
             },
-            weapon: 'rubberSword',      // Welche Waffe der Boss verwendet
-            drops: ['testseed']         // Item-IDs die gedroppt werden
+            weapon: {                     // Waffeninstanz (wie beim Spieler)
+                baseId: 'rubberSword',
+                effects: []               // Keine Effekte
+            },
+            drops: ['testseed']          // Item-IDs die gedroppt werden
         },
         testBoss2: {
             id: 'test_boss2',
@@ -116,8 +204,11 @@ const Definitions = {
                 magic: 0,
                 speed: 0
             },
-            weapon: 'rubberSword',      // Welche Waffe der Boss verwendet
-            drops: ['testseed']         // Item-IDs die gedroppt werden
+            weapon: {                     // Waffeninstanz mit Effekt
+                baseId: 'rubberSword',
+                effects: ['testdamage'] // +3 Schaden Effekt
+            },
+            drops: ['testseed']          // Item-IDs die gedroppt werden
         }
     },
 
@@ -225,6 +316,37 @@ const Definitions = {
                 {
                     itemId: 'heiltrank',
                     price: 2,           // Kosten in Glitzer
+                    currency: 'glitzer'
+                },
+                // Ritual-Items zum Testen
+                {
+                    itemId: 'ritualItem_weak_none',
+                    price: 0,
+                    currency: 'glitzer'
+                },
+                {
+                    itemId: 'ritualItem_weak_testdamage',
+                    price: 0,
+                    currency: 'glitzer'
+                },
+                {
+                    itemId: 'ritualItem_medium_none',
+                    price: 0,
+                    currency: 'glitzer'
+                },
+                {
+                    itemId: 'ritualItem_medium_testdamage',
+                    price: 0,
+                    currency: 'glitzer'
+                },
+                {
+                    itemId: 'ritualItem_strong_none',
+                    price: 0,
+                    currency: 'glitzer'
+                },
+                {
+                    itemId: 'ritualItem_strong_testdamage',
+                    price: 0,
                     currency: 'glitzer'
                 }
             ]

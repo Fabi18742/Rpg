@@ -3,7 +3,8 @@
 const Game = {
     // Referenzen zu zentralen Definitionen
     items: Definitions.items,
-    weapons: Definitions.weapons,
+    weaponBases: Definitions.weaponBases,
+    effects: Definitions.effects,
     creatures: Definitions.creatures,
     bosses: Definitions.bosses,
     bossWorlds: Definitions.bossWorlds,
@@ -63,9 +64,9 @@ const Game = {
         } else {
             console.log('Neues Spiel gestartet');
             // Start-Waffe aus Definitions hinzufügen
-            const startWeapon = this.weapons[Definitions.player.startWeapon];
-            if (startWeapon) {
-                this.addWeapon(startWeapon);
+            const startWeaponBaseId = Definitions.player.startWeapon;
+            if (startWeaponBaseId) {
+                this.addWeapon({ baseId: startWeaponBaseId, effects: [] });
                 // Automatisch ausrüsten
                 this.equipWeapon(0, 0);
             }
@@ -107,12 +108,82 @@ const Game = {
         Storage.saveGameState(this.state);
     },
 
-    // Waffe hinzufügen
-    addWeapon(weapon) {
-        this.state.player.weapons.push(weapon);
+    // Waffeninstanz hinzufügen
+    // weaponInstance = { baseId: 'sword', effects: ['testdamage'] }
+    addWeapon(weaponInstance) {
+        if (!weaponInstance.baseId) {
+            console.error('Waffe muss baseId haben');
+            return false;
+        }
+        
+        const weaponBase = this.weaponBases[weaponInstance.baseId];
+        if (!weaponBase) {
+            console.error('Waffenbasis nicht gefunden:', weaponInstance.baseId);
+            return false;
+        }
+        
+        // Waffeninstanz mit baseId und effects Array
+        const instance = {
+            baseId: weaponInstance.baseId,
+            effects: weaponInstance.effects || []
+        };
+        
+        this.state.player.weapons.push(instance);
         this.save();
-        console.log('Waffe erlernt:', weapon.name);
+        console.log('Waffe erhalten:', weaponBase.name, 'mit', instance.effects.length, 'Effekt(en)');
         return true;
+    },
+
+    // Waffeninstanz zu vollständiger Waffe auflösen
+    resolveWeapon(weaponInstance) {
+        if (!weaponInstance) return null;
+        
+        const base = this.weaponBases[weaponInstance.baseId];
+        if (!base) return null;
+        
+        // Glitzer-Wert berechnen (Basis * Multiplikatoren aller Effekte)
+        let glitzerValue = base.baseGlitzerValue;
+        weaponInstance.effects.forEach(effectId => {
+            const effect = this.effects[effectId];
+            if (effect && effect.glitzerValueMultiplier) {
+                glitzerValue = Math.floor(glitzerValue * effect.glitzerValueMultiplier);
+            }
+        });
+        
+        return {
+            ...base,
+            effects: weaponInstance.effects,
+            glitzerValue: glitzerValue
+        };
+    },
+
+    // Effekte auf Schaden anwenden
+    // Gibt { damage, logs } zurück
+    applyEffects(baseDamage, effectIds, attacker, target, battle) {
+        let damage = baseDamage;
+        let logs = [];
+        
+        if (!effectIds || effectIds.length === 0) {
+            return { damage, logs };
+        }
+        
+        effectIds.forEach(effectId => {
+            const effect = this.effects[effectId];
+            if (!effect) return;
+            
+            // Verschiedene Effekt-Typen
+            switch (effect.type) {
+                case 'damage':
+                    damage += effect.value;
+                    logs.push(`+${effect.value} (${effect.name})`);
+                    break;
+                // Weitere Effekt-Typen können hier hinzugefügt werden
+                // case 'heal': ...
+                // case 'defense': ...
+            }
+        });
+        
+        return { damage, logs };
     },
 
     // Waffe ausrüsten (slot 0-3) - verwendet Array-Index statt weapon.id
@@ -146,10 +217,16 @@ const Game = {
         return false;
     },
 
-    // Ausgewählte Waffen für Kampf holen
+    // Ausgewählte Waffen für Kampf holen (aufgelöst)
     getEquippedWeapons() {
         return this.state.player.equippedWeapons
-            .map(index => typeof index === 'number' ? this.state.player.weapons[index] : null)
+            .map(index => {
+                if (typeof index === 'number') {
+                    const instance = this.state.player.weapons[index];
+                    return this.resolveWeapon(instance);
+                }
+                return null;
+            })
             .filter(w => w !== null);
     },
 
@@ -176,9 +253,15 @@ const Game = {
             return;
         }
 
-        const weapon = this.state.player.weapons[weaponIndex];
-        if (!weapon) {
+        const weaponInstance = this.state.player.weapons[weaponIndex];
+        if (!weaponInstance) {
             console.log('Abbruch: Waffe nicht gefunden');
+            return;
+        }
+        
+        const weapon = this.resolveWeapon(weaponInstance);
+        if (!weapon) {
+            console.log('Abbruch: Waffe konnte nicht aufgelöst werden');
             return;
         }
 
@@ -203,7 +286,20 @@ const Game = {
         const bossDefense = boss.stats.defense;
         let damage = baseDamage + playerStrength - bossDefense;
         
+        // Damage-Teile für Log sammeln
+        let damageLog = [`${baseDamage} Basis`];
+        if (playerStrength > 0) damageLog.push(`${playerStrength} Stärke`);
+        if (bossDefense > 0) damageLog.push(`-${bossDefense} Vert.`);
+        
         console.log(`[SCHADEN] ${weapon.name}: Basis=${baseDamage} + Stärke=${playerStrength} - Verteidigung=${bossDefense} = ${damage}`);
+        
+        // Effekte anwenden
+        if (weapon.effects && weapon.effects.length > 0) {
+            const effectResult = this.applyEffects(damage, weapon.effects, this.state.player, boss, battle);
+            damage = effectResult.damage;
+            damageLog.push(...effectResult.logs);
+            console.log(`[EFFEKTE] Angewendet: ${effectResult.logs.join(', ')}`);
+        }
         
         if (damage < 0) {
             console.log(`[SCHADEN] Schaden unter 0, setze auf 0`);
@@ -211,7 +307,7 @@ const Game = {
         }
 
         boss.hp -= damage;
-        battle.log.push(`${weapon.name} = ${damage} (dmg)`);
+        battle.log.push(`${weapon.name} = ${damage} (${damageLog.join(' + ')})`);
         
         console.log('Boss HP nach Angriff:', boss.hp);
 
@@ -288,8 +384,9 @@ const Game = {
         const battle = this.state.currentBattle;
         const boss = battle.boss;
 
-        // Boss-Waffe aus Definitionen holen
-        const bossWeapon = this.weapons[boss.weapon];
+        // Boss-Waffe auflösen (Instanz zu vollständiger Waffe)
+        const bossWeaponInstance = boss.weapon;
+        const bossWeapon = this.resolveWeapon(bossWeaponInstance);
         const attackDamage = bossWeapon ? bossWeapon.damage : 0;
         const attackName = bossWeapon ? bossWeapon.name : 'Angriff';
         const actionCost = bossWeapon ? bossWeapon.actionCost : 1;
@@ -306,7 +403,21 @@ const Game = {
             const blockBonus = battle.blockBonus || 0;
             let damage = bossBaseDamage + bossStrength - playerDefense - blockBonus;
             
+            // Damage-Teile für Log sammeln
+            let damageLog = [`${bossBaseDamage} Basis`];
+            if (bossStrength > 0) damageLog.push(`${bossStrength} Stärke`);
+            if (playerDefense > 0) damageLog.push(`-${playerDefense} Vert.`);
+            if (blockBonus > 0) damageLog.push(`-${blockBonus} Block`);
+            
             console.log(`[SCHADEN] ${attackName}: Basis=${bossBaseDamage} + Stärke=${bossStrength} - Verteidigung=${playerDefense} - Block=${blockBonus} = ${damage}`);
+            
+            // Effekte anwenden
+            if (bossWeapon && bossWeapon.effects && bossWeapon.effects.length > 0) {
+                const effectResult = this.applyEffects(damage, bossWeapon.effects, boss, this.state.player, battle);
+                damage = effectResult.damage;
+                damageLog.push(...effectResult.logs);
+                console.log(`[GEGNER-EFFEKTE] Angewendet: ${effectResult.logs.join(', ')}`);
+            }
             
             if (damage < 0) {
                 console.log(`[SCHADEN] Schaden unter 0, setze auf 0`);
@@ -316,7 +427,7 @@ const Game = {
             this.state.player.hp -= damage;
             if (this.state.player.hp < 0) this.state.player.hp = 0;
 
-            battle.log.push(`${attackName} = ${damage} (dmg)`);
+            battle.log.push(`Boss: ${attackName} = ${damage} (${damageLog.join(' + ')})`);
 
             console.log('Spieler HP:', this.state.player.hp);
             
@@ -486,7 +597,13 @@ const Game = {
             return false;
         }
 
-        const weapon = this.state.player.weapons[weaponIndex];
+        const weaponInstance = this.state.player.weapons[weaponIndex];
+        const weapon = this.resolveWeapon(weaponInstance);
+        if (!weapon) {
+            console.log('Waffe konnte nicht aufgelöst werden');
+            return false;
+        }
+        
         const glitzerValue = weapon.glitzerValue || 0;
 
         // Prüfe ob Waffe ausgerüstet ist
@@ -718,6 +835,119 @@ const Game = {
         this.save();
         
         this.startBattle(boss);
+    },
+
+    // ===== RITUAL-SYSTEM =====
+    
+    // Ritual durchführen
+    performRitual() {
+        const ritual = this.state.currentRitual;
+        if (!ritual || ritual.selectedItems.length !== 6) {
+            console.log('Ritual benötigt exakt 6 Items');
+            return false;
+        }
+        
+        // Items aus Inventar entfernen
+        const itemDetails = ritual.selectedItems.map(itemId => {
+            const itemDef = this.items[itemId];
+            this.removeItemFromInventory(itemId, 1);
+            return itemDef;
+        });
+        
+        // 1. Power-Score berechnen
+        const powerScore = itemDetails.reduce((sum, item) => sum + item.value, 0);
+        console.log(`[RITUAL] Power-Score: ${powerScore}`);
+        
+        // 2. Tier bestimmen
+        let tier;
+        if (powerScore >= 6 && powerScore <= 25) {
+            tier = 1;
+        } else if (powerScore >= 26 && powerScore <= 45) {
+            tier = 2;
+        } else if (powerScore >= 46 && powerScore <= 60) {
+            tier = 3;
+        } else {
+            tier = 1; // Fallback
+        }
+        console.log(`[RITUAL] Tier: ${tier}`);
+        
+        // 3. Modifier-Wahrscheinlichkeit berechnen
+        const modifierCounts = {};
+        itemDetails.forEach(item => {
+            const type = item.modifierType;
+            modifierCounts[type] = (modifierCounts[type] || 0) + 1;
+        });
+        
+        console.log('[RITUAL] Modifier-Counts:', modifierCounts);
+        
+        // 4. Waffe aus Pool wählen (basierend auf ritualValue)
+        const weaponPool = Object.values(this.weaponBases).filter(weapon => {
+            if (!weapon.ritualValue) return false;
+            
+            if (tier === 1) return weapon.ritualValue >= 6 && weapon.ritualValue <= 25;
+            if (tier === 2) return weapon.ritualValue >= 26 && weapon.ritualValue <= 45;
+            if (tier === 3) return weapon.ritualValue >= 46 && weapon.ritualValue <= 60;
+            return false;
+        });
+        
+        if (weaponPool.length === 0) {
+            console.log('[RITUAL] Kein Waffenpool für Tier', tier);
+            return false;
+        }
+        
+        // Waffe mit nächstem ritualValue zum powerScore wählen
+        weaponPool.sort((a, b) => {
+            const distA = Math.abs(a.ritualValue - powerScore);
+            const distB = Math.abs(b.ritualValue - powerScore);
+            return distA - distB;
+        });
+        
+        const selectedWeapon = weaponPool[0];
+        console.log(`[RITUAL] Gewählte Waffe: ${selectedWeapon.name} (ritualValue: ${selectedWeapon.ritualValue})`);
+        
+        // 5. Effekt würfeln basierend auf Modifier-Wahrscheinlichkeit
+        const effects = [];
+        
+        // Für jeden Modifier-Typ würfeln
+        for (const [modifierType, count] of Object.entries(modifierCounts)) {
+            if (modifierType === 'none') continue; // None gibt keine Effekte
+            
+            const probability = count / 6;
+            const roll = Math.random();
+            
+            console.log(`[RITUAL] ${modifierType}: ${count}/6 = ${(probability * 100).toFixed(1)}% Chance, Roll: ${(roll * 100).toFixed(1)}%`);
+            
+            if (roll < probability) {
+                // Effekt wird angewendet
+                if (this.effects[modifierType]) {
+                    effects.push(modifierType);
+                    console.log(`[RITUAL] ✓ Effekt ${modifierType} angewendet!`);
+                } else {
+                    console.log(`[RITUAL] ✗ Effekt ${modifierType} nicht gefunden`);
+                }
+            } else {
+                console.log(`[RITUAL] ✗ Effekt ${modifierType} nicht gewürfelt`);
+            }
+        }
+        
+        // 6. Waffe hinzufügen
+        const weaponInstance = {
+            baseId: selectedWeapon.id,
+            effects: effects
+        };
+        
+        this.addWeapon(weaponInstance);
+        
+        // 7. Ritual abschließen
+        this.state.currentRitual = null;
+        this.save();
+        
+        console.log(`[RITUAL] Ritual abgeschlossen! Waffe: ${selectedWeapon.name}, Effekte: ${effects.length}`);
+        
+        // UI zurück zum Hideout mit Erfolgsmeldung
+        UI.showHideout();
+        
+        return true;
     }
 };
 

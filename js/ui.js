@@ -43,6 +43,7 @@ const UI = {
             <button class="game-button" id="btn-weapons">Waffen</button>
             <button class="game-button" id="btn-inventory">Inventar</button>
             <button class="game-button" id="btn-shop">Shop</button>
+            <button class="game-button" id="btn-ritual">Das Ritual</button>
             <button class="game-button" id="btn-boss">Boss-Kämpfe</button>
             <button class="game-button" id="btn-explore">Tiererkundung</button>
         `;
@@ -67,6 +68,10 @@ const UI = {
 
         document.getElementById('btn-shop').addEventListener('click', () => {
             Game.showScreen('shop');
+        });
+
+        document.getElementById('btn-ritual').addEventListener('click', () => {
+            this.showRitualSelection();
         });
 
         document.getElementById('btn-boss').addEventListener('click', () => {
@@ -141,15 +146,31 @@ const UI = {
         const player = Game.state.player;
         
         // Nur nicht-ausgewählte Waffen anzeigen
-        const unequippedWeapons = player.weapons.map((weapon, index) => ({ weapon, index }))
-            .filter(data => !player.equippedWeapons.includes(data.index));
+        const unequippedWeapons = player.weapons.map((weaponInstance, index) => {
+            const weapon = Game.resolveWeapon(weaponInstance);
+            return { weaponInstance, weapon, index };
+        }).filter(data => !player.equippedWeapons.includes(data.index));
         
         let weaponsHTML = unequippedWeapons.map(data => {
+            // Effekt-Anzeige mit vollständiger Beschreibung
+            let effectsHTML = '';
+            if (data.weaponInstance.effects && data.weaponInstance.effects.length > 0) {
+                effectsHTML = '<div class="weapon-effects-full">';
+                data.weaponInstance.effects.forEach(effectId => {
+                    const effect = Game.effects[effectId];
+                    if (effect) {
+                        effectsHTML += `<div class="effect-detail"><strong>${effect.name}</strong>: ${effect.description}</div>`;
+                    }
+                });
+                effectsHTML += '</div>';
+            }
+            
             return `
                 <div class="weapon-item" data-weapon-index="${data.index}">
                     <div class="weapon-name">${data.weapon.name}</div>
                     <div class="weapon-damage">Schaden: ${data.weapon.damage} | Kosten: ${data.weapon.actionCost} AP</div>
                     <div class="weapon-desc">${data.weapon.description}</div>
+                    ${effectsHTML}
                 </div>
             `;
         }).join('');
@@ -161,14 +182,17 @@ const UI = {
         let slotsHTML = '';
         for (let i = 0; i < 4; i++) {
             const weaponIndex = player.equippedWeapons[i];
-            const weapon = typeof weaponIndex === 'number' ? player.weapons[weaponIndex] : null;
+            const weaponInstance = typeof weaponIndex === 'number' ? player.weapons[weaponIndex] : null;
+            const weapon = Game.resolveWeapon(weaponInstance);
+            
+            const hasEffects = weaponInstance && weaponInstance.effects && weaponInstance.effects.length > 0;
             
             slotsHTML += `
                 <div class="weapon-slot ${weapon ? 'filled' : 'empty'}" data-slot="${i}">
                     <div class="slot-number">Slot ${i + 1}</div>
                     ${weapon ? `
                         <div class="slot-weapon">
-                            <div>${weapon.name}</div>
+                            <div class="${hasEffects ? 'weapon-with-effects' : ''}">${weapon.name}</div>
                             <div class="slot-cost">${weapon.actionCost} AP</div>
                         </div>
                     ` : '<div class="slot-empty">Leer</div>'}
@@ -605,11 +629,17 @@ const UI = {
         if (battle.turn === 'player') {
             const weaponButtons = equippedWeapons.map((weapon, slotIndex) => {
                 const weaponIndex = player.equippedWeapons[slotIndex];
+                const weaponInstance = player.weapons[weaponIndex];
                 const canUse = battle.playerActionPoints >= weapon.actionCost;
                 const disabledClass = canUse ? '' : 'disabled';
+                
+                // Prüfe ob Waffe Effekte hat
+                const hasEffects = weaponInstance && weaponInstance.effects && weaponInstance.effects.length > 0;
+                const weaponNameClass = hasEffects ? 'weapon-with-effects' : '';
+                
                 return `
                     <button class="game-button weapon-btn ${disabledClass}" data-weapon-index="${weaponIndex}" ${canUse ? '' : 'disabled'}>
-                        ${weapon.name}<br>
+                        <span class="${weaponNameClass}">${weapon.name}</span><br>
                         <small>Schaden: ${weapon.damage} | Kosten: ${weapon.actionCost} AP</small>
                     </button>
                 `;
@@ -783,10 +813,8 @@ const UI = {
             
             // Belohnung: Waffe hinzufügen
             if (creature.rewardWeapon) {
-                const weapon = Game.weapons[creature.rewardWeapon];
-                if (weapon) {
-                    Game.addWeapon(weapon);
-                }
+                // rewardWeapon ist jetzt ein Objekt: { baseId: 'sword', effects: ['testdamage'] }
+                Game.addWeapon(creature.rewardWeapon);
             }
             
             // Zurück zum Hideout
@@ -805,12 +833,16 @@ const UI = {
         const items = Game.state.player.inventory;
 
         // Nur Items mit glitzerValue > 0 anzeigen
-        const sellableWeapons = weapons.map((weapon, index) => ({
-            type: 'weapon',
-            index: index,
-            weapon: weapon,
-            isEquipped: Game.state.player.equippedWeapons.includes(index)
-        })).filter(w => !w.isEquipped && (w.weapon.glitzerValue || 0) > 0);
+        const sellableWeapons = weapons.map((weaponInstance, index) => {
+            const weapon = Game.resolveWeapon(weaponInstance);
+            return {
+                type: 'weapon',
+                index: index,
+                weaponInstance: weaponInstance,
+                weapon: weapon,
+                isEquipped: Game.state.player.equippedWeapons.includes(index)
+            };
+        }).filter(w => !w.isEquipped && w.weapon && (w.weapon.glitzerValue || 0) > 0);
 
         const sellableItems = items.filter(item => {
             const itemDef = Game.items[item.id];
@@ -823,16 +855,32 @@ const UI = {
                 <div class="glitzer-display">Glitzer: ${items.filter(i => i.id === 'glitzer').reduce((sum, i) => sum + (i.quantity || 1), 0)}</div>
                 <div class="items-list">
                     ${sellableWeapons.length === 0 && sellableItems.length === 0 ? '<p class="no-items">Keine verkaufbaren Items</p>' : ''}
-                    ${sellableWeapons.map(data => `
-                        <div class="sellable-item-card" data-type="weapon" data-index="${data.index}">
-                            <div class="item-header">
-                                <span class="item-name">${data.weapon.name}</span>
-                                <span class="item-price">+${data.weapon.glitzerValue || 0} Glitzer</span>
+                    ${sellableWeapons.map(data => {
+                        // Effekt-Anzeige
+                        let effectsHTML = '';
+                        if (data.weaponInstance.effects && data.weaponInstance.effects.length > 0) {
+                            effectsHTML = '<div class="weapon-effects-compact">';
+                            data.weaponInstance.effects.forEach(effectId => {
+                                const effect = Game.effects[effectId];
+                                if (effect) {
+                                    effectsHTML += `<span class="effect-badge">${effect.name}</span>`;
+                                }
+                            });
+                            effectsHTML += '</div>';
+                        }
+                        
+                        return `
+                            <div class="sellable-item-card" data-type="weapon" data-index="${data.index}">
+                                <div class="item-header">
+                                    <span class="item-name">${data.weapon.name}</span>
+                                    <span class="item-price">+${data.weapon.glitzerValue || 0} Glitzer</span>
+                                </div>
+                                <div class="item-description">${data.weapon.description}</div>
+                                ${effectsHTML}
+                                <button class="sell-btn">Verkaufen</button>
                             </div>
-                            <div class="item-description">${data.weapon.description}</div>
-                            <button class="sell-btn">Verkaufen</button>
-                        </div>
-                    `).join('')}
+                        `;
+                    }).join('')}
                     ${sellableItems.map(item => {
                         const itemDef = Game.items[item.id];
                         const glitzerValue = itemDef.glitzerValue || 0;
@@ -946,6 +994,146 @@ const UI = {
                         }
                     }
                 }
+            });
+        });
+    },
+
+    // ===== RITUAL-SYSTEM =====
+    
+    // Ritual Item-Auswahl anzeigen
+    showRitualSelection() {
+        // Stats Panel schließen falls offen
+        this.statsVisible = false;
+        const existingPanel = this.elements.visualArea.querySelector('.stats-panel');
+        if (existingPanel) {
+            existingPanel.classList.remove('visible');
+        }
+        
+        // Initialisiere Ritual-State falls nicht vorhanden
+        if (!Game.state.currentRitual) {
+            Game.state.currentRitual = {
+                selectedItems: []  // Array mit Item-IDs
+            };
+        }
+        
+        const ritual = Game.state.currentRitual;
+        const inventory = Game.state.player.inventory;
+        
+        // Nur Ritual-Items anzeigen
+        const ritualItems = inventory.filter(item => {
+            const itemDef = Game.items[item.id];
+            return itemDef && itemDef.type === 'ritual';
+        });
+        
+        // Zähle wie oft jedes Item bereits ausgewählt wurde
+        const selectedItemCounts = {};
+        ritual.selectedItems.forEach(itemId => {
+            selectedItemCounts[itemId] = (selectedItemCounts[itemId] || 0) + 1;
+        });
+        
+        this.elements.sceneContent.innerHTML = `
+            <div class="ritual-container">
+                <h2>Das Ritual</h2>
+                <p class="ritual-description">Wähle exakt 6 Ritual-Items aus deinem Inventar, um eine Waffe zu erschaffen.</p>
+                
+                <div class="ritual-slots">
+                    <h3>Ausgewählte Items (${ritual.selectedItems.length}/6)</h3>
+                    <div class="ritual-slot-grid">
+                        ${Array.from({length: 6}, (_, i) => {
+                            const itemId = ritual.selectedItems[i];
+                            if (itemId) {
+                                const itemDef = Game.items[itemId];
+                                return `
+                                    <div class="ritual-slot filled" data-slot="${i}">
+                                        <div class="ritual-slot-name">${itemDef.name}</div>
+                                        <div class="ritual-slot-modifier-main">${itemDef.modifierType}</div>
+                                        <div class="ritual-slot-value">Value: ${itemDef.value}</div>
+                                        <button class="ritual-remove-btn" data-slot="${i}">✕</button>
+                                    </div>
+                                `;
+                            } else {
+                                return `
+                                    <div class="ritual-slot empty" data-slot="${i}">
+                                        <div class="ritual-slot-empty-text">Leer</div>
+                                    </div>
+                                `;
+                            }
+                        }).join('')}
+                    </div>
+                </div>
+                
+                <div class="ritual-inventory">
+                    <h3>Verfügbare Ritual-Items</h3>
+                    <div class="ritual-item-list">
+                        ${ritualItems.length === 0 ? '<p class="no-items">Keine Ritual-Items im Inventar</p>' : ''}
+                        ${ritualItems.map(item => {
+                            const itemDef = Game.items[item.id];
+                            // Berechne verfügbare Menge: Gesamt - bereits ausgewählt
+                            const usedCount = selectedItemCounts[item.id] || 0;
+                            const availableCount = (item.quantity || 1) - usedCount;
+                            
+                            // Verstecke Item wenn keine mehr verfügbar
+                            if (availableCount <= 0) {
+                                return '';
+                            }
+                            
+                            return `
+                                <div class="ritual-item-card" data-item-id="${item.id}">
+                                    <div class="ritual-item-header">
+                                        <span class="ritual-item-name">${item.name}</span>
+                                        <span class="ritual-item-quantity">x${availableCount}</span>
+                                    </div>
+                                    <div class="ritual-item-modifier-display">${itemDef.modifierType}</div>
+                                    <div class="ritual-item-stats">
+                                        <span>Value: ${itemDef.value}</span>
+                                    </div>
+                                    </div>
+                                    <button class="ritual-add-btn" data-item-id="${item.id}">Hinzufügen</button>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        this.elements.buttonGrid.innerHTML = `
+            <button class="game-button" id="btn-back">Zurück</button>
+            <button class="game-button ${ritual.selectedItems.length === 6 ? '' : 'disabled'}" id="btn-perform-ritual" ${ritual.selectedItems.length === 6 ? '' : 'disabled'}>Ritual durchführen</button>
+        `;
+        
+        // Event Listeners
+        document.getElementById('btn-back').addEventListener('click', () => {
+            Game.state.currentRitual = null;
+            Game.save();
+            this.showHideout();
+        });
+        
+        document.getElementById('btn-perform-ritual').addEventListener('click', () => {
+            if (ritual.selectedItems.length === 6) {
+                Game.performRitual();
+            }
+        });
+        
+        // Item hinzufügen
+        document.querySelectorAll('.ritual-add-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const itemId = btn.dataset.itemId;
+                if (ritual.selectedItems.length < 6) {
+                    ritual.selectedItems.push(itemId);
+                    Game.save();
+                    this.showRitualSelection();
+                }
+            });
+        });
+        
+        // Item entfernen
+        document.querySelectorAll('.ritual-remove-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const slot = parseInt(btn.dataset.slot);
+                ritual.selectedItems.splice(slot, 1);
+                Game.save();
+                this.showRitualSelection();
             });
         });
     }

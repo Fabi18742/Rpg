@@ -54,6 +54,56 @@ img, svg {
     pointer-events: none;
 }
 
+/* ===== EFFEKT-SYSTEM STYLING ===== */
+
+/* Effekt-Badge für kompakte Anzeige */
+.effect-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #4a90e2, #357abd);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.75em;
+    font-weight: bold;
+    margin: 2px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Waffen mit Effekten - blauer Name */
+.weapon-with-effects {
+    color: #4a90e2;
+    font-weight: bold;
+}
+
+/* Volle Effekt-Beschreibung im Waffen-Management */
+.weapon-effects-full {
+    margin-top: 10px;
+    padding: 8px;
+    background: rgba(74, 144, 226, 0.1);
+    border-left: 3px solid #4a90e2;
+    border-radius: 4px;
+}
+
+.effect-detail {
+    margin: 4px 0;
+    font-size: 0.9em;
+    color: var(--text-color);
+}
+
+.effect-detail strong {
+    color: #4a90e2;
+}
+
+/* Kompakte Effekt-Anzeige für Verkaufs-Interface */
+.weapon-effects-compact {
+    margin-top: 5px;
+}
+
+.weapon-effects-compact .effect-badge {
+    font-size: 0.7em;
+    padding: 1px 6px;
+}
+
 /* Obere 2/3: Visual Area */
 .visual-area {
     flex: 2;
@@ -1428,4 +1478,195 @@ img, svg {
     font-size: 18px;
     color: var(--placeholder-color);
     padding: 40px;
+}
+
+/* ===== RITUAL-SYSTEM STYLING ===== */
+
+.ritual-container {
+    padding: 20px;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.ritual-container h2 {
+    color: var(--text-color);
+    margin-bottom: 10px;
+}
+
+.ritual-description {
+    color: var(--placeholder-color);
+    margin-bottom: 20px;
+    font-style: italic;
+}
+
+.ritual-slots {
+    margin-bottom: 30px;
+}
+
+.ritual-slots h3 {
+    color: var(--text-color);
+    margin-bottom: 15px;
+}
+
+.ritual-slot-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.ritual-slot {
+    background: var(--action-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    padding: 15px;
+    min-height: 100px;
+    position: relative;
+}
+
+.ritual-slot.empty {
+    border-style: dashed;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ritual-slot-empty-text {
+    color: var(--placeholder-color);
+    font-style: italic;
+}
+
+.ritual-slot.filled {
+    background: linear-gradient(135deg, var(--action-bg), var(--wood-light));
+    border-color: var(--button-bg);
+}
+
+.ritual-slot-name {
+    color: var(--text-color);
+    font-weight: bold;
+    margin-bottom: 5px;
+    font-size: 0.9em;
+}
+
+.ritual-slot-modifier-main {
+    color: #e74c3c;
+    font-size: 1.1em;
+    font-weight: bold;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+}
+
+.ritual-slot-value {
+    color: #4a90e2;
+    font-size: 0.85em;
+    margin-bottom: 3px;
+}
+
+.ritual-slot-modifier {
+    color: #e74c3c;
+    font-size: 0.85em;
+    font-style: italic;
+}
+
+.ritual-remove-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 25px;
+    height: 25px;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    transition: background 0.2s;
+}
+
+.ritual-remove-btn:hover {
+    background: #c0392b;
+}
+
+.ritual-inventory h3 {
+    color: var(--text-color);
+    margin-bottom: 15px;
+}
+
+.ritual-item-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+.ritual-item-card {
+    background: var(--action-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    padding: 15px;
+    transition: border-color 0.2s;
+}
+
+.ritual-item-card:hover {
+    border-color: var(--button-bg);
+}
+
+.ritual-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.ritual-item-name {
+    color: var(--text-color);
+    font-weight: bold;
+    font-size: 0.95em;
+}
+
+.ritual-item-quantity {
+    color: var(--placeholder-color);
+    font-size: 0.9em;
+}
+
+.ritual-item-modifier-display {
+    color: #e74c3c;
+    font-size: 1.1em;
+    font-weight: bold;
+    text-align: center;
+    margin: 10px 0;
+    text-transform: uppercase;
+}
+
+.ritual-item-stats {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 10px;
+    font-size: 0.85em;
+    justify-content: center;
+}
+
+.ritual-item-stats span:first-child {
+    color: #4a90e2;
+}
+
+.ritual-item-stats span:last-child {
+    color: #e74c3c;
+    font-style: italic;
+}
+
+.ritual-add-btn {
+    width: 100%;
+    padding: 8px;
+    background: var(--button-bg);
+    border: none;
+    border-radius: 5px;
+    color: white;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.2s;
+}
+
+.ritual-add-btn:hover {
+    background: var(--button-hover);
 }
