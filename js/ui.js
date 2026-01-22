@@ -45,7 +45,6 @@ const UI = {
             <button class="game-button" id="btn-shop">Shop</button>
             <button class="game-button" id="btn-ritual">Das Ritual</button>
             <button class="game-button" id="btn-boss">Boss-Kämpfe</button>
-            <button class="game-button" id="btn-explore">Tiererkundung</button>
         `;
 
         // Event Listeners neu setzen
@@ -76,10 +75,6 @@ const UI = {
 
         document.getElementById('btn-boss').addEventListener('click', () => {
             Game.showScreen('boss');
-        });
-
-        document.getElementById('btn-explore').addEventListener('click', () => {
-            Game.showScreen('explore');
         });
     },
 
@@ -692,137 +687,6 @@ const UI = {
             this.elements.buttonGrid.innerHTML = `
                 <div class="waiting-message">Gegner ist am Zug...</div>
             `;
-        }
-    },
-
-    // Explore Screen anzeigen
-    showExplore() {
-        // Stats Panel schließen
-        this.statsVisible = false;
-        const existingPanel = this.elements.visualArea.querySelector('.stats-panel');
-        if (existingPanel) {
-            existingPanel.classList.remove('visible');
-        }
-        
-        this.elements.sceneContent.innerHTML = `
-            <div class="explore-screen">
-                <h2>Wähle eine Welt</h2>
-                <div class="world-list">
-                    <div class="world-card" id="select-test-world">
-                        <div class="world-name">Testwelt</div>
-                        <div class="world-desc">Eine mysteriöse Testwelt</div>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        this.elements.buttonGrid.innerHTML = `
-            <button class="game-button" id="btn-back">Zurück</button>
-        `;
-
-        document.getElementById('btn-back').addEventListener('click', () => {
-            Game.showScreen('hideout');
-        });
-
-        document.getElementById('select-test-world').addEventListener('click', () => {
-            this.showTestWorld();
-        });
-    },
-
-    // Testwelt anzeigen
-    showTestWorld() {
-        this.elements.sceneContent.innerHTML = `
-            <div class="creature-encounter">
-                <div class="creature-sprite">
-                    <div style="width: 150px; height: 150px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: 3px solid #5a67d8; border-radius: 8px;"></div>
-                </div>
-                <div class="creature-name">Testwesen</div>
-                <div class="creature-hint">Biete dem Testwesen ein Item an...</div>
-            </div>
-        `;
-
-        this.elements.buttonGrid.innerHTML = `
-            <button class="game-button" id="btn-back">Zurück</button>
-            <button class="game-button" id="btn-inventory-offer">Inventar öffnen</button>
-        `;
-
-        document.getElementById('btn-back').addEventListener('click', () => {
-            Game.showScreen('explore');
-        });
-
-        document.getElementById('btn-inventory-offer').addEventListener('click', () => {
-            this.showInventoryForCreature('testwesen');
-        });
-    },
-
-    // Inventar anzeigen um Item an Kreatur anzubieten
-    showInventoryForCreature(creatureId) {
-        const inventory = Game.state.player.inventory;
-        
-        let inventoryHTML = '';
-        if (inventory.length === 0) {
-            inventoryHTML = '<div class="no-items">Dein Inventar ist leer</div>';
-        } else {
-            inventoryHTML = inventory.map(item => `
-                <div class="inventory-item clickable" data-item-id="${item.id}">
-                    <div class="item-name">${item.name}</div>
-                    <div class="item-quantity">x${item.quantity}</div>
-                    <div class="item-desc">${item.description}</div>
-                </div>
-            `).join('');
-        }
-
-        this.elements.sceneContent.innerHTML = `
-            <div class="inventory-screen">
-                <h2>Wähle ein Item</h2>
-                <div class="inventory-list">
-                    ${inventoryHTML}
-                </div>
-            </div>
-        `;
-
-        this.elements.buttonGrid.innerHTML = `
-            <button class="game-button" id="btn-back">Zurück</button>
-        `;
-
-        document.getElementById('btn-back').addEventListener('click', () => {
-            this.showTestWorld();
-        });
-
-        // Event Listeners für Item-Auswahl
-        document.querySelectorAll('.inventory-item.clickable').forEach(item => {
-            item.addEventListener('click', () => {
-                const itemId = item.dataset.itemId;
-                this.offerItemToCreature(itemId, creatureId);
-            });
-        });
-    },
-
-    // Item an Kreatur anbieten
-    offerItemToCreature(itemId, creatureId = 'testwesen') {
-        const item = Game.state.player.inventory.find(i => i.id === itemId);
-        if (!item) return;
-
-        // Hole Kreatur aus zentraler Definition
-        const creature = Game.creatures[creatureId];
-        if (!creature) return;
-
-        // Prüfe ob Kreatur dieses Item akzeptiert
-        if (creature.acceptsItems.includes(itemId)) {
-            Game.removeItemFromInventory(itemId, 1);
-            
-            // Belohnung: Waffe hinzufügen
-            if (creature.rewardWeapon) {
-                // rewardWeapon ist jetzt ein Objekt: { baseId: 'sword', effects: ['testdamage'] }
-                Game.addWeapon(creature.rewardWeapon);
-            }
-            
-            // Zurück zum Hideout
-            setTimeout(() => {
-                Game.showScreen('hideout');
-            }, 800);
-        } else {
-            // Item nicht akzeptiert - nichts tun
         }
     },
 

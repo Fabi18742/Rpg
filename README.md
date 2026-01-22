@@ -6,6 +6,325 @@ Ein pixelbasiertes Browser-RPG, das auf Cloudflare gehostet wird. Der Fokus lieg
 
 ---
 
+## 🧪 GAME TESTER GUIDE
+
+### 🎮 Quick Start für Tester
+
+**Spiel starten:**
+1. Öffne `index.html` im Browser (Chrome/Firefox empfohlen)
+2. Das Spiel lädt automatisch - kein Setup nötig
+3. Speicherstand ist im Browser LocalStorage
+4. Zum Zurücksetzen: Browser-Console → `localStorage.clear()` → Seite neu laden
+
+**Debug-Tools:**
+- Browser Console (F12) zeigt detaillierte Logs
+- Alle Berechnungen werden im Kampf geloggt
+- State-Objekt: `Game.state` in Console eingeben
+
+---
+
+### 📊 Spieler-Statistiken
+
+#### Basis-Stats
+| Stat | Start-Wert | Funktion |
+|------|-----------|----------|
+| **HP (Health Points)** | 10/10 | Lebenspunkte - bei 0 ist Kampf verloren |
+| **Level** | 1 | Spieler-Level (aktuell noch keine Funktion) |
+| **Stärke (Strength)** | 0 | Wird zu Waffen-Schaden addiert |
+| **Verteidigung (Defense)** | 0 | Wird von Gegner-Schaden abgezogen |
+| **Magie (Magic)** | 0 | Noch nicht implementiert |
+| **Geschwindigkeit (Speed)** | 0 | Noch nicht implementiert |
+
+#### Kampf-System
+| Mechanik | Wert | Details |
+|----------|------|---------|
+| **Action Points (AP)** | 2 pro Runde | Für Angriffe und Blocken |
+| **Block-Kosten** | Alle verfügbaren AP | Blocken beendet sofort den Zug |
+| **Block-Bonus** | AP × 2 | Zusätzliche Verteidigung für nächsten Gegner-Angriff |
+| **Waffen-Slots** | 4 | Maximal 4 Waffen gleichzeitig ausrüstbar |
+
+#### Währung
+| Item | Verwendung | Erhalt |
+|------|-----------|--------|
+| **Glitzer** | Shop-Währung | Boss-Drops, Item-Verkauf |
+
+---
+
+### ⚔️ Waffen-System
+
+#### Verfügbare Waffen
+| Waffe | Schaden | AP-Kosten | Verkaufswert | Ritual-Value | Tier |
+|-------|---------|-----------|--------------|--------------|------|
+| **Dolch** | 1 | 1 | 0 | 15 | 1 |
+| **Schwert** | 5 | 2 | 2 Glitzer | 35 | 2 |
+| **Gummischwert** | 0 | 1 | 0 | 55 | 3 |
+
+#### Effekte
+| Effekt-ID | Name | Bonus | Glitzer-Multiplikator |
+|-----------|------|-------|----------------------|
+| **testdamage** | Testdamage | +3 Schaden | ×1.5 |
+
+**Effekt-Beispiel:**
+- Schwert (5 DMG) + Testdamage = 8 Gesamtschaden
+- Verkaufswert: 2 × 1.5 = 3 Glitzer
+
+#### Schadens-Berechnung
+```
+Angriff: Waffen-Schaden + Stärke - Gegner-Verteidigung + Effekte
+Verteidigung: Gegner-Schaden + Gegner-Stärke - Verteidigung - Block-Bonus
+```
+
+**Beispiel:**
+```
+Spieler greift an mit Schwert (testdamage):
+5 (Waffe) + 0 (Stärke) - 0 (Boss-Def) + 3 (Effekt) = 8 Schaden
+Console Log: "Schwert = 8 (5 Basis + +3 (Testdamage))"
+```
+
+---
+
+### 🛍️ Shop-System
+
+#### Händler
+| Händler | Angebot | Preis |
+|---------|---------|-------|
+| **Testhändler** | Heiltrank | 2 Glitzer |
+| | Ritual-Items (alle 6) | 0 Glitzer |
+| **Testhändler 2** | Heiltrank | 2 Glitzer |
+
+#### Items
+| Item | Typ | Funktion | Verkaufswert |
+|------|-----|----------|--------------|
+| **Heiltrank** | Consumable | Heilt 5 HP | 1 Glitzer |
+| **Testseed** | Seed | Für Tiererkundung | 1 Glitzer |
+| **Ritual-Items** | Ritual | Für Waffen-Ritual | 0 Glitzer |
+
+**Verkaufs-Mechanik:**
+- Waffen mit `glitzerValue > 0` können verkauft werden
+- Ausgerüstete Waffen können nicht verkauft werden
+- Items werden einzeln verkauft
+- Button "Inventar (Verkaufen)" beim Händler
+
+---
+
+### 🔮 Ritual-System (WICHTIG ZUM TESTEN!)
+
+#### Konzept
+Kombiniere 6 Ritual-Items → Erhalte Waffe mit zufälligen Effekten
+
+#### Ritual-Items
+| Item | Value | Modifier | Funktion |
+|------|-------|----------|----------|
+| **Schwach (Neutral)** | 1 | none | Niedrige Power, keine Effekt-Chance |
+| **Schwach (Schaden)** | 1 | testdamage | Niedrige Power, +16.7% Effekt-Chance |
+| **Mittel (Neutral)** | 5 | none | Mittlere Power, keine Effekt-Chance |
+| **Mittel (Schaden)** | 5 | testdamage | Mittlere Power, +16.7% Effekt-Chance |
+| **Stark (Neutral)** | 10 | none | Hohe Power, keine Effekt-Chance |
+| **Stark (Schaden)** | 10 | testdamage | Hohe Power, +16.7% Effekt-Chance |
+
+#### Power-Score & Tiers
+```
+Power-Score = Summe aller 6 Item-Values
+
+Tier 1: 6-25   → Dolch
+Tier 2: 26-45  → Schwert
+Tier 3: 46-60  → Gummischwert
+```
+
+#### Effekt-Wahrscheinlichkeit
+```
+Chance = (Anzahl Items mit Modifier) ÷ 6
+
+Beispiele:
+- 0 testdamage Items = 0% Chance
+- 3 testdamage Items = 50% Chance
+- 6 testdamage Items = 100% Chance
+```
+
+#### Test-Szenarien für Ritual
+
+| Szenario | Items | Power-Score | Tier | Effekt-Chance | Erwartung |
+|----------|-------|-------------|------|---------------|-----------|
+| **Min-Roll** | 6× Schwach (Neutral) | 6 | 1 | 0% | Dolch ohne Effekt |
+| **Max-Roll** | 6× Stark (Schaden) | 60 | 3 | 100% | Gummischwert mit testdamage |
+| **50/50 Tier 2** | 3× Mittel (Neutral) + 3× Mittel (Schaden) | 30 | 2 | 50% | Schwert mit 50% testdamage |
+| **Low Tier High Effect** | 5× Schwach (Schaden) + 1× Schwach (Neutral) | 6 | 1 | 83.3% | Dolch mit hoher Effekt-Chance |
+| **High Tier No Effect** | 6× Stark (Neutral) | 60 | 3 | 0% | Gummischwert ohne Effekt |
+| **Mixed Values** | 2× Schwach (Neutral) + 2× Mittel (Schaden) + 2× Stark (Schaden) | 32 | 2 | 66.7% | Schwert mit hoher Effekt-Chance |
+
+---
+
+### 👾 Boss-Kampf System
+
+#### Bosse
+| Boss | HP | AP pro Runde | Waffe | Effekte | Drops |
+|------|----|--------------| ------|---------|-------|
+| **Test Boss 1** | 5 | 2 | Gummischwert | Keine | Testseed |
+| **Test Boss 2** | 5 | 1 | Gummischwert | +3 Schaden | Testseed |
+
+**Wichtig:** Test Boss 2 hat Effekt auf seiner Waffe! Seine Angriffe machen 3 Schaden statt 0!
+
+#### Boss-Welten & Crawl-System
+| Welt | Boss | Beschreibung |
+|------|------|--------------|
+| **Testwelt 1** | Test Boss 1 | Erste Welt |
+| **Testwelt 2** | Test Boss 2 | Zweite Welt |
+
+**Crawl-Mechanik:**
+1. Welt betreten → 100% Sicherheit
+2. Event wählen → Sicherheit sinkt
+3. Nach jedem Event: Boss-Spawn-Würfel
+4. Spawn-Chance = 100% - Sicherheit
+5. Boss erscheint → Kampf startet
+
+**Events:**
+| Event | Difficulty | Sicherheit-Verlust | Spawn bei Start |
+|-------|------------|--------------------|-----------------|
+| Testevent 1-3 | 1 | 2-8% | 2-8% |
+| Testevent 4-6 | 2 | 2-8% | 2-8% |
+| Testevent 7-9 | 3 | 2-8% | 2-8% |
+
+---
+
+### 🐾 Tiererkundung
+
+#### Kreaturen
+| Kreatur | Akzeptiert | Belohnung |
+|---------|-----------|-----------|
+| **Testwesen** | Testseed | Schwert mit testdamage Effekt |
+
+**Test-Flow:**
+1. Testseed im Shop kaufen (oder von Boss erhalten)
+2. "Tiererkundung" → Testwesen
+3. Testseed anbieten
+4. Schwert mit +3 Schaden Effekt erhalten
+
+---
+
+### 🧪 Test-Checkliste
+
+#### Basis-Funktionen
+- [ ] Neues Spiel startet mit Dolch
+- [ ] Stats-Panel öffnen/schließen funktioniert
+- [ ] HP wird korrekt angezeigt (10/10)
+- [ ] LocalStorage speichert Fortschritt
+
+#### Waffen-Management
+- [ ] Waffe in Slot 1-4 ausrüsten
+- [ ] Waffe aus Slot entfernen
+- [ ] 4 Waffen gleichzeitig ausgerüstet
+- [ ] Doppelte Waffen können ausgerüstet werden
+- [ ] Blaue Waffen-Namen zeigen Effekte an
+
+#### Shop
+- [ ] Heiltrank kaufen (2 Glitzer)
+- [ ] Ritual-Items kaufen (0 Glitzer)
+- [ ] Nicht genug Glitzer → Kauf blockiert
+- [ ] Verkaufen-Menü öffnet
+- [ ] Waffe verkaufen gibt Glitzer
+- [ ] Ausgerüstete Waffe kann nicht verkauft werden
+- [ ] Items verkaufen funktioniert
+
+#### Kampf
+- [ ] Boss-Welt wählen
+- [ ] Crawl-Events erscheinen
+- [ ] Sicherheit sinkt nach Event
+- [ ] Boss spawnt basierend auf Sicherheit
+- [ ] Waffen-Buttons zeigen Schaden/AP
+- [ ] Angriff kostet AP
+- [ ] Nicht genug AP → Button disabled
+- [ ] Block kostet alle AP
+- [ ] Block-Bonus wird angewendet
+- [ ] Heiltrank im Kampf nutzbar
+- [ ] Boss greift nach Spieler-Zug an
+- [ ] Schaden-Berechnung korrekt (Console Log prüfen!)
+- [ ] Test Boss 2 macht 3 Schaden (Effekt!)
+- [ ] Sieg: Drops erhalten
+- [ ] Niederlage: HP auf 1, zurück zum Hideout
+
+#### Ritual-System
+- [ ] Ritual-Button im Hideout
+- [ ] 6 Items auswählbar
+- [ ] Verfügbare Menge sinkt beim Auswählen
+- [ ] Items können entfernt werden
+- [ ] Button erst bei 6 Items aktiv
+- [ ] Ritual durchführen verbraucht Items
+- [ ] Power-Score bestimmt Tier korrekt
+- [ ] Effekt-Wahrscheinlichkeit funktioniert
+- [ ] Waffe mit Effekt hat blauen Namen
+- [ ] Console Log zeigt Ritual-Berechnung
+
+#### Tiererkundung
+- [ ] Testwesen erscheint
+- [ ] Testseed anbieten funktioniert
+- [ ] Schwert mit testdamage erhalten
+- [ ] Item wird verbraucht
+
+---
+
+### 🐛 Debug-Commands (Browser Console)
+
+```javascript
+// Spieler-State ansehen
+Game.state.player
+
+// Glitzer hinzufügen
+Game.addItemToInventory(Game.items.glitzer)
+
+// Alle Ritual-Items hinzufügen (jeweils 10)
+for(let i=0; i<10; i++) {
+  Game.addItemToInventory(Game.items.ritualItem_weak_none)
+  Game.addItemToInventory(Game.items.ritualItem_weak_testdamage)
+  Game.addItemToInventory(Game.items.ritualItem_medium_none)
+  Game.addItemToInventory(Game.items.ritualItem_medium_testdamage)
+  Game.addItemToInventory(Game.items.ritualItem_strong_none)
+  Game.addItemToInventory(Game.items.ritualItem_strong_testdamage)
+}
+
+// HP voll heilen
+Game.state.player.hp = Game.state.player.maxHp
+Game.save()
+
+// Stats erhöhen
+Game.state.player.stats.strength = 5
+Game.state.player.stats.defense = 5
+Game.save()
+
+// Alle Waffen bekommen
+Game.addWeapon({baseId: 'dagger', effects: []})
+Game.addWeapon({baseId: 'sword', effects: ['testdamage']})
+Game.addWeapon({baseId: 'rubberSword', effects: []})
+
+// Spielstand komplett löschen
+localStorage.clear()
+location.reload()
+```
+
+---
+
+### 📝 Bekannte Test-Punkte
+
+**Kritische Mechaniken:**
+1. **Ritual-System** - Hauptfeature, alle Kombinationen testen
+2. **Effekte** - testdamage muss sich korrekt verrechnen
+3. **Boss 2** - Muss 3 Schaden machen (nicht 0!)
+4. **Item-Zählung** - Ritual darf nicht mehr Items nehmen als vorhanden
+5. **Waffen verkaufen** - Index-System muss korrekt shiften
+
+**Balance-Tests:**
+- Ist Block zu stark/schwach?
+- Sind Ritual-Items ausgewogen?
+- Passt die Boss-Schwierigkeit?
+- Funktioniert die Effekt-Wahrscheinlichkeit wie erwartet?
+
+**UI-Tests:**
+- Sind alle Informationen sichtbar?
+- Funktionieren alle Buttons?
+- Gibt es visuelles Feedback?
+- Sind Modifier/Effekte erkennbar?
+
+---
+
 ## 🎯 Spielkonzept
 
 ### Kernmechanik

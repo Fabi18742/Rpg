@@ -5,7 +5,6 @@ const Game = {
     items: Definitions.items,
     weaponBases: Definitions.weaponBases,
     effects: Definitions.effects,
-    creatures: Definitions.creatures,
     bosses: Definitions.bosses,
     bossWorlds: Definitions.bossWorlds,
     crawlEvents: Definitions.crawlEvents,
@@ -91,9 +90,6 @@ const Game = {
                 break;
             case 'boss':
                 UI.showBossSelection();
-                break;
-            case 'explore':
-                UI.showExplore();
                 break;
             default:
                 console.error('Unbekannter Screen:', screenName);

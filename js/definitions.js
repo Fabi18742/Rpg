@@ -159,19 +159,6 @@ const Definitions = {
         }
     },
 
-    // ===== KREATUREN =====
-    creatures: {
-        testwesen: {
-            id: 'testwesen',
-            name: 'Testwesen',
-            acceptsItems: ['testseed'],      // Welche Items akzeptiert werden
-            rewardWeapon: {
-                baseId: 'sword',
-                effects: ['testdamage']    // Schwert mit +3 Schaden Effekt
-            }
-        }
-    },
-
     // ===== BOSSE =====
     bosses: {
         testBoss1: {
