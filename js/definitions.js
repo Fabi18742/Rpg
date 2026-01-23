@@ -110,7 +110,6 @@ const Definitions = {
             name: 'Dolch',
             type: 'physical',
             damage: 1,
-            actionCost: 1,
             description: 'Ein einfacher Dolch für schnelle Angriffe',
             baseGlitzerValue: 0,
             ritualValue: 7  // Tier 1 (6-25)
@@ -120,7 +119,6 @@ const Definitions = {
             name: 'Schwert',
             type: 'physical',
             damage: 5,
-            actionCost: 2,
             description: 'Ein kraftvolles Schwert für starke Angriffe',
             baseGlitzerValue: 2,
             ritualValue: 35  // Tier 2 (26-45)
@@ -130,7 +128,6 @@ const Definitions = {
             name: 'Gummischwert',
             type: 'physical',
             damage: 0,
-            actionCost: 1,
             description: 'Ein harmloses Gummischwert',
             baseGlitzerValue: 0,
             ritualValue: 6
@@ -140,7 +137,6 @@ const Definitions = {
             name: 'Großes Schwert',
             type: 'physical',
             damage: 10,
-            actionCost: 2,
             description: 'Ein dickes Schwert',
             baseGlitzerValue: 5,
             ritualValue: 46
@@ -156,6 +152,40 @@ const Definitions = {
             glitzerValueMultiplier: 1.5,
             type: 'damage',
             value: 3
+        }
+    },
+
+    // ===== FÄHIGKEITEN-SYSTEM =====
+    abilities: {
+        stich: {
+            id: 'stich',
+            name: 'Stich',
+            description: 'Ein einfacher Angriff mit der Waffe',
+            damageType: 'physical',      // 'physical' oder 'magical'
+            apCost: 1,                   // AP-Kosten pro Nutzung
+            attacks: 1,                  // Anzahl der Angriffe
+            damageMultiplier: 1.0,       // Multiplikator für Waffenschaden (1.0 = 100%)
+            hitChance: 1.0               // Trefferchance (1.0 = 100%)
+        },
+        doppelhit: {
+            id: 'doppelhit',
+            name: 'Doppelhit',
+            description: '2 schnelle Angriffe mit 60% Schaden pro Treffer',
+            damageType: 'physical',
+            apCost: 1,
+            attacks: 2,                  // 2 separate Angriffe
+            damageMultiplier: 0.6,       // 60% Schaden pro Angriff
+            hitChance: 1.0               // Trefferchance (1.0 = 100%)
+        },
+        riskanterSchlag: {
+            id: 'riskanterSchlag',
+            name: 'Riskanter Schlag',
+            description: 'Ein riskanter Angriff mit 70% Trefferchance, aber 150% Schaden',
+            damageType: 'physical',
+            apCost: 1,
+            attacks: 1,
+            damageMultiplier: 1.5,       // 150% Schaden
+            hitChance: 0.7               // 70% Trefferchance
         }
     },
 

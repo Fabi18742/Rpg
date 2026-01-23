@@ -5,6 +5,7 @@ const Game = {
     items: Definitions.items,
     weaponBases: Definitions.weaponBases,
     effects: Definitions.effects,
+    abilities: Definitions.abilities,
     bosses: Definitions.bosses,
     bossWorlds: Definitions.bossWorlds,
     crawlEvents: Definitions.crawlEvents,
@@ -29,8 +30,12 @@ const Game = {
             },
             // Alle verfügbaren Waffen
             weapons: [],
-            // 4 ausgewählte Waffen für Kampf
-            equippedWeapons: [null, null, null, null],
+            // Ausgerüstete Waffe (Array-Index oder null)
+            equippedWeapon: null,
+            // Alle verfügbaren Fähigkeiten (Array von Ability-IDs)
+            abilities: ['stich', 'doppelhit', 'riskanterSchlag'],
+            // 4 ausgerüstete Fähigkeiten (Array-Indizes in abilities oder null)
+            equippedAbilities: [0, 1, 2, null],
             inventory: []
         },
         defeatedBosses: [],
@@ -48,17 +53,6 @@ const Game = {
         const savedState = Storage.loadGameState();
         if (savedState) {
             this.state = savedState;
-            
-            // Alte equippedWeapons bereinigen (alte IDs zu null konvertieren)
-            if (this.state.player.equippedWeapons) {
-                this.state.player.equippedWeapons = this.state.player.equippedWeapons.map(val => {
-                    // Wenn es eine Zahl ist, behalten
-                    if (typeof val === 'number') return val;
-                    // Alles andere (IDs, undefined, etc.) zu null
-                    return null;
-                });
-            }
-            
             console.log('Spielstand geladen');
         } else {
             console.log('Neues Spiel gestartet');
@@ -67,7 +61,7 @@ const Game = {
             if (startWeaponBaseId) {
                 this.addWeapon({ baseId: startWeaponBaseId, effects: [] });
                 // Automatisch ausrüsten
-                this.equipWeapon(0, 0);
+                this.equipWeapon(0);
             }
         }
 
@@ -182,48 +176,79 @@ const Game = {
         return { damage, logs };
     },
 
-    // Waffe ausrüsten (slot 0-3) - verwendet Array-Index statt weapon.id
-    equipWeapon(weaponIndex, slot) {
-        if (slot < 0 || slot > 3) return false;
+    // Waffe ausrüsten - verwendet Array-Index
+    equipWeapon(weaponIndex) {
         if (weaponIndex < 0 || weaponIndex >= this.state.player.weapons.length) return false;
         
-        // Prüfe ob diese Waffen-Instanz bereits ausgewählt ist
-        if (this.state.player.equippedWeapons.includes(weaponIndex)) {
-            console.log('Diese Waffe ist bereits ausgewählt!');
+        this.state.player.equippedWeapon = weaponIndex;
+        this.save();
+        
+        const weaponInstance = this.state.player.weapons[weaponIndex];
+        const weapon = this.resolveWeapon(weaponInstance);
+        console.log(`${weapon.name} ausgerüstet`);
+        return true;
+    },
+
+    // Waffe entfernen
+    unequipWeapon() {
+        this.state.player.equippedWeapon = null;
+        this.save();
+        return true;
+    },
+
+    // Ausgerüstete Waffe holen (aufgelöst)
+    getEquippedWeapon() {
+        const index = this.state.player.equippedWeapon;
+        if (typeof index === 'number') {
+            const instance = this.state.player.weapons[index];
+            return this.resolveWeapon(instance);
+        }
+        return null;
+    },
+
+    // Fähigkeit ausrüsten (slot 0-3) - verwendet Array-Index aus abilities
+    equipAbility(abilityIndex, slot) {
+        if (slot < 0 || slot > 3) return false;
+        if (abilityIndex < 0 || abilityIndex >= this.state.player.abilities.length) return false;
+        
+        // Prüfe ob diese Fähigkeit bereits ausgewählt ist
+        if (this.state.player.equippedAbilities.includes(abilityIndex)) {
+            console.log('Diese Fähigkeit ist bereits ausgewählt!');
             return false;
         }
         
-        const weapon = this.state.player.weapons[weaponIndex];
-        if (weapon) {
-            this.state.player.equippedWeapons[slot] = weaponIndex;
+        const abilityId = this.state.player.abilities[abilityIndex];
+        const ability = this.abilities[abilityId];
+        if (ability) {
+            this.state.player.equippedAbilities[slot] = abilityIndex;
             this.save();
-            console.log(`${weapon.name} in Slot ${slot + 1} ausgewählt`);
+            console.log(`${ability.name} in Slot ${slot + 1} ausgewählt`);
             return true;
         }
         return false;
     },
 
-    // Waffe aus Slot entfernen
-    unequipWeapon(slot) {
+    // Fähigkeit aus Slot entfernen
+    unequipAbility(slot) {
         if (slot >= 0 && slot <= 3) {
-            this.state.player.equippedWeapons[slot] = null;
+            this.state.player.equippedAbilities[slot] = null;
             this.save();
             return true;
         }
         return false;
     },
 
-    // Ausgewählte Waffen für Kampf holen (aufgelöst)
-    getEquippedWeapons() {
-        return this.state.player.equippedWeapons
+    // Ausgewählte Fähigkeiten für Kampf holen (aufgelöst)
+    getEquippedAbilities() {
+        return this.state.player.equippedAbilities
             .map(index => {
                 if (typeof index === 'number') {
-                    const instance = this.state.player.weapons[index];
-                    return this.resolveWeapon(instance);
+                    const abilityId = this.state.player.abilities[index];
+                    return this.abilities[abilityId];
                 }
                 return null;
             })
-            .filter(w => w !== null);
+            .filter(a => a !== null);
     },
 
     // Kampf starten
@@ -241,20 +266,31 @@ const Game = {
     },
 
     // Spieler-Angriff
-    playerAttack(weaponIndex) {
-        console.log('playerAttack aufgerufen', weaponIndex, 'Turn:', this.state.currentBattle?.turn);
+    // Spieler nutzt Fähigkeit
+    playerAttack(abilityIndex) {
+        console.log('playerAttack aufgerufen mit Fähigkeit', abilityIndex, 'Turn:', this.state.currentBattle?.turn);
         
         if (!this.state.currentBattle || this.state.currentBattle.turn !== 'player') {
             console.log('Abbruch: Kein Battle oder nicht am Zug');
             return;
         }
 
-        const weaponInstance = this.state.player.weapons[weaponIndex];
-        if (!weaponInstance) {
-            console.log('Abbruch: Waffe nicht gefunden');
+        // Hole Fähigkeit
+        const abilityId = this.state.player.abilities[abilityIndex];
+        const ability = this.abilities[abilityId];
+        if (!ability) {
+            console.log('Abbruch: Fähigkeit nicht gefunden');
             return;
         }
-        
+
+        // Hole ausgerüstete Waffe
+        const weaponIndex = this.state.player.equippedWeapon;
+        if (weaponIndex === null || weaponIndex === undefined) {
+            console.log('Abbruch: Keine Waffe ausgerüstet');
+            return;
+        }
+
+        const weaponInstance = this.state.player.weapons[weaponIndex];
         const weapon = this.resolveWeapon(weaponInstance);
         if (!weapon) {
             console.log('Abbruch: Waffe konnte nicht aufgelöst werden');
@@ -264,46 +300,88 @@ const Game = {
         const battle = this.state.currentBattle;
         
         // Prüfe ob genug Aktionspunkte vorhanden sind
-        if (battle.playerActionPoints < weapon.actionCost) {
+        if (battle.playerActionPoints < ability.apCost) {
             console.log('Nicht genug Aktionspunkte!');
             return;
         }
         
         // Aktionspunkte abziehen
-        battle.playerActionPoints -= weapon.actionCost;
+        battle.playerActionPoints -= ability.apCost;
         
         const boss = battle.boss;
         
         console.log('Boss HP vor Angriff:', boss.hp);
         
-        // Schaden berechnen: Basis-Schaden + Stärke - Gegner-Verteidigung
-        const baseDamage = weapon.damage;
-        const playerStrength = this.state.player.stats.strength;
-        const bossDefense = boss.stats.defense;
-        let damage = baseDamage + playerStrength - bossDefense;
+        // Mehrere Angriffe ausführen
+        let totalDamage = 0;
+        let attackLogs = [];
         
-        // Damage-Teile für Log sammeln
-        let damageLog = [`${baseDamage} Basis`];
-        if (playerStrength > 0) damageLog.push(`${playerStrength} Stärke`);
-        if (bossDefense > 0) damageLog.push(`-${bossDefense} Vert.`);
-        
-        console.log(`[SCHADEN] ${weapon.name}: Basis=${baseDamage} + Stärke=${playerStrength} - Verteidigung=${bossDefense} = ${damage}`);
-        
-        // Effekte anwenden
-        if (weapon.effects && weapon.effects.length > 0) {
-            const effectResult = this.applyEffects(damage, weapon.effects, this.state.player, boss, battle);
-            damage = effectResult.damage;
-            damageLog.push(...effectResult.logs);
-            console.log(`[EFFEKTE] Angewendet: ${effectResult.logs.join(', ')}`);
+        for (let i = 0; i < ability.attacks; i++) {
+            // Trefferchance prüfen
+            const hitChance = ability.hitChance || 1.0;
+            const hitRoll = Math.random();
+            
+            if (hitRoll > hitChance) {
+                // Verfehlt!
+                attackLogs.push('Verfehlt!');
+                console.log(`[ANGRIFF ${i+1}] Verfehlt! (Roll: ${hitRoll.toFixed(2)} > ${hitChance})`);
+                continue;
+            }
+            
+            // Schaden berechnen: (Waffenschaden × Multiplikator) + Stats
+            let baseDamage = weapon.damage * ability.damageMultiplier;
+            
+            // Damage-Teile für Log sammeln
+            let damageLog = [`${Math.floor(baseDamage)} Basis (${weapon.name} ${Math.floor(ability.damageMultiplier * 100)}%)`];
+            
+            // Effekte anwenden (vor Stats!)
+            if (weapon.effects && weapon.effects.length > 0) {
+                const effectResult = this.applyEffects(baseDamage, weapon.effects, this.state.player, boss, battle);
+                baseDamage = effectResult.damage;
+                if (effectResult.logs.length > 0) {
+                    damageLog.push(...effectResult.logs);
+                }
+                console.log(`[EFFEKTE] Angewendet: ${effectResult.logs.join(', ')}`);
+            }
+            
+            let damage = baseDamage;
+            
+            // Nur physische Fähigkeiten bekommen Strength-Bonus
+            if (ability.damageType === 'physical') {
+                const playerStrength = this.state.player.stats.strength;
+                if (playerStrength > 0) {
+                    damage += playerStrength;
+                    damageLog.push(`${playerStrength} Stärke`);
+                }
+            }
+            
+            // Verteidigung abziehen
+            const bossDefense = boss.stats.defense;
+            if (bossDefense > 0) {
+                damage -= bossDefense;
+                damageLog.push(`-${bossDefense} Vert.`);
+            }
+            
+            console.log(`[SCHADEN Angriff ${i+1}] ${ability.name}: Basis=${Math.floor(baseDamage)} + Boni - Verteidigung=${bossDefense} = ${Math.floor(damage)}`);
+            
+            if (damage < 0) {
+                console.log(`[SCHADEN] Schaden unter 0, setze auf 0`);
+                damage = 0;
+            }
+            
+            damage = Math.floor(damage);
+            totalDamage += damage;
+            boss.hp -= damage;
+            
+            attackLogs.push(`${damage} (${damageLog.join(' + ')})`);
         }
         
-        if (damage < 0) {
-            console.log(`[SCHADEN] Schaden unter 0, setze auf 0`);
-            damage = 0;
+        // Log-Eintrag erstellen
+        if (ability.attacks > 1) {
+            battle.log.push(`${ability.name}: ${attackLogs.join(', ')} = ${totalDamage} gesamt`);
+        } else {
+            battle.log.push(`${ability.name}: ${attackLogs[0]}`);
         }
-
-        boss.hp -= damage;
-        battle.log.push(`${weapon.name} = ${damage} (${damageLog.join(' + ')})`);
         
         console.log('Boss HP nach Angriff:', boss.hp);
 
@@ -603,8 +681,7 @@ const Game = {
         const glitzerValue = weapon.glitzerValue || 0;
 
         // Prüfe ob Waffe ausgerüstet ist
-        const equippedSlot = this.state.player.equippedWeapons.indexOf(weaponIndex);
-        if (equippedSlot !== -1) {
+        if (this.state.player.equippedWeapon === weaponIndex) {
             console.log('Waffe ist ausgerüstet und kann nicht verkauft werden!');
             return false;
         }
@@ -612,12 +689,9 @@ const Game = {
         // Waffe aus Array entfernen
         this.state.player.weapons.splice(weaponIndex, 1);
 
-        // Alle equippedWeapons Indices anpassen (die größer als weaponIndex sind)
-        for (let i = 0; i < this.state.player.equippedWeapons.length; i++) {
-            const idx = this.state.player.equippedWeapons[i];
-            if (typeof idx === 'number' && idx > weaponIndex) {
-                this.state.player.equippedWeapons[i] = idx - 1;
-            }
+        // equippedWeapon Index anpassen (wenn größer als weaponIndex)
+        if (typeof this.state.player.equippedWeapon === 'number' && this.state.player.equippedWeapon > weaponIndex) {
+            this.state.player.equippedWeapon -= 1;
         }
 
         // Glitzer hinzufügen
