@@ -870,6 +870,12 @@ const Game = {
     checkBossSpawn() {
         const crawl = this.state.currentCrawl;
         
+        // Sicherheit: Prüfen ob crawl existiert
+        if (!crawl) {
+            console.error('checkBossSpawn aufgerufen, aber currentCrawl ist null');
+            return;
+        }
+        
         // Spawn-Wahrscheinlichkeit berechnen (basierend auf fehlender Sicherheit)
         const spawnChance = 100 - crawl.security; // 0% Sicherheit = 100% Spawn-Chance
         const roll = Math.random() * 100;
