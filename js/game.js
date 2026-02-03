@@ -6,6 +6,7 @@ const Game = {
     weaponBases: Definitions.weaponBases,
     effects: Definitions.effects,
     abilities: Definitions.abilities,
+    enemies: Definitions.enemies,
     bosses: Definitions.bosses,
     bossWorlds: Definitions.bossWorlds,
     crawlEvents: Definitions.crawlEvents,
@@ -26,7 +27,7 @@ const Game = {
                 defense: Definitions.player.stats.defense,
                 magic: Definitions.player.stats.magic,
                 speed: Definitions.player.stats.speed,
-                vitality: Definitions.player.stats.vitality
+                glitzer: Definitions.player.stats.glitzer
             },
             // Alle verfügbaren Waffen
             weapons: [],
@@ -120,7 +121,7 @@ const Game = {
         
         this.state.player.weapons.push(instance);
         this.save();
-        console.log('Waffe erhalten:', weaponBase.name, 'mit', instance.effects.length, 'Effekt(en)');
+        console.log(`[WAFFE] ${weaponBase.name} erhalten (${instance.effects.length} Effekte)`);
         return true;
     },
 
@@ -167,6 +168,13 @@ const Game = {
                     damage += effect.value;
                     logs.push(`+${effect.value} (${effect.name})`);
                     break;
+                case 'poison':
+                    // Poison hat eine Chance, Stacks aufzutragen
+                    if (Math.random() < effect.applyChance) {
+                        this.applyPoisonEffect(target, effect);
+                        logs.push(`🧪 Gift aufgetragen!`);
+                    }
+                    break;
                 // Weitere Effekt-Typen können hier hinzugefügt werden
                 // case 'heal': ...
                 // case 'defense': ...
@@ -176,16 +184,35 @@ const Game = {
         return { damage, logs };
     },
 
+    // Gift-Effekt auftragen
+    applyPoisonEffect(target, effect) {
+        if (!target.statusEffects) {
+            target.statusEffects = [];
+        }
+
+        // Prüfe ob bereits ein Gift-Effekt vorhanden ist
+        let existingPoison = target.statusEffects.find(se => se.type === 'poison');
+        
+        if (existingPoison) {
+            // Addiere neue Stacks
+            existingPoison.stacks += effect.stacksToApply;
+        } else {
+            // Erstelle neuen Gift-Effekt
+            target.statusEffects.push({
+                type: 'poison',
+                stacks: effect.stacksToApply,
+                baseDamage: effect.value,
+                ignoreArmor: effect.ignoreArmor
+            });
+        }
+    },
+
     // Waffe ausrüsten - verwendet Array-Index
     equipWeapon(weaponIndex) {
         if (weaponIndex < 0 || weaponIndex >= this.state.player.weapons.length) return false;
         
         this.state.player.equippedWeapon = weaponIndex;
         this.save();
-        
-        const weaponInstance = this.state.player.weapons[weaponIndex];
-        const weapon = this.resolveWeapon(weaponInstance);
-        console.log(`${weapon.name} ausgerüstet`);
         return true;
     },
 
@@ -213,7 +240,6 @@ const Game = {
         
         // Prüfe ob diese Fähigkeit bereits ausgewählt ist
         if (this.state.player.equippedAbilities.includes(abilityIndex)) {
-            console.log('Diese Fähigkeit ist bereits ausgewählt!');
             return false;
         }
         
@@ -222,7 +248,6 @@ const Game = {
         if (ability) {
             this.state.player.equippedAbilities[slot] = abilityIndex;
             this.save();
-            console.log(`${ability.name} in Slot ${slot + 1} ausgewählt`);
             return true;
         }
         return false;
@@ -268,36 +293,28 @@ const Game = {
     // Spieler-Angriff
     // Spieler nutzt Fähigkeit
     playerAttack(abilityIndex) {
-        console.log('playerAttack aufgerufen mit Fähigkeit', abilityIndex, 'Turn:', this.state.currentBattle?.turn);
-        
-        if (!this.state.currentBattle || this.state.currentBattle.turn !== 'player') {
-            console.log('Abbruch: Kein Battle oder nicht am Zug');
-            return;
-        }
+        if (!this.state.currentBattle || this.state.currentBattle.turn !== 'player') return;
 
         // Hole Fähigkeit
         const abilityId = this.state.player.abilities[abilityIndex];
         const ability = this.abilities[abilityId];
-        if (!ability) {
-            console.log('Abbruch: Fähigkeit nicht gefunden');
-            return;
-        }
+        if (!ability) return;
 
         // Hole ausgerüstete Waffe
         const weaponIndex = this.state.player.equippedWeapon;
-        if (weaponIndex === null || weaponIndex === undefined) {
-            console.log('Abbruch: Keine Waffe ausgerüstet');
-            return;
-        }
+        if (weaponIndex === null || weaponIndex === undefined) return;
 
         const weaponInstance = this.state.player.weapons[weaponIndex];
         const weapon = this.resolveWeapon(weaponInstance);
-        if (!weapon) {
-            console.log('Abbruch: Waffe konnte nicht aufgelöst werden');
-            return;
-        }
+        if (!weapon) return;
 
         const battle = this.state.currentBattle;
+        
+        // Bei Gegner-Kämpfen: Stelle sicher, dass battle.boss auf das ausgewählte Ziel zeigt
+        const isEnemyBattle = battle.enemies && battle.enemies.length > 0;
+        if (isEnemyBattle) {
+            battle.boss = battle.enemies[battle.selectedTarget || 0];
+        }
         
         // Prüfe ob genug Aktionspunkte vorhanden sind
         if (battle.playerActionPoints < ability.apCost) {
@@ -324,7 +341,6 @@ const Game = {
             if (hitRoll > hitChance) {
                 // Verfehlt!
                 attackLogs.push('Verfehlt!');
-                console.log(`[ANGRIFF ${i+1}] Verfehlt! (Roll: ${hitRoll.toFixed(2)} > ${hitChance})`);
                 continue;
             }
             
@@ -341,7 +357,6 @@ const Game = {
                 if (effectResult.logs.length > 0) {
                     damageLog.push(...effectResult.logs);
                 }
-                console.log(`[EFFEKTE] Angewendet: ${effectResult.logs.join(', ')}`);
             }
             
             let damage = baseDamage;
@@ -382,16 +397,65 @@ const Game = {
         } else {
             battle.log.push(`${ability.name}: ${attackLogs[0]}`);
         }
-        
-        console.log('Boss HP nach Angriff:', boss.hp);
 
-        // Boss besiegt?
+        // Boss/Gegner besiegt?
         if (boss.hp <= 0) {
             boss.hp = 0;
-            battle.log.push(`${boss.name} wurde besiegt!`);
-            console.log('Boss besiegt!');
-            this.endBattle(true);
-            return;
+            
+            // Prüfe ob es ein Gegner-Kampf ist
+            const isEnemyBattle = battle.enemies && battle.enemies.length > 0;
+            
+            if (isEnemyBattle) {
+                // Gegner besiegt - markiere als besiegt, entferne NICHT aus Array
+                boss.defeated = true;
+                battle.log.push(`${boss.name} wurde besiegt!`);
+                
+                // Zähle lebende Gegner
+                const aliveEnemies = battle.enemies.filter(e => !e.defeated);
+                
+                // Prüfe ob noch lebende Gegner übrig sind
+                if (aliveEnemies.length === 0) {
+                    // Alle Gegner besiegt
+                    battle.log.push('Alle Gegner wurden besiegt!');
+                    this.endBattle(true);
+                    return;
+                } else {
+                    // Noch Gegner übrig
+                    battle.log.push(`Noch ${aliveEnemies.length} Gegner übrig!`);
+                    
+                    // Falls aktuelles Target besiegt wurde, wähle nächsten lebenden Gegner
+                    if (battle.enemies[battle.selectedTarget].defeated) {
+                        // Finde nächsten lebenden Gegner
+                        for (let i = 0; i < battle.enemies.length; i++) {
+                            if (!battle.enemies[i].defeated) {
+                                battle.selectedTarget = i;
+                                battle.boss = battle.enemies[i];
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // Prüfe ob Spieler noch AP hat
+                    if (battle.playerActionPoints > 0) {
+                        // Spieler kann weiter angreifen
+                        this.save();
+                        UI.updateBattleScreen();
+                        return;
+                    } else {
+                        // Keine AP mehr, Gegner-Zug
+                        battle.turn = 'enemy';
+                        this.save();
+                        UI.updateBattleScreen();
+                        setTimeout(() => this.enemyAttack(), 1500);
+                        return;
+                    }
+                }
+            } else {
+                // Boss besiegt
+                battle.log.push(`${boss.name} wurde besiegt!`);
+                this.endBattle(true);
+                return;
+            }
         }
 
         // Prüfe ob Spieler noch Aktionspunkte hat
@@ -412,20 +476,12 @@ const Game = {
 
     // Spieler blockt
     playerBlock() {
-        console.log('playerBlock aufgerufen', 'Turn:', this.state.currentBattle?.turn);
-        
-        if (!this.state.currentBattle || this.state.currentBattle.turn !== 'player') {
-            console.log('Abbruch: Kein Battle oder nicht am Zug');
-            return;
-        }
+        if (!this.state.currentBattle || this.state.currentBattle.turn !== 'player') return;
 
         const battle = this.state.currentBattle;
         
         // Prüfe ob genug Aktionspunkte vorhanden sind
-        if (battle.playerActionPoints < 1) {
-            console.log('Nicht genug Aktionspunkte zum Blocken!');
-            return;
-        }
+        if (battle.playerActionPoints < 1) return;
         
         // Block-Wert berechnen: Nur AP-Bonus (Defense wird bereits normal vom Schaden abgezogen!)
         const availableAP = battle.playerActionPoints; // AP BEVOR wir abziehen
@@ -433,8 +489,6 @@ const Game = {
         
         battle.blockBonus = blockBonus;
         battle.log.push(`Block! (+${blockBonus} Verteidigung)`);
-        
-        console.log(`[BLOCK] Available AP=${availableAP}, Block Bonus=${blockBonus}`);
         
         // NACH der Berechnung: Alle AP verbrauchen (Zug ist beendet)
         battle.playerActionPoints = 0;
@@ -448,29 +502,97 @@ const Game = {
 
     // Gegner-Angriff
     enemyAttack() {
-        console.log('enemyAttack aufgerufen');
-        
-        if (!this.state.currentBattle) {
-            console.log('Abbruch: Kein Battle');
-            return;
-        }
+        if (!this.state.currentBattle) return;
 
         const battle = this.state.currentBattle;
+        
+        // Bestimme ob es ein Gegner-Kampf oder Boss-Kampf ist
+        const isEnemyBattle = battle.enemies && battle.enemies.length > 0;
+        
+        // Bei Gegner-Kämpfen: Stelle sicher dass currentEnemyIndex initialisiert ist
+        if (isEnemyBattle && (battle.currentEnemyIndex === undefined || battle.currentEnemyIndex === null)) {
+            battle.currentEnemyIndex = 0;
+        }
+        
+        // Bei Gegner-Kämpfen: Überspringe besiegte Gegner
+        if (isEnemyBattle) {
+            while (battle.currentEnemyIndex < battle.enemies.length && 
+                   battle.enemies[battle.currentEnemyIndex].defeated) {
+                battle.currentEnemyIndex++;
+            }
+            
+            // Prüfe ob alle Gegner besiegt sind
+            if (battle.currentEnemyIndex >= battle.enemies.length) {
+                this.endBattle(true);
+                return;
+            }
+            
+            // Aktualisiere battle.boss auf den aktuell angreifenden Gegner
+            battle.boss = battle.enemies[battle.currentEnemyIndex];
+        }
+        
         const boss = battle.boss;
+
+        // Gift-Schaden VOR dem Angriff des aktuellen Gegners/Bosses
+        if (boss.statusEffects && boss.statusEffects.length > 0) {
+            const poisonEffect = boss.statusEffects.find(se => se.type === 'poison');
+            if (poisonEffect && poisonEffect.stacks > 0) {
+                // Gift-Schaden = baseDamage + stacks (ignoriert Rüstung)
+                const poisonDamage = poisonEffect.baseDamage + poisonEffect.stacks;
+                boss.hp -= poisonDamage;
+                if (boss.hp < 0) boss.hp = 0;
+
+                battle.log.push(`🧪 ${boss.name} erleidet ${poisonDamage} Gift-Schaden (${poisonEffect.stacks} Stacks)`);
+
+                // Reduziere Stacks um 1
+                poisonEffect.stacks -= 1;
+
+                // Entferne Effekt wenn Stacks auf 0
+                if (poisonEffect.stacks <= 0) {
+                    const index = boss.statusEffects.indexOf(poisonEffect);
+                    boss.statusEffects.splice(index, 1);
+                }
+
+                this.save();
+                UI.updateBattleScreen();
+
+                // Prüfe ob Gegner/Boss durch Gift besiegt wurde
+                if (boss.hp <= 0) {
+                    boss.defeated = true;
+                    battle.log.push(`${boss.name} wurde durch Gift besiegt!`);
+                    
+                    if (isEnemyBattle) {
+                        // Prüfe ob alle Gegner besiegt sind
+                        const allDefeated = battle.enemies.every(e => e.defeated);
+                        if (allDefeated) {
+                            this.endBattle(true);
+                            return;
+                        }
+                        
+                        // Nächster Gegner ist dran
+                        battle.currentEnemyIndex++;
+                        this.save();
+                        UI.updateBattleScreen();
+                        setTimeout(() => this.enemyAttack(), 1500);
+                        return;
+                    } else {
+                        // Boss wurde besiegt
+                        this.endBattle(true);
+                        return;
+                    }
+                }
+            }
+        }
 
         // Boss-Waffe auflösen (Instanz zu vollständiger Waffe)
         const bossWeaponInstance = boss.weapon;
         const bossWeapon = this.resolveWeapon(bossWeaponInstance);
         const attackDamage = bossWeapon ? bossWeapon.damage : 0;
         const attackName = bossWeapon ? bossWeapon.name : 'Angriff';
-        const actionCost = bossWeapon ? bossWeapon.actionCost : 1;
 
-        // Prüfe ob Boss noch Aktionspunkte hat
-        if (battle.bossActionPoints >= actionCost) {
-            // Boss greift an
-            battle.bossActionPoints -= actionCost;
-            
-            // Schaden berechnen: Boss-Ability-Damage + Boss-Stärke - Spieler-Verteidigung
+        // Bei normalen Gegnern: Immer 1 Angriff, keine AP-Verwaltung
+        if (isEnemyBattle) {
+            // Schaden berechnen
             const bossBaseDamage = attackDamage;
             const bossStrength = boss.stats.strength;
             const playerDefense = this.state.player.stats.defense;
@@ -483,68 +605,151 @@ const Game = {
             if (playerDefense > 0) damageLog.push(`-${playerDefense} Vert.`);
             if (blockBonus > 0) damageLog.push(`-${blockBonus} Block`);
             
-            console.log(`[SCHADEN] ${attackName}: Basis=${bossBaseDamage} + Stärke=${bossStrength} - Verteidigung=${playerDefense} - Block=${blockBonus} = ${damage}`);
-            
             // Effekte anwenden
             if (bossWeapon && bossWeapon.effects && bossWeapon.effects.length > 0) {
                 const effectResult = this.applyEffects(damage, bossWeapon.effects, boss, this.state.player, battle);
                 damage = effectResult.damage;
                 damageLog.push(...effectResult.logs);
-                console.log(`[GEGNER-EFFEKTE] Angewendet: ${effectResult.logs.join(', ')}`);
             }
             
-            if (damage < 0) {
-                console.log(`[SCHADEN] Schaden unter 0, setze auf 0`);
-                damage = 0;
-            }
+            if (damage < 0) damage = 0;
 
             this.state.player.hp -= damage;
             if (this.state.player.hp < 0) this.state.player.hp = 0;
 
-            battle.log.push(`Boss: ${attackName} = ${damage} (${damageLog.join(' + ')})`);
-
-            console.log('Spieler HP:', this.state.player.hp);
+            battle.log.push(`${boss.name}: ${attackName} = ${damage} (${damageLog.join(' + ')})`);
             
             // Block-Bonus nach dem Angriff zurücksetzen
             if (battle.blockBonus > 0) {
-                console.log(`[BLOCK] Block-Bonus wird zurückgesetzt: ${battle.blockBonus} -> 0`);
                 battle.blockBonus = 0;
             }
 
             // Spieler besiegt?
             if (this.state.player.hp <= 0) {
                 battle.log.push('Du wurdest besiegt!');
-                console.log('Spieler besiegt!');
                 this.endBattle(false);
                 return;
             }
-        }
-        
-        // Prüfe ob Boss noch Aktionspunkte hat
-        if (battle.bossActionPoints > 0 && battle.bossActionPoints >= actionCost) {
-            // Boss kann noch einmal angreifen
-            this.save();
-            UI.updateBattleScreen();
-            setTimeout(() => this.enemyAttack(), 1500);
+
+            // Zum nächsten Gegner wechseln
+            battle.currentEnemyIndex = (battle.currentEnemyIndex || 0) + 1;
+            
+            // Überspringe besiegte Gegner
+            while (battle.currentEnemyIndex < battle.enemies.length && 
+                   battle.enemies[battle.currentEnemyIndex].defeated) {
+                battle.currentEnemyIndex++;
+            }
+            
+            // Wenn noch lebende Gegner übrig sind, nächsten angreifen lassen
+            if (battle.currentEnemyIndex < battle.enemies.length) {
+                battle.boss = battle.enemies[battle.currentEnemyIndex];
+                this.save();
+                UI.updateBattleScreen();
+                setTimeout(() => this.enemyAttack(), 1500);
+            } else {
+                // Alle lebenden Gegner haben angegriffen, Spieler ist dran
+                battle.turn = 'player';
+                battle.currentEnemyIndex = 0;
+                
+                // Stelle battle.boss auf das ausgewählte Ziel zurück
+                // Prüfe ob aktuelles Target noch lebt, sonst finde nächsten lebenden Gegner
+                if (battle.enemies[battle.selectedTarget] && !battle.enemies[battle.selectedTarget].defeated) {
+                    battle.boss = battle.enemies[battle.selectedTarget];
+                } else {
+                    // Finde ersten lebenden Gegner als neues Target
+                    for (let i = 0; i < battle.enemies.length; i++) {
+                        if (!battle.enemies[i].defeated) {
+                            battle.selectedTarget = i;
+                            battle.boss = battle.enemies[i];
+                            break;
+                        }
+                    }
+                }
+                
+                battle.playerActionPoints = this.state.player.maxActionPoints;
+                this.save();
+                UI.updateBattleScreen();
+            }
         } else {
-            // Boss-Zug beendet, Spieler ist dran
-            console.log('Setze turn auf player');
-            battle.turn = 'player';
-            // Aktionspunkte regenerieren
-            battle.playerActionPoints = this.state.player.maxActionPoints;
-            battle.bossActionPoints = boss.actionPoints;
-            this.save();
-            UI.updateBattleScreen();
+            // Boss-Kampf: Original-Logik mit AP-System
+            const actionCost = bossWeapon ? bossWeapon.actionCost : 1;
+
+            // Prüfe ob Boss noch Aktionspunkte hat
+            if (battle.bossActionPoints >= actionCost) {
+                // Boss greift an
+                battle.bossActionPoints -= actionCost;
+                
+                // Schaden berechnen
+                const bossBaseDamage = attackDamage;
+                const bossStrength = boss.stats.strength;
+                const playerDefense = this.state.player.stats.defense;
+                const blockBonus = battle.blockBonus || 0;
+                let damage = bossBaseDamage + bossStrength - playerDefense - blockBonus;
+                
+                // Damage-Teile für Log sammeln
+                let damageLog = [`${bossBaseDamage} Basis`];
+                if (bossStrength > 0) damageLog.push(`${bossStrength} Stärke`);
+                if (playerDefense > 0) damageLog.push(`-${playerDefense} Vert.`);
+                if (blockBonus > 0) damageLog.push(`-${blockBonus} Block`);
+                
+                // Effekte anwenden
+                if (bossWeapon && bossWeapon.effects && bossWeapon.effects.length > 0) {
+                    const effectResult = this.applyEffects(damage, bossWeapon.effects, boss, this.state.player, battle);
+                    damage = effectResult.damage;
+                    damageLog.push(...effectResult.logs);
+                }
+                
+                if (damage < 0) damage = 0;
+
+                this.state.player.hp -= damage;
+                if (this.state.player.hp < 0) this.state.player.hp = 0;
+
+                battle.log.push(`Boss: ${attackName} = ${damage} (${damageLog.join(' + ')})`);
+                
+                // Block-Bonus nach dem Angriff zurücksetzen
+                if (battle.blockBonus > 0) {
+                    battle.blockBonus = 0;
+                }
+
+                // Spieler besiegt?
+                if (this.state.player.hp <= 0) {
+                    battle.log.push('Du wurdest besiegt!');
+                    this.endBattle(false);
+                    return;
+                }
+            }
+            
+            // Prüfe ob Boss noch Aktionspunkte hat
+            if (battle.bossActionPoints > 0 && battle.bossActionPoints >= actionCost) {
+                // Boss kann noch einmal angreifen
+                this.save();
+                UI.updateBattleScreen();
+                setTimeout(() => this.enemyAttack(), 1500);
+            } else {
+                // Boss-Zug beendet, Spieler ist dran
+                console.log('Setze turn auf player');
+                battle.turn = 'player';
+                // Aktionspunkte regenerieren
+                battle.playerActionPoints = this.state.player.maxActionPoints;
+                battle.bossActionPoints = boss.actionPoints;
+                this.save();
+                UI.updateBattleScreen();
+            }
         }
     },
 
     // Kampf beenden
     endBattle(victory) {
+        const battle = this.state.currentBattle;
+        const isEnemyBattle = battle && battle.enemies && battle.enemies.length > 0;
+        const isBossBattle = !isEnemyBattle;
+        
         if (victory) {
-            const boss = this.state.currentBattle.boss;
+            const boss = battle.boss;
             const bossId = boss.id;
             
-            if (!this.state.defeatedBosses.includes(bossId)) {
+            // Nur bei Boss-Kämpfen den Boss als besiegt markieren
+            if (isBossBattle && !this.state.defeatedBosses.includes(bossId)) {
                 this.state.defeatedBosses.push(bossId);
             }
             
@@ -555,7 +760,7 @@ const Game = {
                     const item = this.items[dropId];
                     if (item) {
                         this.addItemToInventory(item);
-                        this.state.currentBattle.log.push(`${item.name} erhalten!`);
+                        battle.log.push(`${item.name} erhalten!`);
                     }
                 });
             }
@@ -564,34 +769,43 @@ const Game = {
             this.state.player.hp = 1;
         }
 
-        // Crawl-Zustand löschen (falls vorhanden)
-        if (this.state.currentCrawl) {
-            this.state.currentCrawl = null;
-        }
-
         this.save();
 
         // UI aktualisieren für Drop-Nachricht
         UI.updateBattleScreen();
 
-        // Zurück zum Hideout nach 3 Sekunden
-        setTimeout(() => {
-            this.state.currentBattle = null;
-            this.save();
-            this.showScreen('hideout');
-        }, 3000);
+        // Bei Boss-Kampf: Crawl beenden und zurück zum Hideout
+        if (isBossBattle) {
+            // Crawl-Zustand löschen
+            if (this.state.currentCrawl) {
+                this.state.currentCrawl = null;
+            }
+
+            // Zurück zum Hideout nach 3 Sekunden
+            setTimeout(() => {
+                this.state.currentBattle = null;
+                this.save();
+                this.showScreen('hideout');
+            }, 3000);
+        } else {
+            // Bei Gegner-Kampf: Weiter im Crawl
+            setTimeout(() => {
+                this.state.currentBattle = null;
+                this.save();
+                
+                // Boss-Spawn prüfen
+                this.checkBossSpawn();
+            }, 2000);
+        }
     },
 
     // Item zum Inventar hinzufügen
     addItemToInventory(item) {
-        console.log('addItemToInventory aufgerufen mit:', item);
-        
         const existingItem = this.state.player.inventory.find(i => i.id === item.id);
         
         if (existingItem) {
             // Item existiert bereits, erhöhe Anzahl
             existingItem.quantity = (existingItem.quantity || 1) + 1;
-            console.log(`${item.name} Anzahl erhöht auf ${existingItem.quantity}`);
         } else {
             // Neues Item hinzufügen
             this.state.player.inventory.push({
@@ -644,8 +858,8 @@ const Game = {
         const item = this.items[offer.itemId];
         const totalCost = offer.price * quantity;
 
-        // Glitzer zählen
-        const glitzerCount = this.state.player.inventory.filter(i => i.id === 'glitzer').reduce((sum, i) => sum + (i.quantity || 1), 0);
+        // Glitzer prüfen
+        const glitzerCount = this.state.player.stats.glitzer;
 
         if (glitzerCount < totalCost) {
             console.log('Nicht genug Glitzer!');
@@ -653,7 +867,7 @@ const Game = {
         }
 
         // Glitzer abziehen
-        this.removeItemFromInventory('glitzer', totalCost);
+        this.state.player.stats.glitzer -= totalCost;
 
         // Items hinzufügen
         for (let i = 0; i < quantity; i++) {
@@ -696,10 +910,7 @@ const Game = {
 
         // Glitzer hinzufügen
         if (glitzerValue > 0) {
-            const glitzerItem = this.items.glitzer;
-            for (let i = 0; i < glitzerValue; i++) {
-                this.addItemToInventory(glitzerItem);
-            }
+            this.state.player.stats.glitzer += glitzerValue;
         }
 
         this.save();
@@ -727,10 +938,7 @@ const Game = {
         this.removeItemFromInventory(itemId, 1);
 
         // Glitzer hinzufügen
-        const glitzerItem = this.items.glitzer;
-        for (let i = 0; i < glitzerValue; i++) {
-            this.addItemToInventory(glitzerItem);
-        }
+        this.state.player.stats.glitzer += glitzerValue;
 
         this.save();
         console.log(`${itemDef.name} für ${glitzerValue} Glitzer verkauft`);
@@ -800,19 +1008,26 @@ const Game = {
         const crawl = this.state.currentCrawl;
         if (!crawl) return [];
 
-        // Schwierigkeit basierend auf Chaoslevel bestimmen
-        let difficulty;
-        if (crawl.chaosLevel < 5) {
-            difficulty = 1;
-        } else if (crawl.chaosLevel < 10) {
-            difficulty = 2;
-        } else {
-            difficulty = 3;
-        }
+        const bossWorld = this.bossWorlds[crawl.bossWorldId];
 
-        // Nur Events mit passender Schwierigkeit wählen
+        // Alle Events holen
         const allEvents = Object.values(this.crawlEvents);
-        const filteredEvents = allEvents.filter(event => event.difficulty === difficulty);
+        
+        // Nach Chaos-Range und allowedEvents filtern
+        let filteredEvents = allEvents.filter(event => {
+            // Chaos-Level muss im Event-Bereich liegen
+            if (event.minChaos > crawl.chaosLevel) return false;
+            if (event.maxChaos !== null && event.maxChaos !== undefined && crawl.chaosLevel > event.maxChaos) return false;
+            
+            // allowedEvents prüfen (null = alle erlaubt)
+            if (bossWorld.allowedEvents !== null && bossWorld.allowedEvents !== undefined) {
+                if (!bossWorld.allowedEvents.includes(event.id)) return false;
+            }
+            
+            return true;
+        });
+        
+        console.log(`[EVENT] Chaos: ${crawl.chaosLevel}, Events: ${filteredEvents.length}`);
         
         // Falls keine Events vorhanden, alle nehmen (Fallback)
         const eventsToChooseFrom = filteredEvents.length > 0 ? filteredEvents : allEvents;
@@ -825,8 +1040,6 @@ const Game = {
     // Event-Auswahl anzeigen (Debug-Version)
     showEventSelection() {
         if (!this.state.currentCrawl) return;
-        const crawl = this.state.currentCrawl;
-        console.log('Sicherheit:', crawl.security + '%', '| Chaoslevel:', crawl.chaosLevel);
     },
 
     // Event auswählen
@@ -838,12 +1051,161 @@ const Game = {
 
         if (!event) return;
         
-        this.processEvent(event);
+        // Je nach Event-Typ unterschiedlich behandeln
+        if (event.type === 'combat') {
+            // Kampf-Event: Direkt zum Kampf
+            this.startCombatEvent(event);
+        } else if (event.type === 'multipleChoice') {
+            // Multiple Choice: UI anzeigen
+            this.state.currentEvent = event;
+            this.save();
+            UI.showMultipleChoiceEvent();
+        }
     },
 
-    // Event verarbeiten
-    processEvent(event) {
+    // Kampf-Event starten
+    startCombatEvent(event) {
+        // Sicherheit und Chaos verarbeiten
+        this.processEventEffects(event);
+
+        // Gegner-Instanzen erstellen
+        const enemies = event.enemies.map(enemyId => {
+            const enemyDef = this.enemies[enemyId];
+            if (!enemyDef) {
+                console.error('Gegner nicht gefunden:', enemyId);
+                return null;
+            }
+            
+            // Kopie des Gegners erstellen
+            return JSON.parse(JSON.stringify(enemyDef));
+        }).filter(e => e !== null);
+
+        if (enemies.length === 0) {
+            console.error('Keine gültigen Gegner für Combat Event');
+            return;
+        }
+
+        // Kampf starten (ähnlich wie Boss-Kampf, aber mit Gegner-Liste)
+        this.startEnemyBattle(enemies);
+    },
+
+    // Gegner-Kampf starten (mit mehreren Gegnern)
+    startEnemyBattle(enemies) {
+        // Initialisiere statusEffects für alle Gegner
+        enemies.forEach(enemy => {
+            if (!enemy.statusEffects) {
+                enemy.statusEffects = [];
+            }
+        });
+
+        this.state.currentBattle = {
+            enemies: enemies,               // Array von Gegnern
+            currentEnemyIndex: 0,           // Aktueller Gegner im Array (für Gegner-Angriffe)
+            selectedTarget: 0,              // Ausgewähltes Ziel für Spieler-Angriffe
+            boss: enemies[0],               // Aktueller Gegner (für Kompatibilität mit Battle UI)
+            turn: 'player',
+            playerActionPoints: this.state.player.maxActionPoints,
+            bossActionPoints: 0,            // Gegner haben keine AP (greifen immer an)
+            blockBonus: 0,
+            log: [`Kampf gegen ${enemies.length} Gegner beginnt!`]
+        };
+        this.save();
+        UI.showBattleScreen();
+    },
+
+    // Gegner-Ziel auswählen (nur bei Gegner-Kämpfen)
+    selectEnemyTarget(enemyIndex) {
+        const battle = this.state.currentBattle;
+        if (!battle || !battle.enemies) return;
+
+        if (enemyIndex >= 0 && enemyIndex < battle.enemies.length) {
+            const enemy = battle.enemies[enemyIndex];
+            // Nur lebende Gegner können ausgewählt werden
+            if (!enemy.defeated) {
+                battle.selectedTarget = enemyIndex;
+                battle.boss = enemy; // Update boss reference
+                this.save();
+            }
+        }
+    },
+
+    // Multiple Choice Antwort wählen
+    selectChoice(choiceIndex) {
+        const event = this.state.currentEvent;
+        if (!event || !event.choices) return;
+
+        const choice = event.choices[choiceIndex];
+        if (!choice) return;
+
+        // Effekte der Antwort verarbeiten
+        if (choice.effects) {
+            choice.effects.forEach(effect => {
+                this.applyChoiceEffect(effect);
+            });
+        }
+
+        // Event-Basiseffekte verarbeiten
+        this.processEventEffects(event);
+
+        // Event beenden
+        this.state.currentEvent = null;
+        this.save();
+
+        // Boss-Spawn prüfen
+        setTimeout(() => {
+            this.checkBossSpawn();
+        }, 1000);
+    },
+
+    // Wahl-Effekt anwenden
+    applyChoiceEffect(effect) {
+        switch (effect.type) {
+            case 'addItem':
+                const itemDef = this.items[effect.itemId];
+                if (itemDef) {
+                    // Spezielle Behandlung für Glitzer: als Stat statt Inventar-Item
+                    if (effect.itemId === 'glitzer') {
+                        this.state.player.stats.glitzer += (effect.amount || 1);
+                        console.log(`+${effect.amount || 1} ${itemDef.name}`);
+                    } else {
+                        for (let i = 0; i < (effect.amount || 1); i++) {
+                            this.addItemToInventory(itemDef);
+                        }
+                        console.log(`+${effect.amount || 1} ${itemDef.name}`);
+                    }
+                }
+                break;
+            case 'addChaos':
+                const crawl = this.state.currentCrawl;
+                if (crawl) {
+                    crawl.chaosLevel += effect.amount || 1;
+                    console.log(`Chaos +${effect.amount || 1}`);
+                }
+                break;
+            case 'addGold':
+                this.state.player.gold += effect.amount || 0;
+                console.log(`Gold +${effect.amount || 0}`);
+                break;
+            case 'addHp':
+                this.state.player.hp = Math.min(
+                    this.state.player.maxHp,
+                    this.state.player.hp + (effect.amount || 0)
+                );
+                console.log(`HP +${effect.amount || 0}`);
+                break;
+            case 'removeHp':
+                this.state.player.hp = Math.max(0, this.state.player.hp - (effect.amount || 0));
+                console.log(`HP -${effect.amount || 0}`);
+                break;
+            default:
+                console.warn('Unbekannter Effekt-Typ:', effect.type);
+        }
+    },
+
+    // Event-Basiseffekte verarbeiten (Sicherheit, Chaos)
+    processEventEffects(event) {
         const crawl = this.state.currentCrawl;
+        if (!crawl) return;
         
         // Sicherheit verringern
         crawl.security = Math.max(0, crawl.security - event.securityDecrease);
@@ -859,11 +1221,6 @@ const Game = {
         });
 
         this.save();
-
-        // Boss-Spawn prüfen
-        setTimeout(() => {
-            this.checkBossSpawn();
-        }, 1000);
     },
 
     // Prüfen ob Boss erscheint

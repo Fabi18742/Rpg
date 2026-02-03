@@ -26,17 +26,16 @@ const UI = {
 
     // Hideout Screen anzeigen
     showHideout() {
+        // Entferne Battle-Windows und Stats-Fenster
+        this.removeBattleWindows();
+        const statsWindow = document.getElementById('stats-panel-window');
+        if (statsWindow) statsWindow.remove();
+        this.statsVisible = false;
+        
         // SVG Bild anzeigen
         this.elements.sceneContent.innerHTML = `
             <img src="assets/svg/example-hideout.svg" alt="Hideout Scene">
         `;
-        
-        // Stats Panel dynamisch hinzufügen (nicht in sceneContent)
-        const existingPanel = this.elements.visualArea.querySelector('.stats-panel');
-        if (existingPanel) {
-            existingPanel.remove();
-        }
-        this.elements.visualArea.insertAdjacentHTML('beforeend', this.renderStatsPanel());
 
         this.elements.buttonGrid.innerHTML = `
             <button class="game-button" id="btn-stats">Stats</button>
@@ -54,7 +53,7 @@ const UI = {
     // Hideout-spezifische Event Listeners
     setupHideoutListeners() {
         document.getElementById('btn-stats').addEventListener('click', () => {
-            this.toggleStatsPanel();
+            this.showStatsScreen();
         });
 
         document.getElementById('btn-weapons').addEventListener('click', () => {
@@ -122,22 +121,137 @@ const UI = {
 
     // Stats Panel ein/ausblenden
     toggleStatsPanel() {
-        this.statsVisible = !this.statsVisible;
-        const panel = document.getElementById('stats-panel');
-        if (panel) {
-            panel.classList.toggle('visible');
+        let statsWindow = document.getElementById('stats-panel-window');
+        
+        if (statsWindow) {
+            // Fenster existiert, entfernen
+            statsWindow.remove();
+            this.statsVisible = false;
+        } else {
+            // Fenster erstellen
+            this.statsVisible = true;
+            const player = Game.state.player;
+            
+            const statsHTML = `
+                <div id="stats-panel-window" class="draggable-window" data-window-id="stats-panel-window" data-window-title="Charakterwerte" style="left: 100px; top: 100px;">
+                    <div class="window-minimize-btn">−</div>
+                    <div class="window-drag-handle"></div>
+                    <div class="window-content stats-panel-content">
+                        <div class="window-title">Charakterwerte</div>
+                        <div class="stats-grid">
+                            <div class="stat-item">
+                                <span class="stat-label">Level:</span>
+                                <span class="stat-value">${player.level}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">HP:</span>
+                                <span class="stat-value">${player.hp}/${player.maxHp}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Stärke:</span>
+                                <span class="stat-value">${player.stats.strength}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Verteidigung:</span>
+                                <span class="stat-value">${player.stats.defense}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Magie:</span>
+                                <span class="stat-value">${player.stats.magic}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Geschwindigkeit:</span>
+                                <span class="stat-value">${player.stats.speed}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Glitzer:</span>
+                                <span class="stat-value">${player.stats.glitzer}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', statsHTML);
+            const newWindow = document.getElementById('stats-panel-window');
+            
+            // Sicherstellen dass es nicht minimiert ist
+            newWindow.classList.remove('minimized');
+            const minimizeBtn = newWindow.querySelector('.window-minimize-btn');
+            if (minimizeBtn) minimizeBtn.textContent = '−';
+            
+            // Minimiert-Status auf false setzen
+            const minimizedStates = JSON.parse(localStorage.getItem('windowMinimized') || '{}');
+            minimizedStates['stats-panel-window'] = false;
+            localStorage.setItem('windowMinimized', JSON.stringify(minimizedStates));
+            
+            // Positioniere rechts nach Erstellung und setze korrekte Dimensionen
+            const rect = newWindow.getBoundingClientRect();
+            const rightX = window.innerWidth - rect.width - 50;
+            newWindow.style.left = rightX + 'px';
+            
+            // Explizit Höhe setzen (auto für natürliche Höhe basierend auf Content)
+            newWindow.style.height = 'auto';
+            newWindow.style.width = ''; // Breite von CSS (.stats-panel-content: 320px)
+            
+            DraggableManager.makeWindowDraggable(newWindow, 'stats-panel-window');
         }
+    },
+
+    // Stats Screen anzeigen (Hideout)
+    showStatsScreen() {
+        const player = Game.state.player;
+        
+        this.elements.sceneContent.innerHTML = `
+            <div class="stats-screen">
+                <h2>Charakterwerte</h2>
+                <div class="stats-display">
+                    <div class="stats-column">
+                        <div class="stat-row">
+                            <span class="stat-label">Level:</span>
+                            <span class="stat-value">${player.level}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">HP:</span>
+                            <span class="stat-value">${player.hp}/${player.maxHp}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Stärke:</span>
+                            <span class="stat-value">${player.stats.strength}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Verteidigung:</span>
+                            <span class="stat-value">${player.stats.defense}</span>
+                        </div>
+                    </div>
+                    <div class="stats-column">
+                        <div class="stat-row">
+                            <span class="stat-label">Magie:</span>
+                            <span class="stat-value">${player.stats.magic}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Geschwindigkeit:</span>
+                            <span class="stat-value">${player.stats.speed}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Glitzer:</span>
+                            <span class="stat-value">${player.stats.glitzer}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        this.elements.buttonGrid.innerHTML = `
+            <button class="game-button" id="btn-back">Zurück</button>
+        `;
+
+        document.getElementById('btn-back').addEventListener('click', () => {
+            this.showHideout();
+        });
     },
 
     // Waffen-Management anzeigen
     showWeaponManagement() {
-        // Stats Panel schließen falls offen
-        this.statsVisible = false;
-        const existingPanel = this.elements.visualArea.querySelector('.stats-panel');
-        if (existingPanel) {
-            existingPanel.classList.remove('visible');
-        }
-        
         const player = Game.state.player;
         
         // ===== WAFFEN-SLOT =====
@@ -325,15 +439,20 @@ const UI = {
         if (inventory.length === 0) {
             inventoryHTML = '<div class="no-items">Dein Inventar ist leer</div>';
         } else {
-            inventoryHTML = inventory.map(item => {
-                const itemDef = Game.items[item.id];
-                const isConsumable = itemDef && itemDef.type === 'consumable';
+            // Jedes Item einzeln anzeigen (auch wenn quantity > 1)
+            const expandedInventory = [];
+            inventory.forEach(item => {
+                const quantity = item.quantity || 1;
+                for (let i = 0; i < quantity; i++) {
+                    expandedInventory.push(item);
+                }
+            });
+            
+            inventoryHTML = expandedInventory.map(item => {
                 return `
-                    <div class="inventory-item" data-item-id="${item.id}">
+                    <div class="inventory-item-horizontal" data-item-id="${item.id}">
+                        <div class="item-icon-placeholder"></div>
                         <div class="item-name">${item.name}</div>
-                        <div class="item-quantity">x${item.quantity}</div>
-                        <div class="item-desc">${item.description}</div>
-                        ${isConsumable ? `<button class="item-use-btn-small" data-item-id="${item.id}">Nutzen</button>` : ''}
                     </div>
                 `;
             }).join('');
@@ -342,7 +461,7 @@ const UI = {
         this.elements.sceneContent.innerHTML = `
             <div class="inventory-screen">
                 <h2>Inventar</h2>
-                <div class="inventory-list">
+                <div class="inventory-grid-container">
                     ${inventoryHTML}
                 </div>
             </div>
@@ -353,29 +472,20 @@ const UI = {
         `;
 
         document.getElementById('btn-back').addEventListener('click', () => {
-            Game.showScreen('hideout');
+            this.showHideout();
         });
 
-        // Event Listeners für Nutzen-Buttons
-        document.querySelectorAll('.item-use-btn-small').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const itemId = btn.dataset.itemId;
-                Game.useItem(itemId);
-                // Inventar neu laden
-                this.showInventory();
+        // Click auf Items öffnet Details-Popup
+        document.querySelectorAll('.inventory-item-horizontal').forEach(itemEl => {
+            itemEl.addEventListener('click', () => {
+                const itemId = itemEl.dataset.itemId;
+                this.showItemDetailsPopup(itemId);
             });
         });
     },
 
     // Shop Screen anzeigen
     showShop() {
-        // Stats Panel schließen
-        this.statsVisible = false;
-        const existingPanel = this.elements.visualArea.querySelector('.stats-panel');
-        if (existingPanel) {
-            existingPanel.classList.remove('visible');
-        }
-        
         const merchants = Game.merchants;
         
         this.elements.sceneContent.innerHTML = `
@@ -414,8 +524,8 @@ const UI = {
         const merchant = Game.merchants[merchantId];
         if (!merchant) return;
 
-        // Glitzer zählen
-        const glitzerCount = Game.state.player.inventory.filter(i => i.id === 'glitzer').reduce((sum, i) => sum + (i.quantity || 1), 0);
+        // Glitzer aus Stats holen
+        const glitzerCount = Game.state.player.stats.glitzer;
 
         this.elements.sceneContent.innerHTML = `
             <div class="shop-container">
@@ -563,6 +673,9 @@ const UI = {
 
     // Crawl Event-Auswahl anzeigen
     showCrawlEventSelection() {
+        // Battle-Windows entfernen
+        this.removeBattleWindows();
+        
         const crawl = Game.state.currentCrawl;
         if (!crawl) return;
 
@@ -635,6 +748,67 @@ const UI = {
         });
     },
 
+    // Multiple Choice Event anzeigen
+    showMultipleChoiceEvent() {
+        const event = Game.state.currentEvent;
+        if (!event) return;
+
+        const crawl = Game.state.currentCrawl;
+
+        this.elements.sceneContent.innerHTML = `
+            <div class="boss-bar">
+                <div class="boss-bar-label">Sicherheit</div>
+                <div class="boss-bar-container">
+                    <div class="boss-bar-fill" style="width: ${crawl.security}%"></div>
+                    <span class="boss-bar-text">${crawl.security}%</span>
+                </div>
+            </div>
+            <div class="chaos-bar">
+                <div class="chaos-bar-label">Chaoslevel</div>
+                <div class="chaos-bar-container">
+                    <div class="chaos-bar-fill" style="width: ${Math.min(100, (crawl.chaosLevel / 15) * 100)}%"></div>
+                    <span class="chaos-bar-text">${crawl.chaosLevel}</span>
+                </div>
+            </div>
+            <div class="choice-event-container">
+                <div class="choice-event-header">
+                    <h2>${event.name}</h2>
+                </div>
+                <div class="choice-event-story">
+                    ${event.description.split('\n').map(line => `<p>${line}</p>`).join('')}
+                </div>
+                <div class="choice-event-options">
+                    <h3>Was möchtest du tun?</h3>
+                    <div class="choice-buttons">
+                        ${event.choices.map((choice, index) => `
+                            <button class="choice-button game-button" data-choice-index="${index}">
+                                ${choice.text}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        this.elements.buttonGrid.innerHTML = '';
+
+        // Choice Button Listeners
+        document.querySelectorAll('.choice-button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const choiceIndex = parseInt(btn.dataset.choiceIndex);
+                btn.classList.add('selected');
+                // Alle anderen Buttons deaktivieren
+                document.querySelectorAll('.choice-button').forEach(b => {
+                    b.disabled = true;
+                });
+                // Choice nach kurzer Verzögerung auswählen
+                setTimeout(() => {
+                    Game.selectChoice(choiceIndex);
+                }, 300);
+            });
+        });
+    },
+
     // Kampf-Screen anzeigen
     showBattleScreen() {
         this.updateBattleScreen();
@@ -648,35 +822,88 @@ const UI = {
         const boss = battle.boss;
         const player = Game.state.player;
         const equippedAbilities = Game.getEquippedAbilities();
+        const isEnemyBattle = battle.enemies && battle.enemies.length > 0;
 
-        // Stats-Panel aktualisieren falls sichtbar
-        const statsPanel = this.elements.visualArea.querySelector('.stats-panel');
-        if (statsPanel) {
-            // Panel entfernen und neu rendern
-            statsPanel.remove();
-            this.elements.visualArea.insertAdjacentHTML('beforeend', this.renderStatsPanel());
-        }
+        // Alle Log-Einträge für diesen Kampf
+        const allLogs = battle.log;
 
-        // Letzte 3 Log-Einträge
-        const recentLogs = battle.log.slice(-3);
-
-        this.elements.sceneContent.innerHTML = `
-            <div class="battle-screen">
+        // Bei Gegner-Kämpfen: Alle Gegner anzeigen
+        let enemyDisplay = '';
+        if (isEnemyBattle) {
+            enemyDisplay = `
+                <div class="battle-enemies">
+                    ${battle.enemies.map((enemy, index) => {
+                        const isDefeated = enemy.defeated || enemy.hp <= 0;
+                        const isSelected = battle.selectedTarget === index && !isDefeated;
+                        
+                        // Status-Effekte auslesen
+                        let statusDisplay = '';
+                        if (enemy.statusEffects && enemy.statusEffects.length > 0) {
+                            const poisonEffect = enemy.statusEffects.find(se => se.type === 'poison');
+                            if (poisonEffect && poisonEffect.stacks > 0) {
+                                statusDisplay = `<div class="status-effects">🧪 ${poisonEffect.stacks}</div>`;
+                            }
+                        }
+                        
+                        return `
+                            <div class="battle-enemy-card ${isSelected ? 'selected' : ''} ${isDefeated ? 'defeated' : ''}" data-enemy-index="${index}">
+                                <div class="enemy-sprite red-square">
+                                    <div class="enemy-hp">${enemy.hp}</div>
+                                    ${statusDisplay}
+                                </div>
+                                <div class="enemy-name">${enemy.name}</div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        } else {
+            // Bei Boss-Kämpfen: Einzelner Boss
+            // Status-Effekte auslesen
+            let statusDisplay = '';
+            if (boss.statusEffects && boss.statusEffects.length > 0) {
+                const poisonEffect = boss.statusEffects.find(se => se.type === 'poison');
+                if (poisonEffect && poisonEffect.stacks > 0) {
+                    statusDisplay = `<div class="status-effects">🧪 ${poisonEffect.stacks}</div>`;
+                }
+            }
+            
+            enemyDisplay = `
                 <div class="battle-enemy">
                     <div class="enemy-sprite red-square">
                         <div class="enemy-hp">${boss.hp}</div>
+                        ${statusDisplay}
                     </div>
                     <div class="enemy-name">${boss.name}</div>
                 </div>
-                <div class="battle-log">
-                    ${recentLogs.map(log => `<div class="log-entry">${log}</div>`).join('')}
-                </div>
+            `;
+        }
+
+        this.elements.sceneContent.innerHTML = `
+            <div class="battle-screen">
                 <div class="player-hp-display">
                     <span>Deine HP: ${player.hp}/${player.maxHp}</span>
                     <span class="action-points-display">AP: ${battle.playerActionPoints}/${player.maxActionPoints}</span>
                 </div>
             </div>
         `;
+
+        // Gegner-Fenster erstellen/updaten
+        this.createOrUpdateEnemyWindow(isEnemyBattle ? battle.enemies : [boss], isEnemyBattle, battle);
+        
+        // Battle-Log-Fenster erstellen/updaten
+        this.createOrUpdateBattleLogWindow(allLogs);
+
+        // Target-Auswahl für Gegner-Kämpfe
+        if (isEnemyBattle && battle.turn === 'player') {
+            document.querySelectorAll('.battle-enemy-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const enemyIndex = parseInt(card.dataset.enemyIndex);
+                    Game.selectEnemyTarget(enemyIndex);
+                    this.updateBattleScreen();
+                });
+            });
+        }
 
         // Kampf vorbei?
         if (boss.hp <= 0 || player.hp <= 0) {
@@ -725,7 +952,14 @@ const UI = {
 
             // Event Listener für Inventar-Button
             document.getElementById('btn-battle-inventory').addEventListener('click', () => {
-                this.showInventoryUsable('battle');
+                const existingWindow = document.getElementById('inventory-window');
+                if (existingWindow) {
+                    // Fenster existiert bereits - schließen
+                    existingWindow.remove();
+                } else {
+                    // Fenster öffnen
+                    this.createOrUpdateInventoryWindow();
+                }
             });
 
             // Event Listener für Block-Button
@@ -770,13 +1004,13 @@ const UI = {
 
         const sellableItems = items.filter(item => {
             const itemDef = Game.items[item.id];
-            return itemDef && itemDef.id !== 'glitzer' && (itemDef.glitzerValue || 0) > 0;
+            return itemDef && (itemDef.glitzerValue || 0) > 0;
         });
 
         this.elements.sceneContent.innerHTML = `
             <div class="inventory-container">
                 <h2>${merchant.name} - Verkaufen</h2>
-                <div class="glitzer-display">Glitzer: ${items.filter(i => i.id === 'glitzer').reduce((sum, i) => sum + (i.quantity || 1), 0)}</div>
+                <div class="glitzer-display">Glitzer: ${Game.state.player.stats.glitzer}</div>
                 <div class="items-list">
                     ${sellableWeapons.length === 0 && sellableItems.length === 0 ? '<p class="no-items">Keine verkaufbaren Items</p>' : ''}
                     ${sellableWeapons.map(data => {
@@ -926,13 +1160,6 @@ const UI = {
     
     // Ritual Item-Auswahl anzeigen
     showRitualSelection() {
-        // Stats Panel schließen falls offen
-        this.statsVisible = false;
-        const existingPanel = this.elements.visualArea.querySelector('.stats-panel');
-        if (existingPanel) {
-            existingPanel.classList.remove('visible');
-        }
-        
         // Initialisiere Ritual-State falls nicht vorhanden
         if (!Game.state.currentRitual) {
             Game.state.currentRitual = {
@@ -1011,7 +1238,6 @@ const UI = {
                                     <div class="ritual-item-stats">
                                         <span>Value: ${itemDef.value}</span>
                                     </div>
-                                    </div>
                                     <button class="ritual-add-btn" data-item-id="${item.id}">Hinzufügen</button>
                                 </div>
                             `;
@@ -1060,5 +1286,302 @@ const UI = {
                 this.showRitualSelection();
             });
         });
+    },
+
+    // ===== DRAGGABLE WINDOW HELPERS =====
+
+    // Gegner-Fenster erstellen/updaten
+    createOrUpdateEnemyWindow(enemies, isEnemyBattle, battle) {
+        let existingWindow = document.getElementById('enemy-window');
+        
+        let enemyContent = '';
+        if (isEnemyBattle) {
+            enemyContent = `
+                <div class="battle-enemies">
+                    ${enemies.map((enemy, index) => {
+                        const isDefeated = enemy.defeated || enemy.hp <= 0;
+                        const isSelected = battle.selectedTarget === index && !isDefeated;
+                        
+                        let statusDisplay = '';
+                        if (enemy.statusEffects && enemy.statusEffects.length > 0) {
+                            const poisonEffect = enemy.statusEffects.find(se => se.type === 'poison');
+                            if (poisonEffect && poisonEffect.stacks > 0) {
+                                statusDisplay = `<div class="status-effects">🧪 ${poisonEffect.stacks}</div>`;
+                            }
+                        }
+                        
+                        return `
+                            <div class="battle-enemy-card ${isSelected ? 'selected' : ''} ${isDefeated ? 'defeated' : ''}" data-enemy-index="${index}">
+                                <div class="enemy-sprite red-square">
+                                    <div class="enemy-hp">${enemy.hp}</div>
+                                    ${statusDisplay}
+                                </div>
+                                <div class="enemy-name">${enemy.name}</div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        } else {
+            const boss = enemies[0];
+            let statusDisplay = '';
+            if (boss.statusEffects && boss.statusEffects.length > 0) {
+                const poisonEffect = boss.statusEffects.find(se => se.type === 'poison');
+                if (poisonEffect && poisonEffect.stacks > 0) {
+                    statusDisplay = `<div class="status-effects">🧪 ${poisonEffect.stacks}</div>`;
+                }
+            }
+            
+            enemyContent = `
+                <div class="battle-enemy">
+                    <div class="enemy-sprite red-square">
+                        <div class="enemy-hp">${boss.hp}</div>
+                        ${statusDisplay}
+                    </div>
+                    <div class="enemy-name">${boss.name}</div>
+                </div>
+            `;
+        }
+
+        if (existingWindow) {
+            // Update existing window - Überschrift beibehalten
+            const title = existingWindow.dataset.windowTitle || (isEnemyBattle ? 'Gegner' : 'Boss');
+            existingWindow.querySelector('.window-content').innerHTML = `
+                <div class="window-title">${title}</div>
+                ${enemyContent}
+            `;
+        } else {
+            // Create new window
+            const windowHTML = `
+                <div id="enemy-window" class="draggable-window" data-window-id="enemy-window" data-window-title="${isEnemyBattle ? 'Gegner' : 'Boss'}" style="left: 100px; top: 50px;">
+                    <div class="window-minimize-btn">−</div>
+                    <div class="window-drag-handle"></div>
+                    <div class="window-content">
+                        <div class="window-title">${isEnemyBattle ? 'Gegner' : 'Boss'}</div>
+                        ${enemyContent}
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', windowHTML);
+            const newWindow = document.getElementById('enemy-window');
+            
+            // Zentriere horizontal nach dem Erstellen
+            const rect = newWindow.getBoundingClientRect();
+            const centerX = (window.innerWidth - rect.width) / 2;
+            newWindow.style.left = centerX + 'px';
+            
+            DraggableManager.makeWindowDraggable(newWindow, 'enemy-window');
+        }
+    },
+
+    // Battle-Log-Fenster erstellen/updaten
+    createOrUpdateBattleLogWindow(logs) {
+        let existingWindow = document.getElementById('battle-log-window');
+        
+        const logContent = `
+            <div class="window-title">Kampflog</div>
+            <div class="battle-log">
+                ${logs.map(log => `<div class="log-entry">${log}</div>`).join('')}
+            </div>
+        `;
+
+        if (existingWindow) {
+            // Update existing window - nur .battle-log updaten um Flackern zu vermeiden
+            const battleLog = existingWindow.querySelector('.battle-log');
+            if (battleLog) {
+                // Prüfe ob sich der Content geändert hat
+                const newLogHTML = logs.map(log => `<div class="log-entry">${log}</div>`).join('');
+                if (battleLog.innerHTML !== newLogHTML) {
+                    battleLog.innerHTML = newLogHTML;
+                    // Auto-scroll nach unten zur neuesten Nachricht
+                    setTimeout(() => {
+                        battleLog.scrollTop = battleLog.scrollHeight;
+                    }, 0);
+                }
+            }
+        } else {
+            // Create new window  
+            const windowHTML = `
+                <div id="battle-log-window" class="draggable-window" data-window-id="battle-log-window" data-window-title="Kampflog" style="left: 20px; bottom: 20px;">
+                    <div class="window-minimize-btn">−</div>
+                    <div class="window-drag-handle"></div>
+                    <div class="window-content">
+                        ${logContent}
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', windowHTML);
+            const newWindow = document.getElementById('battle-log-window');
+            
+            // Position korrigieren da bottom verwendet wird
+            const rect = newWindow.getBoundingClientRect();
+            newWindow.style.bottom = '';
+            newWindow.style.top = (window.innerHeight - rect.height - 20) + 'px';
+            
+            DraggableManager.makeWindowDraggable(newWindow, 'battle-log-window');
+            
+            // Auto-scroll nach unten zur neuesten Nachricht
+            setTimeout(() => {
+                const battleLog = newWindow.querySelector('.battle-log');
+                if (battleLog) {
+                    battleLog.scrollTop = battleLog.scrollHeight;
+                }
+            }, 0);
+        }
+    },
+
+    // Item-Details-Popup (Hideout)
+    showItemDetailsPopup(itemId) {
+        const item = Game.state.player.inventory.find(i => i.id === itemId);
+        if (!item) return;
+        
+        const itemDef = Game.items[item.id];
+        const isConsumable = itemDef && itemDef.type === 'consumable';
+        
+        // Erstelle Overlay
+        const overlayHTML = `
+            <div class="item-details-overlay" id="item-details-overlay">
+                <div class="item-details-popup">
+                    <div class="popup-header">
+                        <h3>${item.name}</h3>
+                        <button class="close-popup-btn" id="close-popup-btn">×</button>
+                    </div>
+                    <div class="popup-content">
+                        <div class="item-icon-large"></div>
+                        <div class="item-description">${item.description}</div>
+                        <div class="item-type">Typ: ${itemDef ? itemDef.type : 'Unbekannt'}</div>
+                    </div>
+                    <div class="popup-actions">
+                        ${isConsumable ? `<button class="popup-btn use-btn" id="use-item-btn">Verwenden</button>` : ''}
+                        <button class="popup-btn close-btn" id="close-btn">Schließen</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', overlayHTML);
+        
+        // Event Listeners
+        const overlay = document.getElementById('item-details-overlay');
+        const closePopupBtn = document.getElementById('close-popup-btn');
+        const closeBtn = document.getElementById('close-btn');
+        const useBtn = document.getElementById('use-item-btn');
+        
+        const closePopup = () => {
+            overlay.remove();
+        };
+        
+        closePopupBtn.addEventListener('click', closePopup);
+        closeBtn.addEventListener('click', closePopup);
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) closePopup();
+        });
+        
+        if (useBtn) {
+            useBtn.addEventListener('click', () => {
+                Game.useItem(itemId);
+                closePopup();
+                this.showInventory();
+            });
+        }
+    },
+
+    // Kampf-Inventar-Fenster erstellen/updaten
+    createOrUpdateInventoryWindow() {
+        let existingWindow = document.getElementById('inventory-window');
+        
+        const inventory = Game.state.player.inventory;
+        const usableItems = inventory.filter(item => {
+            const itemDef = Game.items[item.id];
+            return itemDef && itemDef.type === 'consumable';
+        });
+        
+        // Jedes Item einzeln anzeigen (auch wenn quantity > 1)
+        const expandedItems = [];
+        usableItems.forEach(item => {
+            const quantity = item.quantity || 1;
+            for (let i = 0; i < quantity; i++) {
+                expandedItems.push(item);
+            }
+        });
+        
+        const inventoryContent = `
+            <div class="window-title">Inventar</div>
+            <div class="inventory-battle-grid">
+                ${expandedItems.length > 0 ? expandedItems.map(item => {
+                    return `
+                        <div class="inventory-item-battle-horizontal" data-item-id="${item.id}">
+                            <div class="item-icon-placeholder"></div>
+                            <div class="item-name">${item.name}</div>
+                        </div>
+                    `;
+                }).join('') : '<div class="no-items">Keine nutzbaren Items</div>'}
+            </div>
+        `;
+        
+        if (existingWindow) {
+            // Update existing window
+            existingWindow.querySelector('.window-content').innerHTML = inventoryContent;
+            
+            // Event Listeners neu setzen
+            this.setupInventoryWindowListeners(existingWindow);
+        } else {
+            // Create new window
+            const windowHTML = `
+                <div id="inventory-window" class="draggable-window" data-window-id="inventory-window" data-window-title="Inventar" style="left: 100px; top: 200px;">
+                    <div class="window-minimize-btn">−</div>
+                    <div class="window-drag-handle"></div>
+                    <div class="window-content">
+                        ${inventoryContent}
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', windowHTML);
+            const newWindow = document.getElementById('inventory-window');
+            
+            DraggableManager.makeWindowDraggable(newWindow, 'inventory-window');
+            
+            // Event Listeners setzen
+            this.setupInventoryWindowListeners(newWindow);
+        }
+    },
+    
+    // Event Listeners für Inventar-Fenster
+    setupInventoryWindowListeners(windowElement) {
+        windowElement.querySelectorAll('.inventory-item-battle-horizontal').forEach(itemEl => {
+            itemEl.addEventListener('click', () => {
+                const itemId = itemEl.dataset.itemId;
+                const healed = Game.useItem(itemId);
+                
+                if (healed !== false) {
+                    // Item verwendet, Fenster updaten
+                    this.createOrUpdateInventoryWindow();
+                    this.updateBattleScreen();
+                }
+            });
+        });
+    },
+
+    // Alle Battle-Windows entfernen
+    removeBattleWindows() {
+        const enemyWindow = document.getElementById('enemy-window');
+        const logWindow = document.getElementById('battle-log-window');
+        const statsWindow = document.getElementById('stats-panel-window');
+        const inventoryWindow = document.getElementById('inventory-window');
+        
+        // ResizeObserver cleanup VOR dem Entfernen!
+        if (enemyWindow) DraggableManager.cleanupWindow('enemy-window');
+        if (logWindow) DraggableManager.cleanupWindow('battle-log-window');
+        if (statsWindow) DraggableManager.cleanupWindow('stats-panel-window');
+        if (inventoryWindow) DraggableManager.cleanupWindow('inventory-window');
+        
+        // Jetzt Fenster entfernen
+        if (enemyWindow) enemyWindow.remove();
+        if (logWindow) logWindow.remove();
+        if (statsWindow) {
+            statsWindow.remove();
+            this.statsVisible = false;
+        }
+        if (inventoryWindow) inventoryWindow.remove();
     }
 };

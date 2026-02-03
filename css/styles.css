@@ -99,6 +99,173 @@ img, svg {
     margin-top: 5px;
 }
 
+/* ===== DRAGGABLE WINDOW SYSTEM ===== */
+
+.draggable-window {
+    position: fixed;
+    background: rgba(44, 24, 16, 0.95);
+    border: 3px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+    z-index: 100;
+    min-width: 200px;
+    min-height: 100px;
+}
+
+.draggable-window.dragging {
+    opacity: 0.9;
+    cursor: move;
+}
+
+.window-drag-handle {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(135deg, var(--button-bg), var(--button-hover));
+    border: 2px solid var(--border-color);
+    border-radius: 3px;
+    cursor: move;
+    transition: all 0.2s;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+    z-index: 10;
+}
+
+.window-drag-handle:hover {
+    background: linear-gradient(135deg, var(--button-hover), #a0692f);
+    transform: scale(1.1);
+}
+
+.window-drag-handle:active {
+    transform: scale(0.95);
+}
+
+.draggable-window .window-content {
+    padding: 15px;
+    padding-top: 35px; /* Platz für Drag-Handle */
+}
+
+/* Battle-Log mit fester Breite und Scroll */
+#battle-log-window {
+    width: 400px;
+    height: 300px;
+    min-height: 300px;
+    max-height: none;
+    resize: vertical;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Battle-Log minimiert - display block für ::before */
+#battle-log-window.minimized {
+    display: block;
+}
+
+#battle-log-window .window-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    box-sizing: border-box;
+    padding: 35px 15px 15px 15px;
+    overflow: hidden;
+}
+
+#battle-log-window .window-title {
+    flex-shrink: 0;
+    margin-bottom: 15px;
+}
+
+#battle-log-window .battle-log {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+#battle-log-window .battle-log::-webkit-scrollbar {
+    display: none; /* Chrome/Safari/Opera */
+}
+
+/* Minimieren-Button */
+.window-minimize-btn {
+    position: absolute;
+    top: 5px;
+    right: 30px;
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(135deg, var(--button-bg), var(--button-hover));
+    border: 2px solid var(--border-color);
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: white;
+    font-weight: bold;
+    line-height: 1;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+    z-index: 10;
+}
+
+.window-minimize-btn:hover {
+    background: linear-gradient(135deg, var(--button-hover), #a0692f);
+    transform: scale(1.1);
+}
+
+.window-minimize-btn:active {
+    transform: scale(0.95);
+}
+
+/* Minimiertes Fenster */
+.draggable-window.minimized .window-content {
+    display: none;
+}
+
+.draggable-window.minimized {
+    height: 40px !important;
+    min-height: 40px !important;
+    max-height: 40px !important;
+    overflow: hidden !important;
+    resize: none !important;
+}
+
+/* Titel bei minimierten Fenstern */
+.draggable-window.minimized::before {
+    content: attr(data-window-title);
+    display: block;
+    height: 40px;
+    line-height: 40px;
+    padding: 0 60px 0 15px; /* Platz für Buttons rechts */
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--text-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: left;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+/* Fenster-Überschrift (ausgeklappte Fenster) */
+.window-title {
+    font-size: 20px;
+    font-weight: bold;
+    color: var(--text-color);
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+    border-bottom: 2px solid var(--border-color);
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
 .weapon-effects-compact .effect-badge {
     font-size: 0.7em;
     padding: 1px 6px;
@@ -325,36 +492,9 @@ img, svg {
     }
 }
 
-/* Stats Panel */
-.stats-panel {
-    position: absolute;
-    top: 20px;
-    right: -350px;
+/* Stats Panel Content (used in draggable window) */
+.stats-panel-content {
     width: 320px;
-    background-color: rgba(44, 24, 16, 0.95);
-    border: 4px solid var(--border-color);
-    border-radius: 4px;
-    padding: 20px;
-    box-shadow: 
-        0 0 20px rgba(0, 0, 0, 0.8),
-        inset 0 0 15px rgba(0, 0, 0, 0.5);
-    transition: right 0.3s ease;
-    z-index: 10;
-}
-
-.stats-panel.visible {
-    right: 20px;
-}
-
-.stats-header {
-    font-size: 20px;
-    font-weight: bold;
-    margin-bottom: 15px;
-    text-align: center;
-    color: var(--text-color);
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
-    border-bottom: 2px solid var(--border-color);
-    padding-bottom: 10px;
 }
 
 .stats-grid {
@@ -872,6 +1012,64 @@ img, svg {
     gap: 15px;
 }
 
+/* Multiple enemies grid */
+.battle-enemies {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    padding: 10px;
+    width: 100%;
+    max-width: 600px;
+}
+
+.battle-enemy-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 15px;
+    background-color: rgba(0, 0, 0, 0.3);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.battle-enemy-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--button-hover);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+}
+
+.battle-enemy-card.selected {
+    border-color: #22c55e;
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
+    background-color: rgba(34, 197, 94, 0.1);
+}
+
+.battle-enemy-card.defeated {
+    opacity: 0.4;
+    cursor: default;
+    filter: grayscale(100%);
+    border-color: #6b7280;
+    pointer-events: none;
+}
+
+.battle-enemy-card.defeated:hover {
+    transform: none;
+    border-color: #6b7280;
+    box-shadow: none;
+}
+
+.battle-enemy-card .enemy-sprite {
+    width: 120px;
+    height: 120px;
+}
+
+.battle-enemy-card .enemy-name {
+    font-size: 16px;
+}
+
 .enemy-sprite {
     width: 200px;
     height: 200px;
@@ -891,23 +1089,25 @@ img, svg {
     font-weight: bold;
 }
 
+.status-effects {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: #90ee90;
+    padding: 5px 12px;
+    border: 2px solid #2d5016;
+    border-radius: 4px;
+    font-size: 16px;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
 .enemy-name {
     font-size: 24px;
     font-weight: bold;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
-}
-
-.battle-log {
-    background-color: rgba(44, 24, 16, 0.9);
-    border: 3px solid var(--border-color);
-    border-radius: 4px;
-    padding: 15px;
-    width: 100%;
-    max-width: 600px;
-    min-height: 80px;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
 }
 
 .log-entry {
@@ -1223,11 +1423,8 @@ img, svg {
 }
 
 .event-type {
-    font-size: 14px;
-    padding: 5px 10px;
-    border-radius: 5px;
-    background-color: rgba(0, 0, 0, 0.3);
-    border: 1px solid var(--border-color);
+    font-size: 20px;
+    padding: 5px;
     white-space: nowrap;
 }
 
@@ -1264,6 +1461,83 @@ img, svg {
     color: #fbbf24;
 }
 
+/* Multiple Choice Event Styling */
+.choice-event-container {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.choice-event-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.choice-event-header h2 {
+    font-size: 28px;
+    color: var(--text-color);
+    margin: 0;
+}
+
+.choice-event-story {
+    background-color: rgba(0, 0, 0, 0.3);
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 30px;
+    line-height: 1.8;
+}
+
+.choice-event-story p {
+    margin: 10px 0;
+    font-size: 16px;
+    color: var(--placeholder-color);
+}
+
+.choice-event-options {
+    text-align: center;
+}
+
+.choice-event-options h3 {
+    font-size: 22px;
+    color: var(--text-color);
+    margin-bottom: 20px;
+}
+
+.choice-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.choice-button {
+    width: 100%;
+    padding: 15px 30px;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.choice-button:hover:not(:disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.5);
+}
+
+.choice-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.choice-button.selected {
+    background-color: #22c55e;
+    border-color: #16a34a;
+    transform: scale(1.05);
+}
+
 /* Responsive Anpassungen */
 @media (max-width: 768px) {
     .event-cards {
@@ -1276,6 +1550,18 @@ img, svg {
     
     .security-bar {
         width: 200px;
+    }
+
+    .choice-event-container {
+        padding: 10px;
+    }
+
+    .choice-event-story {
+        padding: 15px;
+    }
+
+    .choice-buttons {
+        max-width: 100%;
     }
 }
 

@@ -16,7 +16,7 @@ const Definitions = {
             defense: 2,       // Verteidigung
             magic: 0,         // Magie
             speed: 0,         // Geschwindigkeit
-            vitality: 0       // Vitalität
+            glitzer: 0        // Glitzer (Spielwährung)
         },
         startWeapon: 'dagger'  // Waffe mit der der Spieler startet
     },
@@ -98,8 +98,33 @@ const Definitions = {
             description: 'Ein starkes Item mit Schadensaffinit\u00e4t',
             modifierType: 'testdamage',
             value: 10,
+            glitzerValue: 1        },
+        ritualItem_weak_poison: {
+            id: 'ritualItem_weak_poison',
+            name: 'Schwaches Ritual-Item (Gift)',
+            type: 'ritual',
+            description: 'Ein schwaches Item mit Giftaffinität',
+            modifierType: 'poison',
+            value: 1,
             glitzerValue: 1
-        }
+        },
+        ritualItem_medium_poison: {
+            id: 'ritualItem_medium_poison',
+            name: 'Mittleres Ritual-Item (Gift)',
+            type: 'ritual',
+            description: 'Ein mittleres Item mit Giftaffinität',
+            modifierType: 'poison',
+            value: 5,
+            glitzerValue: 1
+        },
+        ritualItem_strong_poison: {
+            id: 'ritualItem_strong_poison',
+            name: 'Starkes Ritual-Item (Gift)',
+            type: 'ritual',
+            description: 'Ein starkes Item mit Giftaffinität',
+            modifierType: 'poison',
+            value: 10,
+            glitzerValue: 1        }
     },
 
     // ===== WAFFENBASEN =====
@@ -152,6 +177,17 @@ const Definitions = {
             glitzerValueMultiplier: 1.5,
             type: 'damage',
             value: 3
+        },
+        poison: {
+            id: 'poison',
+            name: 'Gift',
+            description: 'Hat eine 50% Chance, 2 Gift-Stacks aufzutragen',
+            glitzerValueMultiplier: 2.0,
+            type: 'poison',
+            value: 1,                    // Basis-Schaden pro Runde
+            applyChance: 0.5,            // 50% Chance
+            stacksToApply: 2,            // Anzahl Stacks die hinzugefügt werden
+            ignoreArmor: true            // Gift ignoriert Rüstung
         }
     },
 
@@ -189,13 +225,35 @@ const Definitions = {
         }
     },
 
+    // ===== GEGNER =====
+    // Normale Gegner für Kampfevents
+    enemies: {
+        enemyTestDummy: {
+            id: 'enemyTestDummy',
+            name: 'Test Dummy',
+            hp: 50,
+            maxHp: 50,
+            stats: {
+                strength: 0,
+                defense: 0,
+                magic: 0,
+                speed: 0
+            },
+            weapon: {
+                baseId: 'rubberSword',
+                effects: []
+            },
+            drops: []  // Keine Drops
+        }
+    },
+
     // ===== BOSSE =====
     bosses: {
         testBoss1: {
             id: 'test_boss',
             name: 'Test Boss 1',
-            hp: 5,
-            maxHp: 5,
+            hp: 500,
+            maxHp: 500,
             actionPoints: 2,             // Aktionspunkte pro Zug
             stats: {
                 strength: 0,
@@ -212,8 +270,8 @@ const Definitions = {
         testBoss2: {
             id: 'test_boss2',
             name: 'Test Boss 2',
-            hp: 5,
-            maxHp: 5,
+            hp: 500,
+            maxHp: 500,
             actionPoints: 1,             // Aktionspunkte pro Zug
             stats: {
                 strength: 0,
@@ -235,90 +293,122 @@ const Definitions = {
             id: 'testwelt1',
             name: 'Testwelt 1',
             description: 'Eine mysteriöse Testwelt',
-            boss: 'testBoss1'                 // Welcher Boss in dieser Welt ist
+            boss: 'testBoss1',                 // Welcher Boss in dieser Welt ist
+            allowedEvents: null                // null = alle Events erlaubt
         },
         testwelt2: {
             id: 'testwelt2',
             name: 'Testwelt 2',
             description: 'Eine mysteriöse Testwelt',
-            boss: 'testBoss2'                 // Welcher Boss in dieser Welt ist
+            boss: 'testBoss2',                 // Welcher Boss in dieser Welt ist
+            allowedEvents: ['choice_lorem', 'choice_lorem_diff2', 'choice_lorem_diff3']  // Nur Multiple Choice Events
         }
     },
 
     // ===== CRAWL-EVENTS =====
     // Events die während des Crawls in einer Boss-Welt auftreten können
     crawlEvents: {
-        testevent1: {
-            id: 'testevent1',
-            name: 'Testevent 1',
-            description: 'Ein mysteriöses Ereignis tritt auf',
-            type: 'event',              // 'event' oder 'fight'
-            difficulty: 1,              // Schwierigkeitsstufe (1-3)
-            securityDecrease: 2        // Wie viel Prozent die Sicherheit sinkt (0-100)
+        // ===== KAMPF-EVENTS =====
+        combat_testdummy: {
+            id: 'combat_testdummy_diff1',
+            name: 'Test Dummy Kampf',
+            description: 'Drei Test Dummies versperren den Weg!',
+            type: 'combat',
+            minChaos: 0,
+            maxChaos: null,
+            securityDecrease: 2,
+            enemies: ['enemyTestDummy', 'enemyTestDummy', 'enemyTestDummy']
         },
-        testevent2: {
-            id: 'testevent2',
-            name: 'Testevent 2',
-            description: 'Ein weiteres seltsames Ereignis',
-            type: 'event',              // 'event' oder 'fight'
-            difficulty: 1,              // Schwierigkeitsstufe (1-3)
-            securityDecrease: 5        // Wie viel Prozent die Sicherheit sinkt (0-100)
+        combat_testdummy2: {
+            id: 'combat_testdummy2_diff1',
+            name: 'Test Dummy Kampf 2',
+            description: 'Drei Test Dummies versperren den Weg!',
+            type: 'combat',
+            minChaos: 0,
+            maxChaos: null,
+            securityDecrease: 5,
+            enemies: ['enemyTestDummy', 'enemyTestDummy', 'enemyTestDummy']
         },
-        testevent3: {
-            id: 'testevent3',
-            name: 'Testevent 3',
-            description: 'Etwas Unheimliches geschieht',
-            type: 'event',              // 'event' oder 'fight'
-            difficulty: 1,              // Schwierigkeitsstufe (1-3)
-            securityDecrease: 8        // Wie viel Prozent die Sicherheit sinkt (0-100)
+            combat_testdummy3: {
+            id: 'combat_testdummy3',
+            name: 'Test Dummy Kampf 3',
+            description: 'Drei Test Dummies versperren den Weg!',
+            type: 'combat',
+            minChaos: 0,
+            maxChaos: null,
+            securityDecrease: 8,
+            enemies: ['enemyTestDummy', 'enemyTestDummy', 'enemyTestDummy']
         },
-        testevent4: {
-            id: 'testevent4',
-            name: 'Testevent 4',
-            description: 'Die Spannung steigt',
-            type: 'event',              // 'event' oder 'fight'
-            difficulty: 2,              // Schwierigkeitsstufe (1-3)
-            securityDecrease: 2        // Wie viel Prozent die Sicherheit sinkt (0-100)
+
+        // ===== MULTIPLE CHOICE EVENTS =====
+        choice_lorem: {
+            id: 'choice_lorem',
+            name: 'Mysteriöse Begegnung',
+            description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.\nSed do eiusmod tempor incididunt ut labore et dolore magna aliqua.\nUt enim ad minim veniam, quis nostrud exercitation ullamco.\nDuis aute irure dolor in reprehenderit in voluptate velit.',
+            type: 'multipleChoice',
+            minChaos: 0,
+            maxChaos: null,
+            securityDecrease: 2,
+            choices: [
+                {
+                    text: 'Ja',
+                    effects: [
+                        { type: 'addItem', itemId: 'glitzer', amount: 1 }
+                    ]
+                },
+                {
+                    text: 'Nein',
+                    effects: [
+                        { type: 'addChaos', amount: 1 }
+                    ]
+                }
+            ]
         },
-        testevent5: {
-            id: 'testevent5',
-            name: 'Testevent 5',
-            description: 'Gefährliche Zeichen mehren sich',
-            type: 'event',              // 'event' oder 'fight'
-            difficulty: 2,              // Schwierigkeitsstufe (1-3)
-            securityDecrease: 5        // Wie viel Prozent die Sicherheit sinkt (0-100)
+        choice_lorem2: {
+            id: 'choice_lorem2',
+            name: 'Mysteriöse Begegnung',
+            description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.\nSed do eiusmod tempor incididunt ut labore et dolore magna aliqua.\nUt enim ad minim veniam, quis nostrud exercitation ullamco.\nDuis aute irure dolor in reprehenderit in voluptate velit.',
+            type: 'multipleChoice',
+            minChaos: 0,
+            maxChaos: null,
+            securityDecrease: 5,
+            choices: [
+                {
+                    text: 'Ja',
+                    effects: [
+                        { type: 'addItem', itemId: 'glitzer', amount: 1 }
+                    ]
+                },
+                {
+                    text: 'Nein',
+                    effects: [
+                        { type: 'addChaos', amount: 1 }
+                    ]
+                }
+            ]
         },
-        testevent6: {
-            id: 'testevent6',
-            name: 'Testevent 6',
-            description: 'Das Chaos nimmt bedrohliche Züge an',
-            type: 'event',              // 'event' oder 'fight'
-            difficulty: 2,              // Schwierigkeitsstufe (1-3)
-            securityDecrease: 8        // Wie viel Prozent die Sicherheit sinkt (0-100)
-        },
-        testevent7: {
-            id: 'testevent7',
-            name: 'Testevent 7',
-            description: 'Unheilvolle Mächte erwachen',
-            type: 'event',              // 'event' oder 'fight'
-            difficulty: 3,              // Schwierigkeitsstufe (1-3)
-            securityDecrease: 2        // Wie viel Prozent die Sicherheit sinkt (0-100)
-        },
-        testevent8: {
-            id: 'testevent8',
-            name: 'Testevent 8',
-            description: 'Der Abgrund starrt zurück',
-            type: 'event',              // 'event' oder 'fight'
-            difficulty: 3,              // Schwierigkeitsstufe (1-3)
-            securityDecrease: 5        // Wie viel Prozent die Sicherheit sinkt (0-100)
-        },
-        testevent9: {
-            id: 'testevent9',
-            name: 'Testevent 9',
-            description: 'Das pure Chaos bricht herein',
-            type: 'event',              // 'event' oder 'fight'
-            difficulty: 3,              // Schwierigkeitsstufe (1-3)
-            securityDecrease: 8        // Wie viel Prozent die Sicherheit sinkt (0-100)
+        choice_lorem: {
+            id: 'choice_lorem3',
+            name: 'Mysteriöse Begegnung',
+            description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.\nSed do eiusmod tempor incididunt ut labore et dolore magna aliqua.\nUt enim ad minim veniam, quis nostrud exercitation ullamco.\nDuis aute irure dolor in reprehenderit in voluptate velit.',
+            type: 'multipleChoice',
+            minChaos: 0,
+            maxChaos: null,
+            securityDecrease: 8,
+            choices: [
+                {
+                    text: 'Ja',
+                    effects: [
+                        { type: 'addItem', itemId: 'glitzer', amount: 1 }
+                    ]
+                },
+                {
+                    text: 'Nein',
+                    effects: [
+                        { type: 'addChaos', amount: 1 }
+                    ]
+                }
+            ]
         }
     },
 
@@ -363,6 +453,21 @@ const Definitions = {
                 },
                 {
                     itemId: 'ritualItem_strong_testdamage',
+                    price: 0,
+                    currency: 'glitzer'
+                },
+                {
+                    itemId: 'ritualItem_weak_poison',
+                    price: 0,
+                    currency: 'glitzer'
+                },
+                {
+                    itemId: 'ritualItem_medium_poison',
+                    price: 0,
+                    currency: 'glitzer'
+                },
+                {
+                    itemId: 'ritualItem_strong_poison',
                     price: 0,
                     currency: 'glitzer'
                 }
