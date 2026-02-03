@@ -1,0 +1,327 @@
+/* ===== NEUES INVENTAR SYSTEM ===== */
+
+/* Stats Screen (Hideout) */
+.stats-screen {
+    padding: 30px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.stats-screen h2 {
+    color: var(--accent-color);
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 28px;
+}
+
+.stats-display {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.stats-column {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: linear-gradient(135deg, #3a2a1a 0%, #2c1810 100%);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+}
+
+.stat-row .stat-label {
+    font-size: 18px;
+    color: var(--text-color);
+    font-weight: bold;
+}
+
+.stat-row .stat-value {
+    font-size: 20px;
+    color: var(--accent-color);
+    font-weight: bold;
+}
+
+/* Hideout Inventar Grid (2 pro Reihe) - HORIZONTAL */
+.inventory-grid-container {
+    display: grid;
+    grid-template-columns: repeat(2, 450px);
+    gap: 10px;
+    padding: 20px;
+    width: 100%;
+    justify-content: center;
+    max-height: 500px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.inventory-item-horizontal {
+    background: linear-gradient(135deg, #3a2a1a 0%, #2c1810 100%);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    min-height: 54px;
+}
+
+.inventory-item-horizontal:hover {
+    background: linear-gradient(135deg, #4a3a2a 0%, #3c2820 100%);
+    border-color: var(--button-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.inventory-item-horizontal .item-name {
+    flex: 1;
+    font-size: 13px;
+    color: var(--accent-color);
+    font-weight: bold;
+    margin: 0;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Kampf Inventar Grid (2 pro Reihe) - HORIZONTAL */
+.inventory-battle-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    padding: 10px;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    grid-auto-rows: min-content;
+    align-content: start;
+}
+
+.inventory-battle-grid::-webkit-scrollbar {
+    display: none;
+}
+
+.inventory-item-battle-horizontal {
+    background: linear-gradient(135deg, #3a2a1a 0%, #2c1810 100%);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    padding: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    height: 48px;
+    min-height: 48px;
+    max-height: 48px;
+}
+
+.inventory-item-battle-horizontal:hover {
+    background: linear-gradient(135deg, #4a3a2a 0%, #3c2820 100%);
+    border-color: var(--button-hover);
+    transform: scale(1.03);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.inventory-item-battle-horizontal .item-name {
+    flex: 1;
+    font-size: 12px;
+    color: var(--accent-color);
+    font-weight: bold;
+    word-break: break-word;
+}
+
+/* Item Icon Placeholder (für SVGs später) */
+.item-icon-placeholder {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #6b4423, #8b5a2b);
+    border: 2px solid var(--border-color);
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.item-icon-large {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #6b4423, #8b5a2b);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    margin: 0 auto 15px;
+}
+
+/* No Items Message */
+.no-items {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: #888;
+    padding: 40px;
+    font-size: 16px;
+}
+
+/* Item Details Popup Overlay */
+.item-details-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.item-details-popup {
+    background: linear-gradient(135deg, #2c1810 0%, #1a0f08 100%);
+    border: 4px solid var(--border-color);
+    border-radius: 12px;
+    padding: 0;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.9);
+}
+
+.popup-header {
+    background: linear-gradient(135deg, #6b4423, #8b5a2b);
+    padding: 20px;
+    border-bottom: 3px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 8px 8px 0 0;
+}
+
+.popup-header h3 {
+    margin: 0;
+    color: var(--text-color);
+    font-size: 24px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.close-popup-btn {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    font-size: 32px;
+    cursor: pointer;
+    padding: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.close-popup-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.1);
+}
+
+.popup-content {
+    padding: 30px;
+}
+
+.item-description {
+    color: var(--text-color);
+    font-size: 16px;
+    line-height: 1.6;
+    margin-bottom: 15px;
+}
+
+.item-type {
+    color: #aaa;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.popup-actions {
+    padding: 20px;
+    border-top: 2px solid var(--border-color);
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.popup-btn {
+    padding: 12px 30px;
+    font-size: 16px;
+    font-weight: bold;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.popup-btn.use-btn {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: white;
+    border-color: #15803d;
+}
+
+.popup-btn.use-btn:hover {
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    transform: scale(1.05);
+}
+
+.popup-btn.close-btn {
+    background: linear-gradient(135deg, var(--button-bg), var(--button-hover));
+    color: white;
+}
+
+.popup-btn.close-btn:hover {
+    background: linear-gradient(135deg, var(--button-hover), #a0692f);
+    transform: scale(1.05);
+}
+
+/* Inventar Window Sizing */
+#inventory-window {
+    width: 450px;
+    height: 300px;
+    min-height: 200px;
+    max-height: none;
+    resize: vertical;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+#inventory-window .window-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    box-sizing: border-box;
+    padding: 35px 15px 15px 15px;
+    overflow: hidden;
+}
+
+#inventory-window .window-title {
+    flex-shrink: 0;
+    margin-bottom: 10px;
+    text-align: center;
+    font-weight: bold;
+    color: var(--accent-color);
+}
+
+#inventory-window .inventory-battle-grid {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
