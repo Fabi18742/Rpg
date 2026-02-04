@@ -298,17 +298,27 @@
     max-height: none;
     resize: vertical;
     overflow: hidden;
-    display: flex;
-    flex-direction: column;
+}
+
+/* Inventar minimiert - Höhe fixieren */
+#inventory-window.minimized {
+    height: 40px;
+    min-height: 40px;
+    max-height: 40px;
+    resize: none;
 }
 
 #inventory-window .window-content {
     display: flex;
     flex-direction: column;
-    height: 100%;
+    height: calc(100% - 35px);
     box-sizing: border-box;
-    padding: 35px 15px 15px 15px;
     overflow: hidden;
+}
+
+/* Inventar minimiert - Content verstecken */
+#inventory-window.minimized .window-content {
+    display: none;
 }
 
 #inventory-window .window-title {

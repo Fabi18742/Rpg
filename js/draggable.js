@@ -19,8 +19,18 @@ const DraggableManager = {
         const handle = windowElement.querySelector('.window-drag-handle');
         if (!handle) return;
         
+        console.log(`[DRAGGABLE ${windowId}] Making window draggable`);
+        
         // Lade gespeicherte Position
         this.loadPosition(windowElement, windowId);
+        
+        // WICHTIG: Initiale Dimensionen VOR dem Minimized-State erfassen
+        const computedStyle = window.getComputedStyle(windowElement);
+        if (!windowElement.dataset.savedWidth) {
+            windowElement.dataset.savedWidth = computedStyle.width;
+            windowElement.dataset.savedHeight = computedStyle.height;
+            console.log(`[DRAGGABLE ${windowId}] Initial dimensions captured (before minimize) - Width: ${computedStyle.width}, Height: ${computedStyle.height}`);
+        }
         
         // Minimieren-Button Setup
         const minimizeBtn = windowElement.querySelector('.window-minimize-btn');
@@ -30,11 +40,16 @@ const DraggableManager = {
                 this.toggleMinimize(windowElement, windowId);
             });
             
-            // Lade minimiert-Status
+            // Lade minimiert-Status (NACH dem Erfassen der Dimensionen!)
             const minimizedStates = JSON.parse(localStorage.getItem('windowMinimized') || '{}');
             if (minimizedStates[windowId]) {
                 windowElement.classList.add('minimized');
                 minimizeBtn.textContent = '+';
+                // Breite im minimierten Zustand explizit setzen
+                if (windowElement.dataset.savedWidth) {
+                    windowElement.style.width = windowElement.dataset.savedWidth;
+                }
+                console.log(`[DRAGGABLE ${windowId}] Restored as minimized with width: ${windowElement.dataset.savedWidth}`);
             } else {
                 minimizeBtn.textContent = '−';
             }
@@ -80,7 +95,7 @@ const DraggableManager = {
     },
     
     // ResizeObserver cleanup (vor window.remove() aufrufen!)
-    cleanupWindow(windowId) {
+    cleanupWindow(windowId, keepMinimizedState = false) {
         // ResizeObserver stoppen
         if (this.resizeObservers[windowId]) {
             this.resizeObservers[windowId].disconnect();
@@ -91,6 +106,13 @@ const DraggableManager = {
         if (this.resizeTimers[windowId]) {
             clearTimeout(this.resizeTimers[windowId]);
             delete this.resizeTimers[windowId];
+        }
+        
+        // Optional: minimized-State NICHT löschen (für Toggle)
+        if (!keepMinimizedState) {
+            const minimized = JSON.parse(localStorage.getItem('windowMinimized') || '{}');
+            delete minimized[windowId];
+            localStorage.setItem('windowMinimized', JSON.stringify(minimized));
         }
     },
     
@@ -142,8 +164,8 @@ const DraggableManager = {
             top: windowElement.style.top
         };
         
-        // Nur für resizable Fenster auch Größe speichern
-        if (windowId === 'battle-log-window' || windowId === 'inventory-window') {
+        // Nur für resizable Fenster auch Größe speichern (aber nicht im minimierten Zustand!)
+        if ((windowId === 'battle-log-window' || windowId === 'inventory-window') && !windowElement.classList.contains('minimized')) {
             const rect = windowElement.getBoundingClientRect();
             savedData.width = rect.width + 'px';
             savedData.height = rect.height + 'px';

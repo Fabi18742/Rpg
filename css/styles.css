@@ -50,7 +50,6 @@ body {
 /* Bilder und SVGs nicht ziehbar machen */
 img, svg {
     -webkit-user-drag: none;
-    user-drag: none;
     pointer-events: none;
 }
 
@@ -117,6 +116,7 @@ img, svg {
     cursor: move;
 }
 
+/* Drag-Handle für alle Fenster (absolut positioniert) */
 .window-drag-handle {
     position: absolute;
     top: 5px;
@@ -141,59 +141,7 @@ img, svg {
     transform: scale(0.95);
 }
 
-.draggable-window .window-content {
-    padding: 15px;
-    padding-top: 35px; /* Platz für Drag-Handle */
-}
-
-/* Battle-Log mit fester Breite und Scroll */
-#battle-log-window {
-    width: 400px;
-    height: 300px;
-    min-height: 300px;
-    max-height: none;
-    resize: vertical;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-}
-
-/* Battle-Log minimiert - display block für ::before */
-#battle-log-window.minimized {
-    display: block;
-}
-
-#battle-log-window .window-content {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    box-sizing: border-box;
-    padding: 35px 15px 15px 15px;
-    overflow: hidden;
-}
-
-#battle-log-window .window-title {
-    flex-shrink: 0;
-    margin-bottom: 15px;
-}
-
-#battle-log-window .battle-log {
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow-y: auto;
-    overflow-x: hidden;
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE/Edge */
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-#battle-log-window .battle-log::-webkit-scrollbar {
-    display: none; /* Chrome/Safari/Opera */
-}
-
-/* Minimieren-Button */
+/* Minimieren-Button für alle Fenster (absolut positioniert) */
 .window-minimize-btn {
     position: absolute;
     top: 5px;
@@ -225,20 +173,79 @@ img, svg {
     transform: scale(0.95);
 }
 
+/* Content-Bereich */
+.draggable-window .window-content {
+    padding: 15px;
+    padding-top: 35px; /* Platz für Buttons */
+}
+
+/* Legacy: Content-Bereich mit altem Drag-Handle (Inventar) */
+#inventory-window .window-content {
+    padding: 15px;
+    padding-top: 35px; /* Platz für Drag-Handle */
+}
+
+/* Battle-Log mit fester Breite und Scroll */
+#battle-log-window {
+    width: 400px;
+    height: 300px;
+    min-height: 300px;
+    max-height: none;
+    resize: vertical;
+    overflow: hidden;
+}
+
+/* Battle-Log minimiert - Höhe fixieren */
+#battle-log-window.minimized {
+    height: 40px;
+    min-height: 40px;
+    max-height: 40px;
+    resize: none;
+}
+
+#battle-log-window .window-content {
+    display: flex;
+    flex-direction: column;
+    height: calc(100% - 35px);
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+/* Battle-Log minimiert - Content verstecken */
+#battle-log-window.minimized .window-content {
+    display: none;
+}
+
+#battle-log-window .battle-log {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+#battle-log-window .battle-log::-webkit-scrollbar {
+    display: none; /* Chrome/Safari/Opera */
+}
+
 /* Minimiertes Fenster */
 .draggable-window.minimized .window-content {
     display: none;
 }
 
 .draggable-window.minimized {
-    height: 40px !important;
-    min-height: 40px !important;
-    max-height: 40px !important;
-    overflow: hidden !important;
-    resize: none !important;
+    height: 40px;
+    min-height: 40px;
+    max-height: 40px;
+    overflow: hidden;
+    resize: none;
 }
 
-/* Titel bei minimierten Fenstern */
+/* Titel bei minimierten Fenstern anzeigen */
 .draggable-window.minimized::before {
     content: attr(data-window-title);
     display: block;
@@ -251,7 +258,6 @@ img, svg {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    text-align: left;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
 }
 

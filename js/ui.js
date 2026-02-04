@@ -125,6 +125,10 @@ const UI = {
         
         if (statsWindow) {
             // Fenster existiert, entfernen
+            const windowVisibility = JSON.parse(localStorage.getItem('windowVisibility') || '{}');
+            windowVisibility['stats-panel-window'] = false;
+            localStorage.setItem('windowVisibility', JSON.stringify(windowVisibility));
+            
             statsWindow.remove();
             this.statsVisible = false;
         } else {
@@ -174,15 +178,10 @@ const UI = {
             document.body.insertAdjacentHTML('beforeend', statsHTML);
             const newWindow = document.getElementById('stats-panel-window');
             
-            // Sicherstellen dass es nicht minimiert ist
-            newWindow.classList.remove('minimized');
-            const minimizeBtn = newWindow.querySelector('.window-minimize-btn');
-            if (minimizeBtn) minimizeBtn.textContent = '−';
-            
-            // Minimiert-Status auf false setzen
-            const minimizedStates = JSON.parse(localStorage.getItem('windowMinimized') || '{}');
-            minimizedStates['stats-panel-window'] = false;
-            localStorage.setItem('windowMinimized', JSON.stringify(minimizedStates));
+            // WindowVisibility speichern
+            const windowVisibility = JSON.parse(localStorage.getItem('windowVisibility') || '{}');
+            windowVisibility['stats-panel-window'] = true;
+            localStorage.setItem('windowVisibility', JSON.stringify(windowVisibility));
             
             // Positioniere rechts nach Erstellung und setze korrekte Dimensionen
             const rect = newWindow.getBoundingClientRect();
@@ -881,10 +880,6 @@ const UI = {
 
         this.elements.sceneContent.innerHTML = `
             <div class="battle-screen">
-                <div class="player-hp-display">
-                    <span>Deine HP: ${player.hp}/${player.maxHp}</span>
-                    <span class="action-points-display">AP: ${battle.playerActionPoints}/${player.maxActionPoints}</span>
-                </div>
             </div>
         `;
 
@@ -893,6 +888,18 @@ const UI = {
         
         // Battle-Log-Fenster erstellen/updaten
         this.createOrUpdateBattleLogWindow(allLogs);
+        
+        // Control-Fenster erstellen/updaten
+        this.createOrUpdateControlWindow();
+        
+        // Stats und Inventar automatisch öffnen wenn sie im vorherigen Kampf offen waren
+        const windowVisibility = JSON.parse(localStorage.getItem('windowVisibility') || '{}');
+        if (windowVisibility['stats-panel-window'] && !document.getElementById('stats-panel-window')) {
+            this.toggleStatsPanel();
+        }
+        if (windowVisibility['inventory-window'] && !document.getElementById('inventory-window')) {
+            this.createOrUpdateInventoryWindow();
+        }
 
         // Target-Auswahl für Gegner-Kämpfe
         if (isEnemyBattle && battle.turn === 'player') {
@@ -913,70 +920,16 @@ const UI = {
 
         // Fähigkeiten-Buttons (nur im Spieler-Zug)
         if (battle.turn === 'player') {
-            const abilityButtons = equippedAbilities.map((ability, slotIndex) => {
-                const abilityIndex = player.equippedAbilities[slotIndex];
-                const canUse = battle.playerActionPoints >= ability.apCost;
-                const disabledClass = canUse ? '' : 'disabled';
-                const hitInfo = ability.hitChance < 1.0 ? ` | ${Math.floor(ability.hitChance * 100)}% Treffer` : '';
-                
-                return `
-                    <button class="game-button ability-btn ${disabledClass}" data-ability-index="${abilityIndex}" ${canUse ? '' : 'disabled'}>
-                        <span>${ability.name}</span><br>
-                        <small>${ability.attacks}x ${Math.floor(ability.damageMultiplier * 100)}%${hitInfo} | ${ability.apCost} AP</small>
-                    </button>
-                `;
-            }).join('');
+            // Ability-Fenster erstellen/updaten
+            this.createOrUpdateAbilityWindow();
             
-            // Block-Button (nur wenn mindestens 1 AP vorhanden)
-            const canBlock = battle.playerActionPoints >= 1;
-            const blockButtonClass = canBlock ? '' : 'disabled';
-            const blockValue = battle.playerActionPoints * 2; // Nur AP-Bonus (Defense wird separat abgezogen)
-            const blockButton = `
-                <button class="game-button block-btn ${blockButtonClass}" id="btn-block" ${canBlock ? '' : 'disabled'}>
-                    Blocken<br>
-                    <small>+${blockValue} Verteidigung | Alle AP</small>
-                </button>
-            `;
+            // Toggle-Button States im Control-Window aktualisieren
+            const controlWindow = document.getElementById('control-window');
+            if (controlWindow) {
+                this.updateToggleButtonStates(controlWindow);
+            }
             
-            this.elements.buttonGrid.innerHTML = `
-                <button class="game-button" id="btn-battle-stats">Stats</button>
-                <button class="game-button" id="btn-battle-inventory">Inventar</button>
-                ${abilityButtons}
-                ${blockButton}
-            `;
-
-            // Event Listener für Stats-Button
-            document.getElementById('btn-battle-stats').addEventListener('click', () => {
-                this.toggleStatsPanel();
-            });
-
-            // Event Listener für Inventar-Button
-            document.getElementById('btn-battle-inventory').addEventListener('click', () => {
-                const existingWindow = document.getElementById('inventory-window');
-                if (existingWindow) {
-                    // Fenster existiert bereits - schließen
-                    existingWindow.remove();
-                } else {
-                    // Fenster öffnen
-                    this.createOrUpdateInventoryWindow();
-                }
-            });
-
-            // Event Listener für Block-Button
-            document.getElementById('btn-block').addEventListener('click', () => {
-                document.getElementById('btn-block').disabled = true;
-                Game.playerBlock();
-            });
-
-            // Event Listeners für Fähigkeiten
-            document.querySelectorAll('.ability-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const abilityIndex = parseInt(btn.dataset.abilityIndex);
-                    // Button sofort deaktivieren um Mehrfach-Klicks zu verhindern
-                    btn.disabled = true;
-                    Game.playerAttack(abilityIndex);
-                });
-            });
+            this.elements.buttonGrid.innerHTML = ``;
         } else {
             this.elements.buttonGrid.innerHTML = `
                 <div class="waiting-message">Gegner ist am Zug...</div>
@@ -1294,6 +1247,14 @@ const UI = {
     createOrUpdateEnemyWindow(enemies, isEnemyBattle, battle) {
         let existingWindow = document.getElementById('enemy-window');
         
+        // Prüfe ob Fenster sichtbar sein soll
+        const windowVisibility = JSON.parse(localStorage.getItem('windowVisibility') || '{}');
+        // Beim ersten Aufruf (kein Eintrag in localStorage) soll das Fenster erstellt werden
+        const shouldBeVisible = windowVisibility['enemy-window'] !== false;
+        if (!existingWindow && !shouldBeVisible) {
+            return; // Nicht erstellen wenn explizit ausgeblendet
+        }
+        
         let enemyContent = '';
         if (isEnemyBattle) {
             enemyContent = `
@@ -1344,8 +1305,8 @@ const UI = {
         }
 
         if (existingWindow) {
-            // Update existing window - Überschrift beibehalten
-            const title = existingWindow.dataset.windowTitle || (isEnemyBattle ? 'Gegner' : 'Boss');
+            // Update existing window - window-title beibehalten
+            const title = isEnemyBattle ? 'Gegner' : 'Boss';
             existingWindow.querySelector('.window-content').innerHTML = `
                 <div class="window-title">${title}</div>
                 ${enemyContent}
@@ -1378,8 +1339,14 @@ const UI = {
     createOrUpdateBattleLogWindow(logs) {
         let existingWindow = document.getElementById('battle-log-window');
         
+        // Prüfe ob Fenster sichtbar sein soll (standardmäßig ausgeblendet)
+        const windowVisibility = JSON.parse(localStorage.getItem('windowVisibility') || '{}');
+        // Battle-Log bleibt standardmäßig ausgeblendet, nur erstellen wenn explizit geöffnet
+        if (!existingWindow && !windowVisibility['battle-log-window']) {
+            return; // Nicht erstellen wenn nicht explizit geöffnet
+        }
+        
         const logContent = `
-            <div class="window-title">Kampflog</div>
             <div class="battle-log">
                 ${logs.map(log => `<div class="log-entry">${log}</div>`).join('')}
             </div>
@@ -1406,6 +1373,7 @@ const UI = {
                     <div class="window-minimize-btn">−</div>
                     <div class="window-drag-handle"></div>
                     <div class="window-content">
+                        <div class="window-title">Kampflog</div>
                         ${logContent}
                     </div>
                 </div>
@@ -1539,6 +1507,11 @@ const UI = {
             document.body.insertAdjacentHTML('beforeend', windowHTML);
             const newWindow = document.getElementById('inventory-window');
             
+            // WindowVisibility speichern
+            const windowVisibility = JSON.parse(localStorage.getItem('windowVisibility') || '{}');
+            windowVisibility['inventory-window'] = true;
+            localStorage.setItem('windowVisibility', JSON.stringify(windowVisibility));
+            
             DraggableManager.makeWindowDraggable(newWindow, 'inventory-window');
             
             // Event Listeners setzen
@@ -1562,18 +1535,257 @@ const UI = {
         });
     },
 
+    // Ability-Fenster erstellen/updaten
+    createOrUpdateAbilityWindow() {
+        const battle = Game.state.currentBattle;
+        if (!battle || battle.turn !== 'player') return;
+
+        // Prüfe ob Fenster sichtbar sein soll
+        const windowVisibility = JSON.parse(localStorage.getItem('windowVisibility') || '{}');
+        const existingWindow = document.getElementById('ability-window');
+        // Beim ersten Aufruf (kein Eintrag in localStorage) soll das Fenster erstellt werden
+        const shouldBeVisible = windowVisibility['ability-window'] !== false;
+        if (!existingWindow && !shouldBeVisible) {
+            return; // Nicht erstellen wenn explizit ausgeblendet
+        }
+
+        const player = Game.state.player;
+        const equippedAbilities = player.equippedAbilities
+            .map(abilityIndex => Game.abilities[player.abilities[abilityIndex]])
+            .filter(ability => ability);
+        
+        const abilityButtons = equippedAbilities.map((ability, slotIndex) => {
+            const abilityIndex = player.equippedAbilities[slotIndex];
+            const canUse = battle.playerActionPoints >= ability.apCost;
+            const disabledClass = canUse ? '' : 'disabled';
+            const hitInfo = ability.hitChance < 1.0 ? ` | ${Math.floor(ability.hitChance * 100)}%` : '';
+            
+            return `
+                <div class="ability-button-card ${disabledClass}" data-ability-index="${abilityIndex}">
+                    <div class="ability-icon-placeholder"></div>
+                    <div class="ability-button-name">${ability.name}</div>
+                    <div class="ability-button-stats">${ability.attacks}x ${Math.floor(ability.damageMultiplier * 100)}%${hitInfo} | ${ability.apCost} AP</div>
+                </div>
+            `;
+        }).join('');
+
+        // Block-Button
+        const canBlock = battle.playerActionPoints >= 1;
+        const blockButtonClass = canBlock ? '' : 'disabled';
+        const blockValue = battle.playerActionPoints * 2;
+        const blockButton = `
+            <div class="ability-button-card ${blockButtonClass}" data-action="block">
+                <div class="ability-icon-placeholder"></div>
+                <div class="ability-button-name">Blocken</div>
+                <div class="ability-button-stats">+${blockValue} DEF | Alle AP</div>
+            </div>
+        `;
+
+        const content = `
+            <div class="ability-window-content">
+                ${abilityButtons}
+                ${blockButton}
+            </div>
+        `;
+
+        if (existingWindow) {
+            existingWindow.querySelector('.window-content').innerHTML = `
+                <div class="window-title">Fähigkeiten</div>
+                ${content}
+            `;
+            this.setupAbilityWindowListeners(existingWindow);
+        } else {
+            const windowHTML = `
+                <div class="draggable-window" id="ability-window" data-window-id="ability-window" data-window-title="Fähigkeiten" style="left: 20px; top: 200px;">
+                    <div class="window-minimize-btn">−</div>
+                    <div class="window-drag-handle"></div>
+                    <div class="window-content">
+                        <div class="window-title">Fähigkeiten</div>
+                        ${content}
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', windowHTML);
+            const newWindow = document.getElementById('ability-window');
+            DraggableManager.makeWindowDraggable(newWindow, 'ability-window');
+            DraggableManager.bringToFront(newWindow);
+            this.setupAbilityWindowListeners(newWindow);
+        }
+    },
+
+    // Event Listeners für Ability-Fenster
+    setupAbilityWindowListeners(windowElement) {
+        windowElement.querySelectorAll('.ability-button-card').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (btn.classList.contains('disabled')) return;
+                
+                const abilityIndex = btn.dataset.abilityIndex;
+                const action = btn.dataset.action;
+                
+                if (action === 'block') {
+                    Game.playerBlock();
+                } else {
+                    Game.playerAttack(parseInt(abilityIndex));
+                }
+                
+                this.updateBattleScreen();
+            });
+        });
+    },
+
+    // Control-Fenster erstellen/updaten
+    createOrUpdateControlWindow() {
+        const battle = Game.state.currentBattle;
+        if (!battle) return;
+
+        const player = Game.state.player;
+        const hpPercent = (player.hp / player.maxHp) * 100;
+
+        let existingWindow = document.getElementById('control-window');
+
+        const content = `
+            <div class="window-title">Status</div>
+            <div class="control-window-content">
+                <div class="hp-bar-container">
+                    <div class="hp-bar-label">HP</div>
+                    <div class="hp-bar-wrapper">
+                        <div class="hp-bar-fill" style="width: ${hpPercent}%"></div>
+                        <div class="hp-bar-text">${player.hp}/${player.maxHp}</div>
+                    </div>
+                </div>
+                
+                <div class="ap-display">AP: ${battle.playerActionPoints}/${player.maxActionPoints}</div>
+                
+                <div class="window-toggles">
+                    <div class="window-toggle-btn" data-window="stats-panel-window">Stats</div>
+                    <div class="window-toggle-btn" data-window="inventory-window">Inventar</div>
+                    <div class="window-toggle-btn" data-window="ability-window">Fähigkeiten</div>
+                    <div class="window-toggle-btn" data-window="enemy-window">Gegner</div>
+                    <div class="window-toggle-btn" data-window="battle-log-window">Kampflog</div>
+                </div>
+            </div>
+        `;
+
+        if (existingWindow) {
+            existingWindow.querySelector('.window-content').innerHTML = content;
+            this.updateToggleButtonStates(existingWindow);
+            this.setupControlWindowListeners(existingWindow);
+        } else {
+            const windowHTML = `
+                <div class="draggable-window" id="control-window" data-window-id="control-window" data-window-title="Status">
+                    <div class="window-minimize-btn">−</div>
+                    <div class="window-drag-handle"></div>
+                    <div class="window-content">
+                        ${content}
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', windowHTML);
+            const newWindow = document.getElementById('control-window');
+            
+            // Zentriere horizontal am unteren Rand mit top statt bottom
+            const rect = newWindow.getBoundingClientRect();
+            const centerX = (window.innerWidth - rect.width) / 2;
+            const bottomY = window.innerHeight - rect.height - 20;
+            newWindow.style.left = centerX + 'px';
+            newWindow.style.top = bottomY + 'px';
+            
+            DraggableManager.makeWindowDraggable(newWindow, 'control-window');
+            DraggableManager.bringToFront(newWindow);
+            this.updateToggleButtonStates(newWindow);
+            this.setupControlWindowListeners(newWindow);
+        }
+    },
+
+    // Toggle-Button States aktualisieren basierend auf geöffneten Fenstern
+    updateToggleButtonStates(controlWindow) {
+        controlWindow.querySelectorAll('.window-toggle-btn').forEach(btn => {
+            const windowId = btn.dataset.window;
+            const targetWindow = document.getElementById(windowId);
+            if (targetWindow) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+    },
+
+    // Event Listeners für Control-Fenster
+    setupControlWindowListeners(windowElement) {
+        windowElement.querySelectorAll('.window-toggle-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const windowId = btn.dataset.window;
+                const targetWindow = document.getElementById(windowId);
+                
+                if (targetWindow) {
+                    // Cleanup VOR dem Entfernen! (minimized-State behalten für Toggle)
+                    DraggableManager.cleanupWindow(windowId, true);
+                    // Fenster schließen - in localStorage als hidden markieren
+                    const windowVisibility = JSON.parse(localStorage.getItem('windowVisibility') || '{}');
+                    windowVisibility[windowId] = false;
+                    localStorage.setItem('windowVisibility', JSON.stringify(windowVisibility));
+                    targetWindow.remove();
+                } else {
+                    // Fenster öffnen - in localStorage als visible markieren
+                    const windowVisibility = JSON.parse(localStorage.getItem('windowVisibility') || '{}');
+                    windowVisibility[windowId] = true;
+                    localStorage.setItem('windowVisibility', JSON.stringify(windowVisibility));
+                    
+                    if (windowId === 'stats-panel-window') {
+                        this.toggleStatsPanel();
+                    } else if (windowId === 'inventory-window') {
+                        this.createOrUpdateInventoryWindow();
+                    } else if (windowId === 'ability-window') {
+                        this.createOrUpdateAbilityWindow();
+                    } else if (windowId === 'enemy-window') {
+                        // Gegner-Fenster neu erstellen
+                        const battle = Game.state.currentBattle;
+                        if (battle) {
+                            const isEnemyBattle = battle.enemies && battle.enemies.length > 0;
+                            this.createOrUpdateEnemyWindow(isEnemyBattle ? battle.enemies : [battle.boss], isEnemyBattle, battle);
+                        }
+                    } else if (windowId === 'battle-log-window') {
+                        // Battle-Log neu erstellen
+                        const battle = Game.state.currentBattle;
+                        if (battle && battle.log) {
+                            this.createOrUpdateBattleLogWindow(battle.log);
+                        }
+                    }
+                }
+                
+                // Update alle Button States
+                this.updateToggleButtonStates(windowElement);
+            });
+        });
+    },
+
     // Alle Battle-Windows entfernen
     removeBattleWindows() {
         const enemyWindow = document.getElementById('enemy-window');
         const logWindow = document.getElementById('battle-log-window');
         const statsWindow = document.getElementById('stats-panel-window');
         const inventoryWindow = document.getElementById('inventory-window');
+        const abilityWindow = document.getElementById('ability-window');
+        const controlWindow = document.getElementById('control-window');
+        
+        // Sichtbarkeit von Stats und Inventar für nächsten Kampf speichern
+        const windowVisibility = JSON.parse(localStorage.getItem('windowVisibility') || '{}');
+        if (statsWindow) {
+            windowVisibility['stats-panel-window'] = true; // War sichtbar
+        }
+        if (inventoryWindow) {
+            windowVisibility['inventory-window'] = true; // War sichtbar
+        }
+        localStorage.setItem('windowVisibility', JSON.stringify(windowVisibility));
         
         // ResizeObserver cleanup VOR dem Entfernen!
+        // Stats und Inventar: keepMinimizedState = true (Minimiert-Status merken)
         if (enemyWindow) DraggableManager.cleanupWindow('enemy-window');
         if (logWindow) DraggableManager.cleanupWindow('battle-log-window');
-        if (statsWindow) DraggableManager.cleanupWindow('stats-panel-window');
-        if (inventoryWindow) DraggableManager.cleanupWindow('inventory-window');
+        if (statsWindow) DraggableManager.cleanupWindow('stats-panel-window', true);
+        if (inventoryWindow) DraggableManager.cleanupWindow('inventory-window', true);
+        if (abilityWindow) DraggableManager.cleanupWindow('ability-window');
+        if (controlWindow) DraggableManager.cleanupWindow('control-window');
         
         // Jetzt Fenster entfernen
         if (enemyWindow) enemyWindow.remove();
@@ -1583,5 +1795,7 @@ const UI = {
             this.statsVisible = false;
         }
         if (inventoryWindow) inventoryWindow.remove();
+        if (abilityWindow) abilityWindow.remove();
+        if (controlWindow) controlWindow.remove();
     }
 };
