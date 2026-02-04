@@ -240,7 +240,7 @@ const Definitions = {
                 speed: 0
             },
             weapon: {
-                baseId: 'sword',
+                baseId: 'rubberSword',
                 effects: []
             },
             drops: []  // Keine Drops

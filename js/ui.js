@@ -259,16 +259,55 @@ const UI = {
         const equippedWeapon = Game.resolveWeapon(equippedWeaponInstance);
         
         const hasWeaponEffects = equippedWeaponInstance && equippedWeaponInstance.effects && equippedWeaponInstance.effects.length > 0;
+        let weaponEffectsHTML = '';
+        let weaponTooltipHTML = '';
+        
+        if (equippedWeapon) {
+            // Effekt-Badges für Slot
+            if (hasWeaponEffects) {
+                weaponEffectsHTML = '<div class="slot-effects">';
+                equippedWeaponInstance.effects.forEach(effectId => {
+                    const effect = Game.effects[effectId];
+                    if (effect) {
+                        weaponEffectsHTML += `<span class="effect-badge">${effect.name}</span>`;
+                    }
+                });
+                weaponEffectsHTML += '</div>';
+            }
+            
+            // Tooltip mit ausführlichen Infos
+            let tooltipEffectsHTML = '';
+            if (hasWeaponEffects) {
+                tooltipEffectsHTML = '<div class="tooltip-effects">';
+                equippedWeaponInstance.effects.forEach(effectId => {
+                    const effect = Game.effects[effectId];
+                    if (effect) {
+                        tooltipEffectsHTML += `<div class="tooltip-effect"><strong>${effect.name}:</strong> ${effect.description}</div>`;
+                    }
+                });
+                tooltipEffectsHTML += '</div>';
+            }
+            
+            weaponTooltipHTML = `
+                <div class="equipment-tooltip">
+                    <div class="tooltip-title">${equippedWeapon.name}</div>
+                    <div class="tooltip-desc">${equippedWeapon.description}</div>
+                    <div class="tooltip-stat">Schaden: ${equippedWeapon.damage}</div>
+                    ${tooltipEffectsHTML}
+                </div>
+            `;
+        }
         
         let weaponSlotHTML = `
-            <div class="equipment-slot weapon-slot-single ${equippedWeapon ? 'filled' : 'empty'}" id="weapon-slot">
-                <div class="slot-label">Waffe</div>
-                ${equippedWeapon ? `
-                    <div class="slot-content">
-                        <div class="${hasWeaponEffects ? 'weapon-with-effects' : ''}">${equippedWeapon.name}</div>
-                        <div class="slot-stats">Schaden: ${equippedWeapon.damage}</div>
-                    </div>
-                ` : '<div class="slot-empty">Keine Waffe ausgerüstet</div>'}
+            <div class="equipment-slot weapon-slot ${equippedWeapon ? 'filled' : 'empty'}" id="weapon-slot">
+                <div class="item-icon-placeholder"></div>
+                <div class="item-info">
+                    ${equippedWeapon ? `
+                        <div class="item-name">${equippedWeapon.name}</div>
+                        <div class="item-stats">Schaden: ${equippedWeapon.damage}${hasWeaponEffects ? ' | Effekte' : ''}</div>
+                    ` : '<div class="item-name slot-label">Waffe</div>'}
+                </div>
+                ${equippedWeapon ? weaponTooltipHTML : ''}
             </div>
         `;
         
@@ -279,93 +318,50 @@ const UI = {
             const abilityId = typeof abilityIndex === 'number' ? player.abilities[abilityIndex] : null;
             const ability = abilityId ? Game.abilities[abilityId] : null;
             
-            abilitySlotsHTML += `
-                <div class="equipment-slot ability-slot ${ability ? 'filled' : 'empty'}" data-slot="${i}">
-                    <div class="slot-number">Slot ${i + 1}</div>
-                    ${ability ? `
-                        <div class="slot-content">
-                            <div class="ability-name">${ability.name}</div>
-                            <div class="slot-stats">${ability.apCost} AP | ${ability.attacks}x ${Math.floor(ability.damageMultiplier * 100)}%${ability.hitChance < 1.0 ? ` | ${Math.floor(ability.hitChance * 100)}% Treffer` : ''}</div>
-                        </div>
-                    ` : '<div class="slot-empty">Leer</div>'}
-                </div>
-            `;
-        }
-        
-        // ===== VERFÜGBARE WAFFEN =====
-        const unequippedWeapons = player.weapons
-            .map((weaponInstance, index) => ({ weaponInstance, weapon: Game.resolveWeapon(weaponInstance), index }))
-            .filter(data => data.index !== equippedWeaponIndex && data.weapon !== null);
-        
-        let weaponsHTML = unequippedWeapons.map(data => {
-            // Effekt-Anzeige mit vollständiger Beschreibung
-            let effectsHTML = '';
-            if (data.weaponInstance.effects && data.weaponInstance.effects.length > 0) {
-                effectsHTML = '<div class="weapon-effects-full">';
-                data.weaponInstance.effects.forEach(effectId => {
-                    const effect = Game.effects[effectId];
-                    if (effect) {
-                        effectsHTML += `<div class="effect-detail"><strong>${effect.name}</strong>: ${effect.description}</div>`;
-                    }
-                });
-                effectsHTML += '</div>';
+            let abilityStatsHTML = '';
+            let abilityTooltipHTML = '';
+            
+            if (ability) {
+                const hitInfo = ability.hitChance < 1.0 ? ` | ${Math.floor(ability.hitChance * 100)}%` : '';
+                abilityStatsHTML = `<div class="item-stats">${ability.apCost} AP | ${ability.attacks}x ${Math.floor(ability.damageMultiplier * 100)}%${hitInfo}</div>`;
+                
+                // Tooltip mit ausführlichen Infos
+                const fullHitInfo = ability.hitChance < 1.0 ? ` | ${Math.floor(ability.hitChance * 100)}% Trefferchance` : '';
+                abilityTooltipHTML = `
+                    <div class="equipment-tooltip">
+                        <div class="tooltip-title">${ability.name}</div>
+                        <div class="tooltip-desc">${ability.description}</div>
+                        <div class="tooltip-stat">${ability.apCost} AP | ${ability.attacks} Angriff(e) | ${Math.floor(ability.damageMultiplier * 100)}% Schaden${fullHitInfo}</div>
+                    </div>
+                `;
             }
             
-            return `
-                <div class="weapon-item" data-weapon-index="${data.index}">
-                    <div class="weapon-name">${data.weapon.name}</div>
-                    <div class="weapon-damage">Schaden: ${data.weapon.damage}</div>
-                    <div class="weapon-desc">${data.weapon.description}</div>
-                    ${effectsHTML}
+            abilitySlotsHTML += `
+                <div class="equipment-slot ability-slot ${ability ? 'filled' : 'empty'}" data-slot="${i}">
+                    <div class="item-icon-placeholder"></div>
+                    <div class="item-info">
+                        ${ability ? `
+                            <div class="item-name">${ability.name}</div>
+                            ${abilityStatsHTML}
+                        ` : `<div class="item-name slot-label">Slot ${i + 1}</div>`}
+                    </div>
+                    ${ability ? abilityTooltipHTML : ''}
                 </div>
             `;
-        }).join('');
-        
-        if (unequippedWeapons.length === 0) {
-            weaponsHTML = '<div class="no-weapons">Keine weiteren Waffen verfügbar</div>';
-        }
-        
-        // ===== VERFÜGBARE FÄHIGKEITEN =====
-        const unequippedAbilities = player.abilities
-            .map((abilityId, index) => ({ ability: Game.abilities[abilityId], index }))
-            .filter(data => !player.equippedAbilities.includes(data.index) && data.ability !== null);
-        
-        let abilitiesHTML = unequippedAbilities.map(data => {
-            const hitInfo = data.ability.hitChance < 1.0 ? ` | ${Math.floor(data.ability.hitChance * 100)}% Treffer` : '';
-            return `
-                <div class="ability-item" data-ability-index="${data.index}">
-                    <div class="ability-name">${data.ability.name}</div>
-                    <div class="ability-stats">${data.ability.apCost} AP | ${data.ability.attacks} Angriff(e) | ${Math.floor(data.ability.damageMultiplier * 100)}%${hitInfo}</div>
-                    <div class="ability-desc">${data.ability.description}</div>
-                </div>
-            `;
-        }).join('');
-        
-        if (unequippedAbilities.length === 0) {
-            abilitiesHTML = '<div class="no-abilities">Alle Fähigkeiten sind ausgerüstet</div>';
         }
 
         this.elements.sceneContent.innerHTML = `
-            <div class="equipment-screen">
-                <div class="equipment-section">
-                    <h3>Ausrüstung</h3>
-                    ${weaponSlotHTML}
-                    <h4 style="margin-top: 20px;">Fähigkeiten</h4>
-                    <div class="ability-slots">
-                        ${abilitySlotsHTML}
+            <div class="equipment-container">
+                <h2>Ausrüstung</h2>
+                <div class="equipment-slots-wrapper">
+                    <div class="weapon-section">
+                        <h3>Waffe</h3>
+                        ${weaponSlotHTML}
                     </div>
-                </div>
-                <div class="available-section">
-                    <div class="available-weapons">
-                        <h3>Verfügbare Waffen</h3>
-                        <div class="weapon-list">
-                            ${weaponsHTML}
-                        </div>
-                    </div>
-                    <div class="available-abilities">
-                        <h3>Verfügbare Fähigkeiten</h3>
-                        <div class="ability-list">
-                            ${abilitiesHTML}
+                    <div class="abilities-section">
+                        <h3>Fähigkeiten</h3>
+                        <div class="ability-slots-grid">
+                            ${abilitySlotsHTML}
                         </div>
                     </div>
                 </div>
@@ -381,45 +377,183 @@ const UI = {
             Game.showScreen('hideout');
         });
 
-        // Waffen-Slot Click = Unequip
-        const weaponSlot = document.getElementById('weapon-slot');
-        if (weaponSlot && weaponSlot.classList.contains('filled')) {
-            weaponSlot.addEventListener('click', () => {
-                Game.unequipWeapon();
-                this.showWeaponManagement(); // Refresh
-            });
-        }
+        // Waffen-Slot Click = Modal öffnen
+        document.getElementById('weapon-slot').addEventListener('click', () => {
+            this.openWeaponModal();
+        });
 
-        // Weapon Click to Equip
-        document.querySelectorAll('.weapon-item').forEach(item => {
+        // Fähigkeiten-Slot Click = Modal öffnen
+        document.querySelectorAll('.ability-slot').forEach(slot => {
+            slot.addEventListener('click', () => {
+                const slotIndex = parseInt(slot.dataset.slot);
+                this.openAbilityModal(slotIndex);
+            });
+        });
+    },
+
+    // Modal für Waffen-Auswahl
+    openWeaponModal() {
+        const player = Game.state.player;
+        const equippedWeaponIndex = player.equippedWeapon;
+        
+        // Alle Waffen anzeigen
+        const allWeapons = player.weapons
+            .map((weaponInstance, index) => ({ weaponInstance, weapon: Game.resolveWeapon(weaponInstance), index }))
+            .filter(data => data.weapon !== null);
+        
+        let weaponsHTML = '';
+        if (allWeapons.length === 0) {
+            weaponsHTML = '<div class="no-items">Keine Waffen verfügbar</div>';
+        } else {
+            weaponsHTML = allWeapons.map(data => {
+                const isEquipped = data.index === equippedWeaponIndex;
+                
+                // Effekt-Anzeige
+                let effectsHTML = '';
+                if (data.weaponInstance.effects && data.weaponInstance.effects.length > 0) {
+                    effectsHTML = '<div class="weapon-effects">';
+                    data.weaponInstance.effects.forEach(effectId => {
+                        const effect = Game.effects[effectId];
+                        if (effect) {
+                            effectsHTML += `<div class="effect-tag">${effect.name}</div>`;
+                        }
+                    });
+                    effectsHTML += '</div>';
+                }
+                
+                return `
+                    <div class="equipment-modal-item ${isEquipped ? 'equipped' : ''}" data-weapon-index="${data.index}">
+                        <div class="item-icon-placeholder"></div>
+                        <div class="item-details">
+                            <div class="item-name">${data.weapon.name}</div>
+                            <div class="item-stats-row">
+                                <span class="item-stats">Schaden: ${data.weapon.damage}</span>
+                                ${effectsHTML}
+                                ${isEquipped ? '<span class="equipped-label">Ausgerüstet</span>' : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // Modal HTML
+        const modalHTML = `
+            <div class="equipment-modal-overlay" id="equipment-modal">
+                <div class="equipment-modal-content">
+                    <h3>Waffe wählen</h3>
+                    <div class="equipment-modal-list">
+                        ${weaponsHTML}
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        const modal = document.getElementById('equipment-modal');
+        
+        // Item auswählen
+        modal.querySelectorAll('.equipment-modal-item:not(.equipped)').forEach(item => {
             item.addEventListener('click', () => {
                 const weaponIndex = parseInt(item.dataset.weaponIndex);
                 Game.equipWeapon(weaponIndex);
-                this.showWeaponManagement(); // Refresh
+                modal.remove();
+                this.showWeaponManagement();
             });
         });
+        
+        // Overlay Click = Close
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+    },
 
-        // Click auf gefüllten Fähigkeiten-Slot = Unequip
-        document.querySelectorAll('.ability-slot.filled').forEach(slot => {
-            slot.addEventListener('click', () => {
-                const slotIndex = parseInt(slot.dataset.slot);
+    // Modal für Fähigkeiten-Auswahl
+    openAbilityModal(slotIndex) {
+        const player = Game.state.player;
+        
+        // "Leer"-Option ganz oben
+        let abilitiesHTML = `
+            <div class="equipment-modal-item empty-option" data-empty="true">
+                <div class="item-icon-placeholder"></div>
+                <div class="item-details">
+                    <div class="item-name">Leer</div>
+                    <div class="item-stats">Slot leeren</div>
+                </div>
+            </div>
+        `;
+        
+        // Alle Fähigkeiten anzeigen
+        const allAbilities = player.abilities
+            .map((abilityId, index) => ({ ability: Game.abilities[abilityId], index }))
+            .filter(data => data.ability !== null);
+        
+        if (allAbilities.length === 0) {
+            abilitiesHTML += '<div class="no-items">Keine weiteren Fähigkeiten verfügbar</div>';
+        } else {
+            abilitiesHTML += allAbilities.map(data => {
+                const isEquipped = player.equippedAbilities.includes(data.index);
+                const hitInfo = data.ability.hitChance < 1.0 ? ` | ${Math.floor(data.ability.hitChance * 100)}% Treffer` : '';
+                
+                return `
+                    <div class="equipment-modal-item ${isEquipped ? 'equipped' : ''}" data-ability-index="${data.index}">
+                        <div class="item-icon-placeholder"></div>
+                        <div class="item-details">
+                            <div class="item-name">${data.ability.name}</div>
+                            <div class="item-stats-row">
+                                <span class="item-stats">${data.ability.apCost} AP | ${data.ability.attacks}x ${Math.floor(data.ability.damageMultiplier * 100)}%${hitInfo}</span>
+                                ${isEquipped ? '<span class="equipped-label">Ausgerüstet</span>' : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // Modal HTML
+        const modalHTML = `
+            <div class="equipment-modal-overlay" id="equipment-modal">
+                <div class="equipment-modal-content">
+                    <h3>Fähigkeit wählen (Slot ${slotIndex + 1})</h3>
+                    <div class="equipment-modal-list">
+                        ${abilitiesHTML}
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        const modal = document.getElementById('equipment-modal');
+        
+        // "Leer"-Option
+        const emptyOption = modal.querySelector('.empty-option');
+        if (emptyOption) {
+            emptyOption.addEventListener('click', () => {
                 Game.unequipAbility(slotIndex);
-                this.showWeaponManagement(); // Refresh
+                modal.remove();
+                this.showWeaponManagement();
             });
-        });
-
-        // Ability Click to Equip
-        document.querySelectorAll('.ability-item').forEach(item => {
+        }
+        
+        // Item auswählen
+        modal.querySelectorAll('.equipment-modal-item:not(.equipped):not(.empty-option)').forEach(item => {
             item.addEventListener('click', () => {
                 const abilityIndex = parseInt(item.dataset.abilityIndex);
-                
-                // Finde ersten freien Slot
-                const freeSlot = player.equippedAbilities.indexOf(null);
-                if (freeSlot !== -1) {
-                    Game.equipAbility(abilityIndex, freeSlot);
-                    this.showWeaponManagement(); // Refresh
-                }
+                Game.equipAbility(abilityIndex, slotIndex);
+                modal.remove();
+                this.showWeaponManagement();
             });
+        });
+        
+        // Overlay Click = Close
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
         });
     },
 
@@ -1116,32 +1250,18 @@ const UI = {
         // Initialisiere Ritual-State falls nicht vorhanden
         if (!Game.state.currentRitual) {
             Game.state.currentRitual = {
-                selectedItems: []  // Array mit Item-IDs
+                selectedItems: Array(6).fill(null)  // 6 feste Slots
             };
         }
         
         const ritual = Game.state.currentRitual;
-        const inventory = Game.state.player.inventory;
-        
-        // Nur Ritual-Items anzeigen
-        const ritualItems = inventory.filter(item => {
-            const itemDef = Game.items[item.id];
-            return itemDef && itemDef.type === 'ritual';
-        });
-        
-        // Zähle wie oft jedes Item bereits ausgewählt wurde
-        const selectedItemCounts = {};
-        ritual.selectedItems.forEach(itemId => {
-            selectedItemCounts[itemId] = (selectedItemCounts[itemId] || 0) + 1;
-        });
         
         this.elements.sceneContent.innerHTML = `
             <div class="ritual-container">
                 <h2>Das Ritual</h2>
                 <p class="ritual-description">Wähle exakt 6 Ritual-Items aus deinem Inventar, um eine Waffe zu erschaffen.</p>
                 
-                <div class="ritual-slots">
-                    <h3>Ausgewählte Items (${ritual.selectedItems.length}/6)</h3>
+                <div class="ritual-slots-wrapper">
                     <div class="ritual-slot-grid">
                         ${Array.from({length: 6}, (_, i) => {
                             const itemId = ritual.selectedItems[i];
@@ -1149,51 +1269,18 @@ const UI = {
                                 const itemDef = Game.items[itemId];
                                 return `
                                     <div class="ritual-slot filled" data-slot="${i}">
-                                        <div class="ritual-slot-name">${itemDef.name}</div>
-                                        <div class="ritual-slot-modifier-main">${itemDef.modifierType}</div>
-                                        <div class="ritual-slot-value">Value: ${itemDef.value}</div>
+                                        <div class="item-icon-placeholder"></div>
+                                        <div class="item-name">${itemDef.name}</div>
                                         <button class="ritual-remove-btn" data-slot="${i}">✕</button>
                                     </div>
                                 `;
                             } else {
                                 return `
                                     <div class="ritual-slot empty" data-slot="${i}">
-                                        <div class="ritual-slot-empty-text">Leer</div>
+                                        <div class="item-icon-placeholder empty-icon"></div>
                                     </div>
                                 `;
                             }
-                        }).join('')}
-                    </div>
-                </div>
-                
-                <div class="ritual-inventory">
-                    <h3>Verfügbare Ritual-Items</h3>
-                    <div class="ritual-item-list">
-                        ${ritualItems.length === 0 ? '<p class="no-items">Keine Ritual-Items im Inventar</p>' : ''}
-                        ${ritualItems.map(item => {
-                            const itemDef = Game.items[item.id];
-                            // Berechne verfügbare Menge: Gesamt - bereits ausgewählt
-                            const usedCount = selectedItemCounts[item.id] || 0;
-                            const availableCount = (item.quantity || 1) - usedCount;
-                            
-                            // Verstecke Item wenn keine mehr verfügbar
-                            if (availableCount <= 0) {
-                                return '';
-                            }
-                            
-                            return `
-                                <div class="ritual-item-card" data-item-id="${item.id}">
-                                    <div class="ritual-item-header">
-                                        <span class="ritual-item-name">${item.name}</span>
-                                        <span class="ritual-item-quantity">x${availableCount}</span>
-                                    </div>
-                                    <div class="ritual-item-modifier-display">${itemDef.modifierType}</div>
-                                    <div class="ritual-item-stats">
-                                        <span>Value: ${itemDef.value}</span>
-                                    </div>
-                                    <button class="ritual-add-btn" data-item-id="${item.id}">Hinzufügen</button>
-                                </div>
-                            `;
                         }).join('')}
                     </div>
                 </div>
@@ -1202,7 +1289,7 @@ const UI = {
         
         this.elements.buttonGrid.innerHTML = `
             <button class="game-button" id="btn-back">Zurück</button>
-            <button class="game-button ${ritual.selectedItems.length === 6 ? '' : 'disabled'}" id="btn-perform-ritual" ${ritual.selectedItems.length === 6 ? '' : 'disabled'}>Ritual durchführen</button>
+            <button class="game-button ${ritual.selectedItems.filter(id => id !== null).length === 6 ? '' : 'disabled'}" id="btn-perform-ritual" ${ritual.selectedItems.filter(id => id !== null).length === 6 ? '' : 'disabled'}>Ritual durchführen</button>
         `;
         
         // Event Listeners
@@ -1213,31 +1300,109 @@ const UI = {
         });
         
         document.getElementById('btn-perform-ritual').addEventListener('click', () => {
-            if (ritual.selectedItems.length === 6) {
+            if (ritual.selectedItems.filter(id => id !== null).length === 6) {
                 Game.performRitual();
             }
         });
         
-        // Item hinzufügen
-        document.querySelectorAll('.ritual-add-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const itemId = btn.dataset.itemId;
-                if (ritual.selectedItems.length < 6) {
-                    ritual.selectedItems.push(itemId);
-                    Game.save();
-                    this.showRitualSelection();
-                }
+        // Slot click - öffnet Modal
+        document.querySelectorAll('.ritual-slot').forEach(slot => {
+            slot.addEventListener('click', (e) => {
+                // Verhindere dass Remove-Button den Slot öffnet
+                if (e.target.closest('.ritual-remove-btn')) return;
+                
+                const slotIndex = parseInt(slot.dataset.slot);
+                this.openRitualItemModal(slotIndex);
             });
         });
         
         // Item entfernen
         document.querySelectorAll('.ritual-remove-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Verhindere Slot-Click
                 const slot = parseInt(btn.dataset.slot);
-                ritual.selectedItems.splice(slot, 1);
+                ritual.selectedItems[slot] = null;
                 Game.save();
                 this.showRitualSelection();
             });
+        });
+    },
+    
+    // Modal für Item-Auswahl öffnen
+    openRitualItemModal(slotIndex) {
+        const ritual = Game.state.currentRitual;
+        const inventory = Game.state.player.inventory;
+        
+        // Nur Ritual-Items anzeigen
+        const ritualItems = inventory.filter(item => {
+            const itemDef = Game.items[item.id];
+            return itemDef && itemDef.type === 'ritual';
+        });
+        
+        // Expandiere Items: Jedes Item einzeln anzeigen (keine Stacks)
+        const expandedItems = [];
+        ritualItems.forEach(item => {
+            const quantity = item.quantity || 1;
+            for (let i = 0; i < quantity; i++) {
+                expandedItems.push({ ...item, displayQuantity: 1 });
+            }
+        });
+        
+        // Zähle wie oft jedes Item bereits ausgewählt wurde
+        const selectedItemCounts = {};
+        ritual.selectedItems.forEach(itemId => {
+            if (itemId !== null) {
+                selectedItemCounts[itemId] = (selectedItemCounts[itemId] || 0) + 1;
+            }
+        });
+        
+        // Modal HTML
+        const modalHTML = `
+            <div class="ritual-modal-overlay" id="ritual-modal">
+                <div class="ritual-modal-content">
+                    <h3>Wähle ein Ritual-Item</h3>
+                    <div class="ritual-modal-item-list">
+                        ${expandedItems.length === 0 ? '<p class="no-items">Keine Ritual-Items im Inventar</p>' : ''}
+                        ${expandedItems.map((item, index) => {
+                            const itemDef = Game.items[item.id];
+                            const usedCount = selectedItemCounts[item.id] || 0;
+                            const availableIndex = index - usedCount;
+                            
+                            // Verstecke Item wenn bereits ausgewählt
+                            if (availableIndex < 0) return '';
+                            
+                            return `
+                                <div class="ritual-modal-item" data-item-id="${item.id}">
+                                    <div class="item-icon-placeholder"></div>
+                                    <div class="item-name">${itemDef.name}</div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        const modal = document.getElementById('ritual-modal');
+        
+        // Item auswählen
+        modal.querySelectorAll('.ritual-modal-item').forEach(itemEl => {
+            itemEl.addEventListener('click', () => {
+                const itemId = itemEl.dataset.itemId;
+                ritual.selectedItems[slotIndex] = itemId;
+                Game.save();
+                modal.remove();
+                this.showRitualSelection();
+            });
+        });
+        
+        // Overlay click zum Schließen
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
         });
     },
 
