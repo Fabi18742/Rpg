@@ -1715,24 +1715,37 @@ const UI = {
         }
 
         const player = Game.state.player;
-        const equippedAbilities = player.equippedAbilities
-            .map(abilityIndex => Game.abilities[player.abilities[abilityIndex]])
-            .filter(ability => ability);
         
-        const abilityButtons = equippedAbilities.map((ability, slotIndex) => {
-            const abilityIndex = player.equippedAbilities[slotIndex];
-            const canUse = battle.playerActionPoints >= ability.apCost;
-            const disabledClass = canUse ? '' : 'disabled';
-            const hitInfo = ability.hitChance < 1.0 ? ` | ${Math.floor(ability.hitChance * 100)}%` : '';
-            
-            return `
-                <div class="ability-button-card ${disabledClass}" data-ability-index="${abilityIndex}">
-                    <div class="ability-icon-placeholder"></div>
-                    <div class="ability-button-name">${ability.name}</div>
-                    <div class="ability-button-stats">${ability.attacks}x ${Math.floor(ability.damageMultiplier * 100)}%${hitInfo} | ${ability.apCost} AP</div>
-                </div>
-            `;
-        }).join('');
+        // Fähigkeiten mit korrektem Slot-Index verarbeiten
+        const abilityButtons = player.equippedAbilities
+            .map((abilityIndex, slotIndex) => {
+                // Slot ist leer
+                if (abilityIndex === null || abilityIndex === undefined) {
+                    return null;
+                }
+                
+                const abilityId = player.abilities[abilityIndex];
+                const ability = Game.abilities[abilityId];
+                
+                // Fähigkeit existiert nicht
+                if (!ability) {
+                    return null;
+                }
+                
+                const canUse = battle.playerActionPoints >= ability.apCost;
+                const disabledClass = canUse ? '' : 'disabled';
+                const hitInfo = ability.hitChance < 1.0 ? ` | ${Math.floor(ability.hitChance * 100)}%` : '';
+                
+                return `
+                    <div class="ability-button-card ${disabledClass}" data-ability-index="${abilityIndex}" data-slot-index="${slotIndex}">
+                        <div class="ability-icon-placeholder"></div>
+                        <div class="ability-button-name">${ability.name}</div>
+                        <div class="ability-button-stats">${ability.attacks}x ${Math.floor(ability.damageMultiplier * 100)}%${hitInfo} | ${ability.apCost} AP</div>
+                    </div>
+                `;
+            })
+            .filter(html => html !== null)
+            .join('');
 
         // Block-Button
         const canBlock = battle.playerActionPoints >= 1;
