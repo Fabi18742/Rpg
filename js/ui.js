@@ -663,6 +663,14 @@ const UI = {
 
         const player = Game.state.player;
         const glitzerCount = player.stats.glitzer;
+        
+        // Scroll-Position speichern (falls bereits vorhanden)
+        let leftPanelScrollPos = 0;
+        let rightPanelScrollPos = 0;
+        const existingLeftPanel = document.querySelector('.shop-left-panel .shop-item-list');
+        const existingRightPanel = document.querySelector('.shop-right-panel .shop-item-list');
+        if (existingLeftPanel) leftPanelScrollPos = existingLeftPanel.scrollTop;
+        if (existingRightPanel) rightPanelScrollPos = existingRightPanel.scrollTop;
 
         // Linke Seite: Verkaufbare Items - EINZELN anzeigen (expanded)
         const expandedSellableItems = [];
@@ -750,6 +758,14 @@ const UI = {
             ? expandedSellableItems[selectedIndex]?.inventoryIndex 
             : null;
         this.renderShopActionArea(merchantId, selectedType, selectedIndex, initialInventoryIndex, expandedSellableItems);
+
+        // Scroll-Position wiederherstellen (requestAnimationFrame für smooth update)
+        requestAnimationFrame(() => {
+            const leftPanel = document.querySelector('.shop-left-panel .shop-item-list');
+            const rightPanel = document.querySelector('.shop-right-panel .shop-item-list');
+            if (leftPanel && leftPanelScrollPos > 0) leftPanel.scrollTop = leftPanelScrollPos;
+            if (rightPanel && rightPanelScrollPos > 0) rightPanel.scrollTop = rightPanelScrollPos;
+        });
 
         // Event Listeners für Item-Auswahl
         document.querySelectorAll('.shop-item-card').forEach(card => {
@@ -1602,20 +1618,30 @@ const UI = {
             }
         });
         
+        // Filtere Items: zeige nur verfügbare (nicht bereits ausgewählte)
+        const availableItems = [];
+        
+        ritualItems.forEach(item => {
+            const itemId = item.id;
+            const totalQuantity = item.quantity || 1;
+            const usedCount = selectedItemCounts[itemId] || 0;
+            const availableCount = totalQuantity - usedCount;
+            
+            // Füge jedes verfügbare Item einzeln hinzu
+            for (let i = 0; i < availableCount; i++) {
+                availableItems.push(item);
+            }
+        });
+        
         // Modal HTML
         const modalHTML = `
             <div class="ritual-modal-overlay" id="ritual-modal">
                 <div class="ritual-modal-content">
                     <h3>Wähle ein Ritual-Item</h3>
                     <div class="ritual-modal-item-list">
-                        ${expandedItems.length === 0 ? '<p class="no-items">Keine Ritual-Items im Inventar</p>' : ''}
-                        ${expandedItems.map((item, index) => {
+                        ${availableItems.length === 0 ? '<p class="no-items">Keine Ritual-Items verfügbar</p>' : ''}
+                        ${availableItems.map((item) => {
                             const itemDef = Game.items[item.id];
-                            const usedCount = selectedItemCounts[item.id] || 0;
-                            const availableIndex = index - usedCount;
-                            
-                            // Verstecke Item wenn bereits ausgewählt
-                            if (availableIndex < 0) return '';
                             
                             return `
                                 <div class="ritual-modal-item" data-item-id="${item.id}">

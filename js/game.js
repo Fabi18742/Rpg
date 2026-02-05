@@ -1303,20 +1303,7 @@ const Game = {
         const powerScore = itemDetails.reduce((sum, item) => sum + item.value, 0);
         console.log(`[RITUAL] Power-Score: ${powerScore}`);
         
-        // 2. Tier bestimmen
-        let tier;
-        if (powerScore >= 6 && powerScore <= 25) {
-            tier = 1;
-        } else if (powerScore >= 26 && powerScore <= 45) {
-            tier = 2;
-        } else if (powerScore >= 46 && powerScore <= 60) {
-            tier = 3;
-        } else {
-            tier = 1; // Fallback
-        }
-        console.log(`[RITUAL] Tier: ${tier}`);
-        
-        // 3. Modifier-Wahrscheinlichkeit berechnen
+        // 2. Modifier-Wahrscheinlichkeit berechnen
         const modifierCounts = {};
         itemDetails.forEach(item => {
             const type = item.modifierType;
@@ -1325,60 +1312,91 @@ const Game = {
         
         console.log('[RITUAL] Modifier-Counts:', modifierCounts);
         
-        // 4. Waffe aus Pool wählen (basierend auf ritualValue)
-        const weaponPool = Object.values(this.weaponBases).filter(weapon => {
+        // 3. Waffen-Pool erstellen: Alle Waffen im Bereich powerScore ±5
+        const minValue = powerScore - 5;
+        const maxValue = powerScore + 5;
+        
+        let weaponPool = Object.values(this.weaponBases).filter(weapon => {
             if (!weapon.ritualValue) return false;
-            
-            if (tier === 1) return weapon.ritualValue >= 6 && weapon.ritualValue <= 25;
-            if (tier === 2) return weapon.ritualValue >= 26 && weapon.ritualValue <= 45;
-            if (tier === 3) return weapon.ritualValue >= 46 && weapon.ritualValue <= 60;
-            return false;
+            return weapon.ritualValue >= minValue && weapon.ritualValue <= maxValue;
         });
         
+        console.log(`[RITUAL] Waffen-Pool (${minValue}-${maxValue}): ${weaponPool.length} Waffen`);
+        
+        // Fallback: Wenn keine Waffe im ±5 Bereich, nimm die nächstgelegene
         if (weaponPool.length === 0) {
-            console.log('[RITUAL] Kein Waffenpool für Tier', tier);
-            return false;
+            console.log('[RITUAL] Kein Waffenpool im ±5 Bereich, suche nächstgelegene Waffe');
+            
+            const allWeapons = Object.values(this.weaponBases).filter(weapon => weapon.ritualValue);
+            
+            if (allWeapons.length === 0) {
+                console.log('[RITUAL] Keine Waffen mit ritualValue gefunden');
+                return false;
+            }
+            
+            // Sortiere nach Distanz zum powerScore
+            allWeapons.sort((a, b) => {
+                const distA = Math.abs(a.ritualValue - powerScore);
+                const distB = Math.abs(b.ritualValue - powerScore);
+                return distA - distB;
+            });
+            
+            // Nimm die nächstgelegene
+            weaponPool = [allWeapons[0]];
+            console.log(`[RITUAL] Nächstgelegene Waffe: ${weaponPool[0].name} (ritualValue: ${weaponPool[0].ritualValue}, Distanz: ${Math.abs(weaponPool[0].ritualValue - powerScore)})`);
         }
         
-        // Waffe mit nächstem ritualValue zum powerScore wählen
-        weaponPool.sort((a, b) => {
-            const distA = Math.abs(a.ritualValue - powerScore);
-            const distB = Math.abs(b.ritualValue - powerScore);
-            return distA - distB;
-        });
+        // Zufällig eine Waffe aus dem Pool wählen
+        const randomIndex = Math.floor(Math.random() * weaponPool.length);
+        const selectedWeapon = weaponPool[randomIndex];
         
-        const selectedWeapon = weaponPool[0];
         console.log(`[RITUAL] Gewählte Waffe: ${selectedWeapon.name} (ritualValue: ${selectedWeapon.ritualValue})`);
         
         // 5. Effekt würfeln basierend auf Modifier-Wahrscheinlichkeit
-        const effects = [];
+        // Gewichtete Zufallsauswahl - maximal EIN Effekt
+        let selectedEffect = null;
         
-        // Für jeden Modifier-Typ würfeln
+        // Erstelle gewichteten Pool (ALLE Items, auch 'none')
+        const weightedPool = [];
         for (const [modifierType, count] of Object.entries(modifierCounts)) {
-            if (modifierType === 'none') continue; // None gibt keine Effekte
-            
-            const probability = count / 6;
-            const roll = Math.random();
-            
-            console.log(`[RITUAL] ${modifierType}: ${count}/6 = ${(probability * 100).toFixed(1)}% Chance, Roll: ${(roll * 100).toFixed(1)}%`);
-            
-            if (roll < probability) {
-                // Effekt wird angewendet
-                if (this.effects[modifierType]) {
-                    effects.push(modifierType);
-                    console.log(`[RITUAL] ✓ Effekt ${modifierType} angewendet!`);
-                } else {
-                    console.log(`[RITUAL] ✗ Effekt ${modifierType} nicht gefunden`);
-                }
-            } else {
-                console.log(`[RITUAL] ✗ Effekt ${modifierType} nicht gewürfelt`);
+            // Jedes Item = ein Eintrag im Pool (auch 'none')
+            for (let i = 0; i < count; i++) {
+                weightedPool.push(modifierType);
             }
+            
+            const percentage = (count / 6 * 100).toFixed(1);
+            console.log(`[RITUAL] ${modifierType}: ${count}/6 = ${percentage}% Chance`);
+        }
+        
+        console.log(`[RITUAL] Pool-Größe: ${weightedPool.length} Items`);
+        
+        // Zufällig einen Modifier aus Pool wählen
+        if (weightedPool.length > 0) {
+            const randomEffectIndex = Math.floor(Math.random() * weightedPool.length);
+            const chosenModifier = weightedPool[randomEffectIndex];
+            
+            console.log(`[RITUAL] Gezogen: ${chosenModifier}`);
+            
+            // None = kein Effekt
+            if (chosenModifier === 'none') {
+                console.log(`[RITUAL] 'none' gezogen - kein Effekt`);
+            } else {
+                // Prüfe ob der Effekt existiert
+                if (this.effects[chosenModifier]) {
+                    selectedEffect = chosenModifier;
+                    console.log(`[RITUAL] ✓ Effekt ${chosenModifier} angewendet`);
+                } else {
+                    console.log(`[RITUAL] ✗ Effekt ${chosenModifier} nicht gefunden`);
+                }
+            }
+        } else {
+            console.log(`[RITUAL] Leerer Pool - kein Effekt`);
         }
         
         // 6. Waffe hinzufügen
         const weaponInstance = {
             baseId: selectedWeapon.id,
-            effects: effects
+            effects: selectedEffect ? [selectedEffect] : []
         };
         
         this.addWeapon(weaponInstance);
@@ -1387,7 +1405,8 @@ const Game = {
         this.state.currentRitual = null;
         this.save();
         
-        console.log(`[RITUAL] Ritual abgeschlossen! Waffe: ${selectedWeapon.name}, Effekte: ${effects.length}`);
+        const effectCount = selectedEffect ? 1 : 0;
+        console.log(`[RITUAL] Ritual abgeschlossen! Waffe: ${selectedWeapon.name}, Effekte: ${effectCount} (${selectedEffect || 'keiner'})`);
         
         // UI zurück zum Hideout mit Erfolgsmeldung
         UI.showHideout();
