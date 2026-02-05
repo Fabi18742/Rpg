@@ -38,13 +38,14 @@ const UI = {
         `;
 
         this.elements.buttonGrid.innerHTML = `
-            <button class="game-button" id="btn-stats">Stats</button>
-            <button class="game-button" id="btn-weapons">Ausrüstung</button>
-            <button class="game-button" id="btn-inventory">Inventar</button>
-            <button class="game-button" id="btn-shop">Shop</button>
-            <button class="game-button" id="btn-ritual">Das Ritual</button>
-            <button class="game-button" id="btn-boss">Boss-Kämpfe</button>
+            <button class="game-button hideout-button" id="btn-weapons">Ausrüstung</button>
+            <button class="game-button hideout-button" id="btn-shop">Shop</button>
+            <button class="game-button hideout-button" id="btn-stats">Stats</button>
+            <button class="game-button hideout-button" id="btn-inventory">Inventar</button>
+            <button class="game-button hideout-button" id="btn-ritual">Das Ritual</button>
+            <button class="game-button hideout-button" id="btn-boss">Boss-Kämpfe</button>
         `;
+        this.elements.buttonGrid.classList.add('hideout-grid');
 
         // Event Listeners neu setzen
         this.setupHideoutListeners();

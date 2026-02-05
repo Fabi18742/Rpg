@@ -279,7 +279,7 @@ img, svg {
 
 /* Obere 2/3: Visual Area */
 .visual-area {
-    flex: 2;
+    flex: 3;
     background-color: var(--visual-bg);
     display: flex;
     justify-content: center;
@@ -358,12 +358,12 @@ img, svg {
 
 /* Untere 1/3: Action Area */
 .action-area {
-    flex: 1;
+    flex: 0.8;
     background-color: var(--action-bg);
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 20px;
+    padding: 15px 20px;
     box-shadow: inset 0 8px 20px rgba(0, 0, 0, 0.5);
     position: relative;
 }
@@ -397,12 +397,29 @@ img, svg {
     z-index: 1;
 }
 
+/* Hideout-spezifisches 2x3 Grid */
+.button-grid.hideout-grid {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 15px;
+    width: 100%;
+    max-width: 100%;
+    height: 100%;
+}
+
+.hideout-button {
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .game-button {
     background-color: var(--button-bg);
     color: var(--text-color);
     border: 3px solid var(--border-color);
-    padding: 25px 20px;
-    font-size: 18px;
+    padding: 18px 20px;
+    font-size: 16px;
     font-family: 'Courier New', monospace;
     font-weight: bold;
     cursor: pointer;
