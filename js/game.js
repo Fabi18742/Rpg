@@ -919,14 +919,19 @@ const Game = {
     },
 
     // Item verkaufen
-    sellItem(itemId) {
-        const itemInInventory = this.state.player.inventory.find(i => i.id === itemId);
-        if (!itemInInventory) {
+    sellItem(inventoryIndex, quantity = 1) {
+        const item = this.state.player.inventory[inventoryIndex];
+        if (!item) {
             console.log('Item nicht im Inventar gefunden');
             return false;
         }
 
-        const itemDef = this.items[itemId];
+        const itemDef = this.items[item.id];
+        if (!itemDef) {
+            console.log('Item-Definition nicht gefunden');
+            return false;
+        }
+
         const glitzerValue = itemDef.glitzerValue || 0;
 
         if (glitzerValue === 0) {
@@ -934,14 +939,21 @@ const Game = {
             return false;
         }
 
-        // 1 Item entfernen
-        this.removeItemFromInventory(itemId, 1);
+        const availableQuantity = item.quantity || 1;
+        if (quantity > availableQuantity) {
+            console.log('Nicht genug Items zum Verkaufen');
+            return false;
+        }
+
+        // Items entfernen
+        this.removeItemFromInventory(item.id, quantity);
 
         // Glitzer hinzufügen
-        this.state.player.stats.glitzer += glitzerValue;
+        const totalValue = glitzerValue * quantity;
+        this.state.player.stats.glitzer += totalValue;
 
         this.save();
-        console.log(`${itemDef.name} für ${glitzerValue} Glitzer verkauft`);
+        console.log(`${quantity}x ${itemDef.name} für ${totalValue} Glitzer verkauft`);
         return true;
     },
 

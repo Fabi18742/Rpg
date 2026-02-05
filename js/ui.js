@@ -45,7 +45,8 @@ const UI = {
             <button class="game-button hideout-button" id="btn-ritual">Das Ritual</button>
             <button class="game-button hideout-button" id="btn-boss">Boss-Kämpfe</button>
         `;
-        this.elements.buttonGrid.classList.add('hideout-grid');
+        // Grid-Klasse zurücksetzen: shop-grid entfernen und hideout-grid setzen
+        this.elements.buttonGrid.className = 'button-grid hideout-grid';
 
         // Event Listeners neu setzen
         this.setupHideoutListeners();
@@ -604,6 +605,7 @@ const UI = {
         this.elements.buttonGrid.innerHTML = `
             <button class="game-button" id="btn-back">Zurück</button>
         `;
+        this.elements.buttonGrid.className = 'button-grid';
 
         document.getElementById('btn-back').addEventListener('click', () => {
             this.showHideout();
@@ -639,6 +641,7 @@ const UI = {
         this.elements.buttonGrid.innerHTML = `
             <button class="game-button" id="btn-back">Zurück</button>
         `;
+        this.elements.buttonGrid.className = 'button-grid';
 
         document.getElementById('btn-back').addEventListener('click', () => {
             Game.showScreen('hideout');
@@ -654,77 +657,312 @@ const UI = {
     },
 
     // Händler-Angebote anzeigen
-    showMerchantOffers(merchantId) {
+    showMerchantOffers(merchantId, preserveSelection = null) {
         const merchant = Game.merchants[merchantId];
         if (!merchant) return;
 
-        // Glitzer aus Stats holen
-        const glitzerCount = Game.state.player.stats.glitzer;
+        const player = Game.state.player;
+        const glitzerCount = player.stats.glitzer;
+
+        // Linke Seite: Verkaufbare Items - EINZELN anzeigen (expanded)
+        const expandedSellableItems = [];
+        player.inventory.forEach((item, inventoryIndex) => {
+            const itemDef = Game.items[item.id];
+            if (!itemDef) return;
+            
+            const quantity = item.quantity || 1;
+            for (let i = 0; i < quantity; i++) {
+                expandedSellableItems.push({
+                    item: item,
+                    itemDef: itemDef,
+                    inventoryIndex: inventoryIndex,
+                    displayIndex: expandedSellableItems.length
+                });
+            }
+        });
+
+        // State für ausgewähltes Item
+        let selectedType = preserveSelection ? preserveSelection.type : 'buy'; // Standardmäßig 'buy'
+        let selectedIndex = preserveSelection ? preserveSelection.index : 0;
+        
+        // Wenn kein Inventar vorhanden und sell ausgewählt ist, auf buy wechseln
+        if (expandedSellableItems.length === 0 && selectedType === 'sell') {
+            selectedType = 'buy';
+            selectedIndex = 0;
+        }
+        
+        let sellInventoryHTML = '';
+        if (expandedSellableItems.length === 0) {
+            sellInventoryHTML = '<div class="no-items">Keine Items zum Verkaufen</div>';
+        } else {
+            sellInventoryHTML = '<div class="shop-item-list">';
+            expandedSellableItems.forEach(({item, itemDef, inventoryIndex, displayIndex}) => {
+                const sellValue = itemDef.glitzerValue || 0;
+                const isSelected = selectedType === 'sell' && selectedIndex === displayIndex;
+                
+                sellInventoryHTML += `
+                    <div class="shop-item-card ${isSelected ? 'selected' : ''}" data-type="sell" data-index="${displayIndex}" data-inventory-index="${inventoryIndex}">
+                        <div class="item-icon-placeholder"></div>
+                        <div class="shop-item-info">
+                            <div class="item-name">${itemDef.name}</div>
+                            <div class="item-value">${sellValue} G</div>
+                        </div>
+                    </div>
+                `;
+            });
+            sellInventoryHTML += '</div>';
+        }
+
+        // Rechte Seite: Kaufbare Items
+        let buyOffersHTML = '<div class="shop-item-list">';
+        merchant.offers.forEach((offer, index) => {
+            const item = Game.items[offer.itemId];
+            const isSelected = selectedType === 'buy' && selectedIndex === index;
+            
+            buyOffersHTML += `
+                <div class="shop-item-card ${isSelected ? 'selected' : ''}" data-type="buy" data-index="${index}">
+                    <div class="item-icon-placeholder"></div>
+                    <div class="shop-item-info">
+                        <div class="item-name">${item.name}</div>
+                        <div class="item-value">${offer.price} G</div>
+                    </div>
+                </div>
+            `;
+        });
+        buyOffersHTML += '</div>';
 
         this.elements.sceneContent.innerHTML = `
-            <div class="shop-container">
-                <h2>${merchant.name}</h2>
-                <p class="merchant-description">${merchant.description}</p>
-                <div class="glitzer-display">Glitzer: ${glitzerCount}</div>
-                <div class="offers-list">
-                    ${merchant.offers.map((offer, index) => {
-                        const item = Game.items[offer.itemId];
-                        const canAfford = glitzerCount >= offer.price;
-                        return `
-                            <div class="offer-card" data-merchant-id="${merchantId}" data-offer-index="${index}" data-price="${offer.price}" data-glitzer="${glitzerCount}">
-                                <div class="offer-header">
-                                    <span class="item-name">${item.name}</span>
-                                    <span class="item-price-dynamic">${offer.price} Glitzer (1 Stück)</span>
-                                </div>
-                                <div class="item-description">${item.description}</div>
-                                <div class="buy-controls">
-                                    <button class="quantity-btn minus">-</button>
-                                    <span class="quantity-display">1</span>
-                                    <button class="quantity-btn plus">+</button>
-                                    <button class="buy-btn ${!canAfford ? 'disabled' : ''}" ${!canAfford ? 'disabled' : ''}>Kaufen</button>
-                                </div>
-                            </div>
-                        `;
-                    }).join('')}
+            <div class="shop-split-container">
+                <div class="shop-left-panel">
+                    <h3>Verkaufen</h3>
+                    <div class="glitzer-display">Dein Glitzer: ${glitzerCount}</div>
+                    ${sellInventoryHTML}
+                </div>
+                <div class="shop-right-panel">
+                    <h3>${merchant.name} - Shop</h3>
+                    ${buyOffersHTML}
                 </div>
             </div>
         `;
 
+        // Initiale Auswahl rendern
+        const initialInventoryIndex = selectedType === 'sell' && expandedSellableItems.length > 0 
+            ? expandedSellableItems[selectedIndex]?.inventoryIndex 
+            : null;
+        this.renderShopActionArea(merchantId, selectedType, selectedIndex, initialInventoryIndex, expandedSellableItems);
+
+        // Event Listeners für Item-Auswahl
+        document.querySelectorAll('.shop-item-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const type = card.dataset.type;
+                const index = parseInt(card.dataset.index);
+                const inventoryIndex = card.dataset.inventoryIndex ? parseInt(card.dataset.inventoryIndex) : null;
+                
+                // Auswahl aktualisieren - nur das geklickte Item markieren
+                document.querySelectorAll('.shop-item-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                
+                // Action-Area aktualisieren
+                selectedType = type;
+                selectedIndex = index;
+                this.renderShopActionArea(merchantId, type, index, inventoryIndex, expandedSellableItems);
+            });
+        });
+    },
+
+    updateShopItemSelection(inventoryIndex, quantity, startDisplayIndex) {
+        // Alle Sell-Items mit diesem inventoryIndex
+        const items = document.querySelectorAll(`.shop-item-card[data-type="sell"][data-inventory-index="${inventoryIndex}"]`);
+        
+        // Alle zuerst demarkieren
+        items.forEach(item => item.classList.remove('selected'));
+        
+        // Finde den Start-Index innerhalb der gefilterten Items
+        let startIdx = 0;
+        items.forEach((item, idx) => {
+            const displayIdx = parseInt(item.dataset.index);
+            if (displayIdx === startDisplayIndex) {
+                startIdx = idx;
+            }
+        });
+        
+        // Berechne wie viele Items nach unten verfügbar sind
+        const itemsBelow = items.length - startIdx;
+        
+        if (quantity <= itemsBelow) {
+            // Genug Platz nach unten: markiere ab startIdx
+            for (let i = startIdx; i < startIdx + quantity; i++) {
+                items[i].classList.add('selected');
+            }
+        } else {
+            // Nicht genug Platz nach unten: fülle nach oben auf
+            const itemsNeededAbove = quantity - itemsBelow;
+            const startAbove = Math.max(0, startIdx - itemsNeededAbove);
+            
+            // Markiere von startAbove bis Ende
+            for (let i = startAbove; i < startAbove + quantity; i++) {
+                if (i < items.length) {
+                    items[i].classList.add('selected');
+                }
+            }
+        }
+    },
+
+    renderShopActionArea(merchantId, type, index, inventoryIndex = null, expandedSellableItems = null) {
+        const merchant = Game.merchants[merchantId];
+        const player = Game.state.player;
+        const glitzerCount = player.stats.glitzer;
+
+        let itemHTML = '';
+        let actionType = '';
+        
+        if (type === 'sell') {
+            // actualInventoryIndex nutzen falls vorhanden, sonst aus expandedSellableItems holen
+            const actualInventoryIndex = inventoryIndex !== null ? inventoryIndex : 
+                (expandedSellableItems && expandedSellableItems[index] ? expandedSellableItems[index].inventoryIndex : index);
+            
+            const item = player.inventory[actualInventoryIndex];
+            if (!item) {
+                this.elements.buttonGrid.innerHTML = `<button class="game-button" id="btn-back-shop">Zurück</button>`;
+                return;
+            }
+            
+            const itemDef = Game.items[item.id];
+            if (!itemDef) {
+                this.elements.buttonGrid.innerHTML = `<button class="game-button" id="btn-back-shop">Zurück</button>`;
+                return;
+            }
+            
+            const sellValue = itemDef.glitzerValue || 0;
+            const maxQuantity = item.quantity || 1;
+            
+            itemHTML = `
+                <div class="shop-action-details">
+                    <div class="shop-action-item">
+                        <div class="item-icon-placeholder-large"></div>
+                        <div class="shop-action-info">
+                            <div class="shop-action-name">${itemDef.name}</div>
+                            <div class="shop-action-description">${itemDef.description}</div>
+                        </div>
+                    </div>
+                    <div class="shop-action-controls">
+                        <div class="shop-action-price" id="shop-total-price">${sellValue} G</div>
+                        <div class="shop-quantity-controls">
+                            <button class="quantity-btn" id="shop-minus">-</button>
+                            <span class="quantity-display" id="shop-quantity">1</span>
+                            <button class="quantity-btn" id="shop-plus">+</button>
+                        </div>
+                        <button class="shop-action-btn sell-btn" id="shop-action-btn">Verkaufen</button>
+                    </div>
+                </div>
+            `;
+            actionType = 'sell';
+            
+        } else if (type === 'buy') {
+            const offer = merchant.offers[index];
+            if (!offer) {
+                this.elements.buttonGrid.innerHTML = `<button class="game-button" id="btn-back-shop">Zurück</button>`;
+                return;
+            }
+            
+            const item = Game.items[offer.itemId];
+            const canAfford = glitzerCount >= offer.price;
+            
+            itemHTML = `
+                <div class="shop-action-details">
+                    <div class="shop-action-item">
+                        <div class="item-icon-placeholder-large"></div>
+                        <div class="shop-action-info">
+                            <div class="shop-action-name">${item.name}</div>
+                            <div class="shop-action-description">${item.description}</div>
+                        </div>
+                    </div>
+                    <div class="shop-action-controls">
+                        <div class="shop-action-price" id="shop-total-price">${offer.price} G</div>
+                        <div class="shop-quantity-controls">
+                            <button class="quantity-btn" id="shop-minus">-</button>
+                            <span class="quantity-display" id="shop-quantity">1</span>
+                            <button class="quantity-btn" id="shop-plus">+</button>
+                        </div>
+                        <button class="shop-action-btn buy-btn ${!canAfford ? 'disabled' : ''}" id="shop-action-btn" ${!canAfford ? 'disabled' : ''}>Kaufen</button>
+                    </div>
+                </div>
+            `;
+            actionType = 'buy';
+        }
+
+        this.elements.buttonGrid.className = 'button-grid shop-grid';
         this.elements.buttonGrid.innerHTML = `
-            <button class="game-button" id="btn-back-shop">Zurück</button>
-            <button class="game-button" id="btn-sell-inventory">Inventar (Verkaufen)</button>
+            <button class="game-button shop-back-btn" id="btn-back-shop">Zurück</button>
+            ${itemHTML}
         `;
 
+        // Event Listener für Zurück
         document.getElementById('btn-back-shop').addEventListener('click', () => {
             this.showShop();
         });
 
-        document.getElementById('btn-sell-inventory').addEventListener('click', () => {
-            this.showSellInventory(merchantId);
-        });
-
         // Quantity Controls
-        document.querySelectorAll('.offer-card').forEach(card => {
-            let quantity = 1;
-            const quantityDisplay = card.querySelector('.quantity-display');
-            const minusBtn = card.querySelector('.minus');
-            const plusBtn = card.querySelector('.plus');
-            const buyBtn = card.querySelector('.buy-btn');
-            const priceDisplay = card.querySelector('.item-price-dynamic');
-            const unitPrice = parseInt(card.dataset.price);
-            const availableGlitzer = parseInt(card.dataset.glitzer);
+        let quantity = 1;
+        const quantityDisplay = document.getElementById('shop-quantity');
+        const priceDisplay = document.getElementById('shop-total-price');
+        const minusBtn = document.getElementById('shop-minus');
+        const plusBtn = document.getElementById('shop-plus');
+        const actionBtn = document.getElementById('shop-action-btn');
 
-            const updatePrice = () => {
-                const totalPrice = unitPrice * quantity;
-                priceDisplay.textContent = `${totalPrice} Glitzer (${quantity} Stück)`;
+        if (type === 'sell') {
+            // actualInventoryIndex erneut berechnen für die Event Handlers
+            const actualInventoryIndex = inventoryIndex !== null ? inventoryIndex : 
+                (expandedSellableItems && expandedSellableItems[index] ? expandedSellableItems[index].inventoryIndex : index);
+            
+            const item = player.inventory[actualInventoryIndex];
+            const itemDef = Game.items[item.id];
+            const sellValue = itemDef.glitzerValue || 0;
+            const maxQuantity = item.quantity || 1;
+
+            minusBtn.addEventListener('click', () => {
+                if (quantity > 1) {
+                    quantity--;
+                    quantityDisplay.textContent = quantity;
+                    priceDisplay.textContent = `${sellValue * quantity} G`;
+                    // Visuelle Markierung aktualisieren
+                    this.updateShopItemSelection(actualInventoryIndex, quantity, index);
+                }
+            });
+
+            plusBtn.addEventListener('click', () => {
+                if (quantity < maxQuantity) {
+                    quantity++;
+                    quantityDisplay.textContent = quantity;
+                    priceDisplay.textContent = `${sellValue * quantity} G`;
+                    // Visuelle Markierung aktualisieren
+                    this.updateShopItemSelection(actualInventoryIndex, quantity, index);
+                }
+            });
+
+            actionBtn.addEventListener('click', () => {
+                const actualInventoryIndex = inventoryIndex !== null ? inventoryIndex : 
+                    (expandedSellableItems && expandedSellableItems[index] ? expandedSellableItems[index].inventoryIndex : index);
+                const success = Game.sellItem(actualInventoryIndex, quantity);
+                if (success) {
+                    // Auswahl im Verkaufen-Bereich erhalten (oder zurück zu Index 0 falls nicht mehr vorhanden)
+                    this.showMerchantOffers(merchantId, {type: 'sell', index: Math.max(0, index - quantity)});
+                }
+            });
+
+        } else if (type === 'buy') {
+            const offer = merchant.offers[index];
+
+            const updateBuyButton = () => {
+                const totalPrice = offer.price * quantity;
+                priceDisplay.textContent = `${totalPrice} G`;
                 
-                // Kaufen-Button aktivieren/deaktivieren basierend auf Glitzer
-                if (availableGlitzer >= totalPrice) {
-                    buyBtn.disabled = false;
-                    buyBtn.classList.remove('disabled');
+                if (glitzerCount >= totalPrice) {
+                    actionBtn.disabled = false;
+                    actionBtn.classList.remove('disabled');
                 } else {
-                    buyBtn.disabled = true;
-                    buyBtn.classList.add('disabled');
+                    actionBtn.disabled = true;
+                    actionBtn.classList.add('disabled');
                 }
             };
 
@@ -732,7 +970,7 @@ const UI = {
                 if (quantity > 1) {
                     quantity--;
                     quantityDisplay.textContent = quantity;
-                    updatePrice();
+                    updateBuyButton();
                 }
             });
 
@@ -740,20 +978,27 @@ const UI = {
                 if (quantity < 99) {
                     quantity++;
                     quantityDisplay.textContent = quantity;
-                    updatePrice();
+                    updateBuyButton();
                 }
             });
 
-            buyBtn.addEventListener('click', () => {
-                const merchantId = card.dataset.merchantId;
-                const offerIndex = parseInt(card.dataset.offerIndex);
-                const success = Game.buyItem(merchantId, offerIndex, quantity);
+            actionBtn.addEventListener('click', () => {
+                if (actionBtn.disabled) return;
+                const success = Game.buyItem(merchantId, index, quantity);
                 if (success) {
-                    // Shop neu laden
-                    this.showMerchantOffers(merchantId);
+                    // Auswahl im Kaufen-Bereich erhalten
+                    this.showMerchantOffers(merchantId, {type: 'buy', index: index});
                 }
             });
-        });
+        }
+    },
+
+    updateBuyDisplay(merchantId, offerIndex, quantity) {
+        // Diese Funktion wird nicht mehr benötigt
+    },
+
+    showSellConfirmation(merchantId, inventoryIndex) {
+        // Diese Funktion wird nicht mehr benötigt
     },
 
     // Boss-Welten Screen anzeigen
