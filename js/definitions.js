@@ -14,8 +14,6 @@ const Definitions = {
         stats: {
             strength: 1,      // Stärke
             defense: 2,       // Verteidigung
-            magic: 0,         // Magie
-            speed: 0,         // Geschwindigkeit
             glitzer: 0        // Glitzer (Spielwährung)
         },
         startWeapon: 'dagger'  // Waffe mit der der Spieler startet
@@ -257,9 +255,7 @@ const Definitions = {
             actionPoints: 2,             // Aktionspunkte pro Zug
             stats: {
                 strength: 0,
-                defense: 0,
-                magic: 0,
-                speed: 0
+                defense: 0
             },
             weapon: {                     // Waffeninstanz (wie beim Spieler)
                 baseId: 'rubberSword',
@@ -275,9 +271,7 @@ const Definitions = {
             actionPoints: 1,             // Aktionspunkte pro Zug
             stats: {
                 strength: 0,
-                defense: 0,
-                magic: 0,
-                speed: 0
+                defense: 0
             },
             weapon: {                     // Waffeninstanz mit Effekt
                 baseId: 'rubberSword',

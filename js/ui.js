@@ -105,16 +105,8 @@ const UI = {
                         <span class="stat-value">${player.stats.defense}</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-label">Magie:</span>
-                        <span class="stat-value">${player.stats.magic}</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Geschwindigkeit:</span>
-                        <span class="stat-value">${player.stats.speed}</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Vitalität:</span>
-                        <span class="stat-value">${player.stats.vitality}</span>
+                        <span class="stat-label">Glitzer:</span>
+                        <span class="stat-value">${player.stats.glitzer}</span>
                     </div>
                 </div>
             </div>
@@ -162,14 +154,6 @@ const UI = {
                                 <span class="stat-value">${player.stats.defense}</span>
                             </div>
                             <div class="stat-item">
-                                <span class="stat-label">Magie:</span>
-                                <span class="stat-value">${player.stats.magic}</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-label">Geschwindigkeit:</span>
-                                <span class="stat-value">${player.stats.speed}</span>
-                            </div>
-                            <div class="stat-item">
                                 <span class="stat-label">Glitzer:</span>
                                 <span class="stat-value">${player.stats.glitzer}</span>
                             </div>
@@ -206,37 +190,25 @@ const UI = {
             <div class="stats-screen">
                 <h2>Charakterwerte</h2>
                 <div class="stats-display">
-                    <div class="stats-column">
-                        <div class="stat-row">
-                            <span class="stat-label">Level:</span>
-                            <span class="stat-value">${player.level}</span>
-                        </div>
-                        <div class="stat-row">
-                            <span class="stat-label">HP:</span>
-                            <span class="stat-value">${player.hp}/${player.maxHp}</span>
-                        </div>
-                        <div class="stat-row">
-                            <span class="stat-label">Stärke:</span>
-                            <span class="stat-value">${player.stats.strength}</span>
-                        </div>
-                        <div class="stat-row">
-                            <span class="stat-label">Verteidigung:</span>
-                            <span class="stat-value">${player.stats.defense}</span>
-                        </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Level:</span>
+                        <span class="stat-value">${player.level}</span>
                     </div>
-                    <div class="stats-column">
-                        <div class="stat-row">
-                            <span class="stat-label">Magie:</span>
-                            <span class="stat-value">${player.stats.magic}</span>
-                        </div>
-                        <div class="stat-row">
-                            <span class="stat-label">Geschwindigkeit:</span>
-                            <span class="stat-value">${player.stats.speed}</span>
-                        </div>
-                        <div class="stat-row">
-                            <span class="stat-label">Glitzer:</span>
-                            <span class="stat-value">${player.stats.glitzer}</span>
-                        </div>
+                    <div class="stat-row">
+                        <span class="stat-label">HP:</span>
+                        <span class="stat-value">${player.hp}/${player.maxHp}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Stärke:</span>
+                        <span class="stat-value">${player.stats.strength}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Verteidigung:</span>
+                        <span class="stat-value">${player.stats.defense}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Glitzer:</span>
+                        <span class="stat-value">${player.stats.glitzer}</span>
                     </div>
                 </div>
             </div>
@@ -616,6 +588,67 @@ const UI = {
             itemEl.addEventListener('click', () => {
                 const itemId = itemEl.dataset.itemId;
                 this.showItemDetailsPopup(itemId);
+            });
+        });
+    },
+
+    // Inventar während Crawl (gleich wie Hideout-Inventar, aber mit Zurück zu Crawl)
+    showInventoryCrawl() {
+        // Stats Panel schließen falls offen
+        this.statsVisible = false;
+        const existingPanel = this.elements.visualArea.querySelector('.stats-panel');
+        if (existingPanel) {
+            existingPanel.classList.remove('visible');
+        }
+        
+        const inventory = Game.state.player.inventory;
+        
+        let inventoryHTML = '';
+        if (inventory.length === 0) {
+            inventoryHTML = '<div class="no-items">Dein Inventar ist leer</div>';
+        } else {
+            // Jedes Item einzeln anzeigen (auch wenn quantity > 1)
+            const expandedInventory = [];
+            inventory.forEach(item => {
+                const quantity = item.quantity || 1;
+                for (let i = 0; i < quantity; i++) {
+                    expandedInventory.push(item);
+                }
+            });
+            
+            inventoryHTML = expandedInventory.map(item => {
+                return `
+                    <div class="inventory-item-horizontal" data-item-id="${item.id}">
+                        <div class="item-icon-placeholder"></div>
+                        <div class="item-name">${item.name}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        this.elements.sceneContent.innerHTML = `
+            <div class="inventory-screen">
+                <h2>Inventar</h2>
+                <div class="inventory-grid-container">
+                    ${inventoryHTML}
+                </div>
+            </div>
+        `;
+
+        this.elements.buttonGrid.innerHTML = `
+            <button class="game-button" id="btn-back">Zurück</button>
+        `;
+        this.elements.buttonGrid.className = 'button-grid';
+
+        document.getElementById('btn-back').addEventListener('click', () => {
+            this.showCrawlEventSelection();
+        });
+
+        // Click auf Items öffnet Details-Popup
+        document.querySelectorAll('.inventory-item-horizontal').forEach(itemEl => {
+            itemEl.addEventListener('click', () => {
+                const itemId = itemEl.dataset.itemId;
+                this.showItemDetailsPopupCrawl(itemId);
             });
         });
     },
@@ -1123,7 +1156,7 @@ const UI = {
 
         // Inventar-Button
         document.getElementById('btn-inventory-crawl').addEventListener('click', () => {
-            this.showInventoryUsable('crawl');
+            this.showInventoryCrawl();
         });
 
         // Event Listeners für Event-Karten
@@ -1533,7 +1566,6 @@ const UI = {
                                     <div class="ritual-slot filled" data-slot="${i}">
                                         <div class="item-icon-placeholder"></div>
                                         <div class="item-name">${itemDef.name}</div>
-                                        <button class="ritual-remove-btn" data-slot="${i}">✕</button>
                                     </div>
                                 `;
                             } else {
@@ -1570,22 +1602,8 @@ const UI = {
         // Slot click - öffnet Modal
         document.querySelectorAll('.ritual-slot').forEach(slot => {
             slot.addEventListener('click', (e) => {
-                // Verhindere dass Remove-Button den Slot öffnet
-                if (e.target.closest('.ritual-remove-btn')) return;
-                
                 const slotIndex = parseInt(slot.dataset.slot);
                 this.openRitualItemModal(slotIndex);
-            });
-        });
-        
-        // Item entfernen
-        document.querySelectorAll('.ritual-remove-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation(); // Verhindere Slot-Click
-                const slot = parseInt(btn.dataset.slot);
-                ritual.selectedItems[slot] = null;
-                Game.save();
-                this.showRitualSelection();
             });
         });
     },
@@ -1887,6 +1905,62 @@ const UI = {
                 Game.useItem(itemId);
                 closePopup();
                 this.showInventory();
+            });
+        }
+    },
+
+    // Item Details Popup während Crawl
+    showItemDetailsPopupCrawl(itemId) {
+        const item = Game.state.player.inventory.find(i => i.id === itemId);
+        if (!item) return;
+        
+        const itemDef = Game.items[item.id];
+        const isConsumable = itemDef && itemDef.type === 'consumable';
+        
+        // Erstelle Overlay
+        const overlayHTML = `
+            <div class="item-details-overlay" id="item-details-overlay">
+                <div class="item-details-popup">
+                    <div class="popup-header">
+                        <h3>${item.name}</h3>
+                        <button class="close-popup-btn" id="close-popup-btn">×</button>
+                    </div>
+                    <div class="popup-content">
+                        <div class="item-icon-large"></div>
+                        <div class="item-description">${item.description}</div>
+                        <div class="item-type">Typ: ${itemDef ? itemDef.type : 'Unbekannt'}</div>
+                    </div>
+                    <div class="popup-actions">
+                        ${isConsumable ? `<button class="popup-btn use-btn" id="use-item-btn">Verwenden</button>` : ''}
+                        <button class="popup-btn close-btn" id="close-btn">Schließen</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', overlayHTML);
+        
+        // Event Listeners
+        const overlay = document.getElementById('item-details-overlay');
+        const closePopupBtn = document.getElementById('close-popup-btn');
+        const closeBtn = document.getElementById('close-btn');
+        const useBtn = document.getElementById('use-item-btn');
+        
+        const closePopup = () => {
+            overlay.remove();
+        };
+        
+        closePopupBtn.addEventListener('click', closePopup);
+        closeBtn.addEventListener('click', closePopup);
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) closePopup();
+        });
+        
+        if (useBtn) {
+            useBtn.addEventListener('click', () => {
+                Game.useItem(itemId);
+                closePopup();
+                this.showInventoryCrawl();
             });
         }
     },

@@ -25,8 +25,6 @@ const Game = {
             stats: {
                 strength: Definitions.player.stats.strength,
                 defense: Definitions.player.stats.defense,
-                magic: Definitions.player.stats.magic,
-                speed: Definitions.player.stats.speed,
                 glitzer: Definitions.player.stats.glitzer
             },
             // Alle verfügbaren Waffen
