@@ -464,6 +464,12 @@ const Game = {
         } else {
             // Spieler-Zug beendet, Gegner ist dran
             battle.turn = 'enemy';
+            
+            // Reset attack counter für neue Gegner-Runde
+            if (battle.enemies && battle.enemies.length > 0) {
+                battle.enemiesAttackedThisRound = 0;
+            }
+            
             this.save();
             UI.updateBattleScreen();
 
@@ -512,15 +518,35 @@ const Game = {
             battle.currentEnemyIndex = 0;
         }
         
-        // Bei Gegner-Kämpfen: Überspringe besiegte Gegner
+        // Bei Gegner-Kämpfen: Suche zirkulär nach lebendem Gegner
         if (isEnemyBattle) {
-            while (battle.currentEnemyIndex < battle.enemies.length && 
-                   battle.enemies[battle.currentEnemyIndex].defeated) {
-                battle.currentEnemyIndex++;
+            // Initialisiere Attack-Counter
+            if (battle.enemiesAttackedThisRound === undefined) {
+                battle.enemiesAttackedThisRound = 0;
             }
             
-            // Prüfe ob alle Gegner besiegt sind
-            if (battle.currentEnemyIndex >= battle.enemies.length) {
+            let attempts = 0;
+            const totalEnemies = battle.enemies.length;
+            
+            // Zirkuläre Suche mit Wrap-Around
+            while (attempts < totalEnemies) {
+                // Wrap-around: Index auf 0 zurücksetzen wenn >= Länge
+                if (battle.currentEnemyIndex >= totalEnemies) {
+                    battle.currentEnemyIndex = 0;
+                }
+                
+                // Lebenden Gegner gefunden?
+                if (!battle.enemies[battle.currentEnemyIndex].defeated) {
+                    break; // Gefunden, verlasse Schleife
+                }
+                
+                // Dieser ist tot, weiter zum nächsten
+                battle.currentEnemyIndex++;
+                attempts++;
+            }
+            
+            // Wenn alle durchsucht und alle tot sind
+            if (attempts >= totalEnemies) {
                 this.endBattle(true);
                 return;
             }
@@ -629,25 +655,16 @@ const Game = {
                 return;
             }
 
-            // Zum nächsten Gegner wechseln
-            battle.currentEnemyIndex = (battle.currentEnemyIndex || 0) + 1;
+            // Inkrementiere Attack-Counter
+            battle.enemiesAttackedThisRound++;
+            const livingEnemies = battle.enemies.filter(e => !e.defeated).length;
             
-            // Überspringe besiegte Gegner
-            while (battle.currentEnemyIndex < battle.enemies.length && 
-                   battle.enemies[battle.currentEnemyIndex].defeated) {
-                battle.currentEnemyIndex++;
-            }
-            
-            // Wenn noch lebende Gegner übrig sind, nächsten angreifen lassen
-            if (battle.currentEnemyIndex < battle.enemies.length) {
-                battle.boss = battle.enemies[battle.currentEnemyIndex];
-                this.save();
-                UI.updateBattleScreen();
-                setTimeout(() => this.enemyAttack(), 1500);
-            } else {
-                // Alle lebenden Gegner haben angegriffen, Spieler ist dran
+            // Prüfe ob alle lebenden Gegner bereits angegriffen haben
+            if (battle.enemiesAttackedThisRound >= livingEnemies) {
+                // Alle haben angegriffen, Spieler ist dran
                 battle.turn = 'player';
                 battle.currentEnemyIndex = 0;
+                battle.enemiesAttackedThisRound = 0; // Reset für nächste Runde
                 
                 // Stelle battle.boss auf das ausgewählte Ziel zurück
                 // Prüfe ob aktuelles Target noch lebt, sonst finde nächsten lebenden Gegner
@@ -667,6 +684,47 @@ const Game = {
                 battle.playerActionPoints = this.state.player.maxActionPoints;
                 this.save();
                 UI.updateBattleScreen();
+            } else {
+                // Noch nicht alle haben angegriffen, zum nächsten wechseln
+                battle.currentEnemyIndex++;
+                
+                // Zirkuläre Suche nach nächstem lebenden Gegner
+                let attempts = 0;
+                const totalEnemies = battle.enemies.length;
+                let foundNext = false;
+                
+                while (attempts < totalEnemies) {
+                    // Wrap-around
+                    if (battle.currentEnemyIndex >= totalEnemies) {
+                        battle.currentEnemyIndex = 0;
+                    }
+                    
+                    // Lebenden Gegner gefunden?
+                    if (!battle.enemies[battle.currentEnemyIndex].defeated) {
+                        foundNext = true;
+                        break;
+                    }
+                    
+                    // Weiter suchen
+                    battle.currentEnemyIndex++;
+                    attempts++;
+                }
+                
+                // Sollte immer einen finden (weil enemiesAttackedThisRound < livingEnemies)
+                if (foundNext) {
+                    battle.boss = battle.enemies[battle.currentEnemyIndex];
+                    this.save();
+                    UI.updateBattleScreen();
+                    setTimeout(() => this.enemyAttack(), 1500);
+                } else {
+                    // Fehlerfall - sollte nicht passieren
+                    console.error("Konnte keinen lebenden Gegner finden obwohl noch nicht alle angegriffen haben!");
+                    battle.turn = 'player';
+                    battle.currentEnemyIndex = 0;
+                    battle.enemiesAttackedThisRound = 0;
+                    this.save();
+                    UI.updateBattleScreen();
+                }
             }
         } else {
             // Boss-Kampf: Original-Logik mit AP-System

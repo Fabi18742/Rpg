@@ -32,10 +32,11 @@ const UI = {
         if (statsWindow) statsWindow.remove();
         this.statsVisible = false;
         
-        // SVG Bild anzeigen
-        this.elements.sceneContent.innerHTML = `
-            <img src="assets/svg/example-hideout.svg" alt="Hideout Scene">
-        `;
+        // Hintergrundbild-Klasse hinzufügen
+        this.elements.visualArea.classList.add('hideout-bg');
+        
+        // Leerer Container für Hintergrundbild
+        this.elements.sceneContent.innerHTML = ``;
 
         this.elements.buttonGrid.innerHTML = `
             <button class="game-button hideout-button" id="btn-weapons">Ausrüstung</button>
@@ -184,6 +185,7 @@ const UI = {
 
     // Stats Screen anzeigen (Hideout)
     showStatsScreen() {
+        this.elements.visualArea.classList.remove('hideout-bg');
         const player = Game.state.player;
         
         this.elements.sceneContent.innerHTML = `
@@ -225,6 +227,7 @@ const UI = {
 
     // Waffen-Management anzeigen
     showWeaponManagement() {
+        this.elements.visualArea.classList.remove('hideout-bg');
         const player = Game.state.player;
         
         // ===== WAFFEN-SLOT =====
@@ -533,6 +536,7 @@ const UI = {
 
     // Inventar anzeigen
     showInventory() {
+        this.elements.visualArea.classList.remove('hideout-bg');
         // Stats Panel schließen falls offen
         this.statsVisible = false;
         const existingPanel = this.elements.visualArea.querySelector('.stats-panel');
@@ -577,7 +581,7 @@ const UI = {
         this.elements.buttonGrid.innerHTML = `
             <button class="game-button" id="btn-back">Zurück</button>
         `;
-        this.elements.buttonGrid.className = 'button-grid';
+        this.elements.buttonGrid.className = 'button-grid hideout-grid';
 
         document.getElementById('btn-back').addEventListener('click', () => {
             this.showHideout();
@@ -594,6 +598,7 @@ const UI = {
 
     // Inventar während Crawl (gleich wie Hideout-Inventar, aber mit Zurück zu Crawl)
     showInventoryCrawl() {
+        this.elements.visualArea.classList.remove('hideout-bg');
         // Stats Panel schließen falls offen
         this.statsVisible = false;
         const existingPanel = this.elements.visualArea.querySelector('.stats-panel');
@@ -655,6 +660,7 @@ const UI = {
 
     // Shop Screen anzeigen
     showShop() {
+        this.elements.visualArea.classList.remove('hideout-bg');
         const merchants = Game.merchants;
         
         this.elements.sceneContent.innerHTML = `
@@ -674,7 +680,7 @@ const UI = {
         this.elements.buttonGrid.innerHTML = `
             <button class="game-button" id="btn-back">Zurück</button>
         `;
-        this.elements.buttonGrid.className = 'button-grid';
+        this.elements.buttonGrid.className = 'button-grid hideout-grid';
 
         document.getElementById('btn-back').addEventListener('click', () => {
             Game.showScreen('hideout');
@@ -1052,6 +1058,7 @@ const UI = {
 
     // Boss-Welten Screen anzeigen
     showBossSelection() {
+        this.elements.visualArea.classList.remove('hideout-bg');
         // Stats Panel schließen
         this.statsVisible = false;
         const existingPanel = this.elements.visualArea.querySelector('.stats-panel');
@@ -1112,6 +1119,7 @@ const UI = {
         // Sicherheit und Chaoslevel in Console ausgeben
         console.log('Sicherheit:', crawl.security + '%', '| Chaoslevel:', crawl.chaosLevel);
 
+        this.elements.visualArea.classList.remove('hideout-bg');
         this.elements.sceneContent.innerHTML = `
             <div class="boss-bar">
                 <div class="boss-bar-label">Sicherheit</div>
@@ -1178,6 +1186,7 @@ const UI = {
 
     // Multiple Choice Event anzeigen
     showMultipleChoiceEvent() {
+        this.elements.visualArea.classList.remove('hideout-bg');
         const event = Game.state.currentEvent;
         if (!event) return;
 
@@ -1239,6 +1248,7 @@ const UI = {
 
     // Kampf-Screen anzeigen
     showBattleScreen() {
+        this.elements.visualArea.classList.remove('hideout-bg');
         this.updateBattleScreen();
     },
 
@@ -1551,6 +1561,7 @@ const UI = {
         
         const ritual = Game.state.currentRitual;
         
+        this.elements.visualArea.classList.remove('hideout-bg');
         this.elements.sceneContent.innerHTML = `
             <div class="ritual-container">
                 <h2>Das Ritual</h2>
