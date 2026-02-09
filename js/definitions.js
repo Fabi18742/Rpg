@@ -13,7 +13,7 @@ const Definitions = {
         maxActionPoints: 2,   // Maximale Aktionspunkte
         stats: {
             strength: 1,      // Stärke
-            defense: 2,       // Verteidigung
+            defense: 10,       // Verteidigung
             glitzer: 0        // Glitzer (Spielwährung)
         },
         startWeapon: 'dagger'  // Waffe mit der der Spieler startet
@@ -220,6 +220,16 @@ const Definitions = {
             attacks: 1,
             damageMultiplier: 1.5,       // 150% Schaden
             hitChance: 0.7               // 70% Trefferchance
+        },
+        rageAttack: {
+            id: 'rageAttack',
+            name: 'Wütende Schläge',
+            description: 'Sehr viele wütende Schläge',
+            damageType: 'physical',
+            apCost: 2,
+            attacks: 10,
+            damageMultiplier: 0.3,
+            hitChance: 1.0,
         }
     },
 
@@ -278,10 +288,29 @@ const Definitions = {
                 effects: ['testdamage'] // +3 Schaden Effekt
             },
             drops: ['testseed']          // Item-IDs die gedroppt werden
+        },
+        bibaBoss: {
+            id: 'bibaBoss',
+            name: 'BA! BA! BOSS!',
+            hp: 1,
+            maxHp: 1,
+            actionPoints: 1,             // Aktionspunkte pro Zug
+            stats: {
+                strength: 0,
+                defense: 5
+            },
+            weapon: {                     // Waffeninstanz mit Effekt
+                baseId: 'sword',
+                effects: ['poison'] // +3 Schaden Effekt
+            },
+            drops: [
+                { type: 'ability', id: 'rageAttack' }
+            ]
         }
     },
 
     // ===== BOSS-WELTEN =====
+    //Key muss mit ID übereinstimmen
     bossWorlds: {
         testwelt1: {
             id: 'testwelt1',
@@ -296,6 +325,13 @@ const Definitions = {
             description: 'Eine mysteriöse Testwelt',
             boss: 'testBoss2',                 // Welcher Boss in dieser Welt ist
             allowedEvents: ['choice_lorem', 'choice_lorem_diff2', 'choice_lorem_diff3']  // Nur Multiple Choice Events
+        },
+        bibaWelt: {
+            id: 'bibaWelt',
+            name: 'BiBa Welt',
+            description: 'Eine mysteriöse Biba Welt',
+            boss: 'bibaBoss',
+            allowedEvents: ['choice_lorem', 'choice_lorem2', 'choice_lorem3']  // Mindestens 3 Events für Auswahl
         }
     },
 
@@ -381,7 +417,7 @@ const Definitions = {
                 }
             ]
         },
-        choice_lorem: {
+        choice_lorem3: {
             id: 'choice_lorem3',
             name: 'Mysteriöse Begegnung',
             description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.\nSed do eiusmod tempor incididunt ut labore et dolore magna aliqua.\nUt enim ad minim veniam, quis nostrud exercitation ullamco.\nDuis aute irure dolor in reprehenderit in voluptate velit.',

@@ -510,8 +510,25 @@ const Game = {
 
         const battle = this.state.currentBattle;
         
+        console.log('[ENEMY ATTACK] Turn:', battle.turn);
+        
+        // Turn-Prüfung: Nur angreifen wenn enemy dran ist
+        if (battle.turn !== 'enemy') {
+            console.log('[ENEMY ATTACK] Abgebrochen - nicht enemy turn');
+            return;
+        }
+        
         // Bestimme ob es ein Gegner-Kampf oder Boss-Kampf ist
         const isEnemyBattle = battle.enemies && battle.enemies.length > 0;
+        
+        // Boss holen (gemeinsam für beide Kampfarten)
+        const boss = battle.boss;
+        
+        // Boss-Waffe auflösen (Instanz zu vollständiger Waffe)
+        const bossWeaponInstance = boss.weapon;
+        const bossWeapon = this.resolveWeapon(bossWeaponInstance);
+        const attackDamage = bossWeapon ? bossWeapon.damage : 0;
+        const attackName = bossWeapon ? bossWeapon.name : 'Angriff';
         
         // Bei Gegner-Kämpfen: Stelle sicher dass currentEnemyIndex initialisiert ist
         if (isEnemyBattle && (battle.currentEnemyIndex === undefined || battle.currentEnemyIndex === null)) {
@@ -554,8 +571,6 @@ const Game = {
             // Aktualisiere battle.boss auf den aktuell angreifenden Gegner
             battle.boss = battle.enemies[battle.currentEnemyIndex];
         }
-        
-        const boss = battle.boss;
 
         // Gift-Schaden VOR dem Angriff des aktuellen Gegners/Bosses
         if (boss.statusEffects && boss.statusEffects.length > 0) {
@@ -607,12 +622,6 @@ const Game = {
                 }
             }
         }
-
-        // Boss-Waffe auflösen (Instanz zu vollständiger Waffe)
-        const bossWeaponInstance = boss.weapon;
-        const bossWeapon = this.resolveWeapon(bossWeaponInstance);
-        const attackDamage = bossWeapon ? bossWeapon.damage : 0;
-        const attackName = bossWeapon ? bossWeapon.name : 'Angriff';
 
         // Bei normalen Gegnern: Immer 1 Angriff, keine AP-Verwaltung
         if (isEnemyBattle) {
@@ -727,70 +736,54 @@ const Game = {
                 }
             }
         } else {
-            // Boss-Kampf: Original-Logik mit AP-System
-            const actionCost = bossWeapon ? bossWeapon.actionCost : 1;
-
-            // Prüfe ob Boss noch Aktionspunkte hat
-            if (battle.bossActionPoints >= actionCost) {
-                // Boss greift an
-                battle.bossActionPoints -= actionCost;
-                
-                // Schaden berechnen
-                const bossBaseDamage = attackDamage;
-                const bossStrength = boss.stats.strength;
-                const playerDefense = this.state.player.stats.defense;
-                const blockBonus = battle.blockBonus || 0;
-                let damage = bossBaseDamage + bossStrength - playerDefense - blockBonus;
-                
-                // Damage-Teile für Log sammeln
-                let damageLog = [`${bossBaseDamage} Basis`];
-                if (bossStrength > 0) damageLog.push(`${bossStrength} Stärke`);
-                if (playerDefense > 0) damageLog.push(`-${playerDefense} Vert.`);
-                if (blockBonus > 0) damageLog.push(`-${blockBonus} Block`);
-                
-                // Effekte anwenden
-                if (bossWeapon && bossWeapon.effects && bossWeapon.effects.length > 0) {
-                    const effectResult = this.applyEffects(damage, bossWeapon.effects, boss, this.state.player, battle);
-                    damage = effectResult.damage;
-                    damageLog.push(...effectResult.logs);
-                }
-                
-                if (damage < 0) damage = 0;
-
-                this.state.player.hp -= damage;
-                if (this.state.player.hp < 0) this.state.player.hp = 0;
-
-                battle.log.push(`Boss: ${attackName} = ${damage} (${damageLog.join(' + ')})`);
-                
-                // Block-Bonus nach dem Angriff zurücksetzen
-                if (battle.blockBonus > 0) {
-                    battle.blockBonus = 0;
-                }
-
-                // Spieler besiegt?
-                if (this.state.player.hp <= 0) {
-                    battle.log.push('Du wurdest besiegt!');
-                    this.endBattle(false);
-                    return;
-                }
+            // Boss-Kampf: Einfacher Angriff ohne AP-System
+            console.log('[BOSS ATTACK] Boss greift an mit:', bossWeapon ? bossWeapon.name : 'Angriff');
+            
+            // Schaden berechnen
+            const bossBaseDamage = attackDamage;
+            const bossStrength = boss.stats.strength;
+            const playerDefense = this.state.player.stats.defense;
+            const blockBonus = battle.blockBonus || 0;
+            let damage = bossBaseDamage + bossStrength - playerDefense - blockBonus;
+            
+            // Damage-Teile für Log sammeln
+            let damageLog = [`${bossBaseDamage} Basis`];
+            if (bossStrength > 0) damageLog.push(`${bossStrength} Stärke`);
+            if (playerDefense > 0) damageLog.push(`-${playerDefense} Vert.`);
+            if (blockBonus > 0) damageLog.push(`-${blockBonus} Block`);
+            
+            // Effekte anwenden
+            if (bossWeapon && bossWeapon.effects && bossWeapon.effects.length > 0) {
+                const effectResult = this.applyEffects(damage, bossWeapon.effects, boss, this.state.player, battle);
+                damage = effectResult.damage;
+                damageLog.push(...effectResult.logs);
             }
             
-            // Prüfe ob Boss noch Aktionspunkte hat
-            if (battle.bossActionPoints > 0 && battle.bossActionPoints >= actionCost) {
-                // Boss kann noch einmal angreifen
-                this.save();
-                UI.updateBattleScreen();
-                setTimeout(() => this.enemyAttack(), 1500);
-            } else {
-                // Boss-Zug beendet, Spieler ist dran
-                console.log('Setze turn auf player');
-                battle.turn = 'player';
-                // Aktionspunkte regenerieren
-                battle.playerActionPoints = this.state.player.maxActionPoints;
-                battle.bossActionPoints = boss.actionPoints;
-                this.save();
-                UI.updateBattleScreen();
+            if (damage < 0) damage = 0;
+
+            this.state.player.hp -= damage;
+            if (this.state.player.hp < 0) this.state.player.hp = 0;
+
+            battle.log.push(`Boss: ${attackName} = ${damage} (${damageLog.join(' + ')})`);
+            
+            // Block-Bonus nach dem Angriff zurücksetzen
+            if (battle.blockBonus > 0) {
+                battle.blockBonus = 0;
             }
+
+            // Spieler besiegt?
+            if (this.state.player.hp <= 0) {
+                battle.log.push('Du wurdest besiegt!');
+                this.endBattle(false);
+                return;
+            }
+            
+            // Boss-Angriff beendet, Spieler ist dran
+            console.log('Boss-Angriff beendet, Spieler ist dran');
+            battle.turn = 'player';
+            battle.playerActionPoints = this.state.player.maxActionPoints;
+            this.save();
+            UI.updateBattleScreen();
         }
     },
 
@@ -811,18 +804,50 @@ const Game = {
             
             // Drops hinzufügen
             if (boss.drops && boss.drops.length > 0) {
-                boss.drops.forEach(dropId => {
-                    // Hole Item aus zentraler Definition
-                    const item = this.items[dropId];
-                    if (item) {
-                        this.addItemToInventory(item);
-                        battle.log.push(`${item.name} erhalten!`);
+                boss.drops.forEach(drop => {
+                    // Unterstütze altes Format (nur String) und neues Format (Object mit type)
+                    if (typeof drop === 'string') {
+                        // Altes Format: Nur Item-ID als String
+                        const item = this.items[drop];
+                        if (item) {
+                            this.addItemToInventory(item);
+                            battle.log.push(`${item.name} erhalten!`);
+                        }
+                    } else {
+                        // Neues Format: { type: 'item'/'weapon'/'ability', id: '...' }
+                        const dropType = drop.type;
+                        const dropId = drop.id;
+                        
+                        if (dropType === 'item') {
+                            const item = this.items[dropId];
+                            if (item) {
+                                this.addItemToInventory(item);
+                                battle.log.push(`${item.name} erhalten!`);
+                            }
+                        } else if (dropType === 'weapon') {
+                            const weapon = this.weapons[dropId];
+                            if (weapon) {
+                                // Waffe als Instanz zum Inventar hinzufügen
+                                this.state.player.weapons.push({
+                                    baseId: weapon.id,
+                                    effects: []
+                                });
+                                battle.log.push(`Waffe erhalten: ${weapon.name}!`);
+                            }
+                        } else if (dropType === 'ability') {
+                            const ability = this.abilities[dropId];
+                            if (ability && !this.state.player.abilities.includes(dropId)) {
+                                this.state.player.abilities.push(dropId);
+                                battle.log.push(`Fähigkeit erhalten: ${ability.name}!`);
+                            }
+                        }
                     }
                 });
             }
         } else {
-            // Bei Niederlage: HP auf 1 setzen
-            this.state.player.hp = 1;
+            // Bei Niederlage: HP vollständig auffüllen und zurück ins Hideout
+            this.state.player.hp = this.state.player.maxHp;
+            battle.log.push('Du wurdest besiegt! Zurück ins Hideout...');
         }
 
         this.save();
@@ -830,8 +855,8 @@ const Game = {
         // UI aktualisieren für Drop-Nachricht
         UI.updateBattleScreen();
 
-        // Bei Boss-Kampf: Crawl beenden und zurück zum Hideout
-        if (isBossBattle) {
+        // Bei Niederlage oder Boss-Kampf: Zurück zum Hideout
+        if (!victory || isBossBattle) {
             // Crawl-Zustand löschen
             if (this.state.currentCrawl) {
                 this.state.currentCrawl = null;
@@ -844,7 +869,7 @@ const Game = {
                 this.showScreen('hideout');
             }, 3000);
         } else {
-            // Bei Gegner-Kampf: Weiter im Crawl
+            // Bei Sieg im Gegner-Kampf: Weiter im Crawl
             setTimeout(() => {
                 this.state.currentBattle = null;
                 this.save();
@@ -1089,16 +1114,25 @@ const Game = {
             
             // allowedEvents prüfen (null = alle erlaubt)
             if (bossWorld.allowedEvents !== null && bossWorld.allowedEvents !== undefined) {
-                if (!bossWorld.allowedEvents.includes(event.id)) return false;
+                if (!bossWorld.allowedEvents.includes(event.id)) {
+                    console.log(`[EVENT] Blockiert: ${event.id} (nicht in allowedEvents)`);
+                    return false;
+                }
             }
             
             return true;
         });
         
-        console.log(`[EVENT] Chaos: ${crawl.chaosLevel}, Events: ${filteredEvents.length}`);
+        console.log(`[EVENT] Chaos: ${crawl.chaosLevel}, Gefilterte Events: ${filteredEvents.length}`, filteredEvents.map(e => e.id));
+        console.log(`[EVENT] Erlaubte Events:`, bossWorld.allowedEvents);
         
-        // Falls keine Events vorhanden, alle nehmen (Fallback)
-        const eventsToChooseFrom = filteredEvents.length > 0 ? filteredEvents : allEvents;
+        // Falls keine Events vorhanden, Fehler (KEIN Fallback mehr)
+        if (filteredEvents.length === 0) {
+            console.error('[EVENT] Keine passenden Events gefunden! Prüfe allowedEvents oder minChaos/maxChaos');
+            return [];
+        }
+        
+        const eventsToChooseFrom = filteredEvents;
         
         const shuffled = [...eventsToChooseFrom].sort(() => Math.random() - 0.5);
         const selected = shuffled.slice(0, 3);
