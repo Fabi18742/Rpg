@@ -292,8 +292,8 @@ const Definitions = {
         bibaBoss: {
             id: 'bibaBoss',
             name: 'BA! BA! BOSS!',
-            hp: 1,
-            maxHp: 1,
+            hp: 1000,
+            maxHp: 1000,
             actionPoints: 1,             // Aktionspunkte pro Zug
             stats: {
                 strength: 0,
