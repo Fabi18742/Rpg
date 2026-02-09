@@ -91,7 +91,7 @@
 
 .inventory-item-horizontal:hover {
     background: #000000;
-    border-color: var(--button-hover);
+    border-color: var(--border-color);
     transform: none;
     box-shadow: none;
 }
@@ -145,7 +145,7 @@
 
 .inventory-item-battle-horizontal:hover {
     background: #000000;
-    border-color: var(--button-hover);
+    border-color: var(--border-color);
     transform: none;
     box-shadow: none;
 }

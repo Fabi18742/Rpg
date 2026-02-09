@@ -25,9 +25,9 @@
 }
 
 .ability-button-card:hover:not(.disabled) {
-    background: var(--button-hover);
-    border-color: var(--accent-color);
-    transform: translateY(-2px);
+    background: var(--button-bg);
+    border-color: var(--border-color);
+    transform: none;
 }
 
 .ability-button-card.disabled {

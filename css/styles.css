@@ -1089,9 +1089,9 @@ img, svg {
 }
 
 .battle-enemy-card:hover {
-    transform: translateY(-5px);
-    border-color: var(--button-hover);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+    transform: none;
+    border-color: var(--border-color);
+    box-shadow: none;
 }
 
 .battle-enemy-card.selected {
@@ -1217,7 +1217,7 @@ img, svg {
 }
 
 .block-btn:hover:not(:disabled) {
-    background-color: #5a9c69;
+    background-color: #4a7c59;
 }
 
 .block-btn.disabled {
@@ -1574,8 +1574,8 @@ img, svg {
 }
 
 .choice-button:hover:not(:disabled) {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.5);
+    transform: none;
+    box-shadow: none;
 }
 
 .choice-button:disabled {
@@ -1583,9 +1583,9 @@ img, svg {
 }
 
 .choice-button.selected {
-    background-color: #22c55e;
-    border-color: #16a34a;
-    transform: scale(1.05);
+    background-color: #000000;
+    border-color: var(--border-color);
+    transform: none;
 }
 
 /* Responsive Anpassungen */
