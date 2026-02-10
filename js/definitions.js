@@ -1,519 +1,295 @@
-// ===== GAME DEFINITIONS =====
-// Zentrale Definitionen für Items, Fähigkeiten, Kreaturen und Bosse
-// Hier können einfach Balance-Anpassungen vorgenommen werden
-
 const Definitions = {
     // ===== SPIELER-STANDARD-WERTE =====
     player: {
         level: 1,
-        hp: 10,
-        maxHp: 10,
+        hp: 100,
+        maxHp: 100,
         gold: 0,
-        actionPoints: 2,      // Aktionspunkte pro Zug
-        maxActionPoints: 2,   // Maximale Aktionspunkte
+        actionPoints: 3,
+        maxActionPoints: 3,
         stats: {
-            strength: 1,      // Stärke
-            defense: 10,       // Verteidigung
-            glitzer: 0        // Glitzer (Spielwährung)
+            strength: 5,
+            defense: 0,
+            glitzer: 0
         },
-        startWeapon: 'dagger',  // Waffe mit der der Spieler startet
-        startAbilities: ['stich']      // Abilities mit denen der Spieler startet (z.B. ['rageAttack'])
+        startWeapon: 'dagger',
+        startAbilities: ['stich']
     },
 
     // ===== ITEMS =====
     items: {
-        testseed: {
-            id: 'testseed',
-            name: 'Testseed',
-            type: 'seed',
-            description: 'Ein mysteriöser Testsamen',
-            glitzerValue: 1
-        },
-        glitzer: {
-            id: 'glitzer',
-            name: 'Glitzer',
-            type: 'currency',
-            description: 'Funkelnder Glitzer, wertvoll und selten'
-        },
-        heiltrank: {
-            id: 'heiltrank',
-            name: 'Heiltrank',
-            type: 'consumable',
-            description: 'Heilt 5 HP',
-            healAmount: 5,
-            glitzerValue: 1
-        },
+        // Währungen & Konsum
+        glitzer: { id: 'glitzer', name: 'Glitzer', type: 'currency', description: 'Funkelnder Glitzer.' },
+        heiltrank: { id: 'heiltrank', name: 'Kleiner Heiltrank', type: 'consumable', description: 'Heilt 30 HP', healAmount: 30, glitzerValue: 5 },
+        heiltrank_gross: { id: 'heiltrank_gross', name: 'Großer Heiltrank', type: 'consumable', description: 'Heilt 80 HP', healAmount: 80, glitzerValue: 15 },
         
-        // ===== RITUAL-ITEMS =====
-        ritualItem_weak_none: {
-            id: 'ritualItem_weak_none',
-            name: 'Schwaches Ritual-Item (Neutral)',
-            type: 'ritual',
-            description: 'Ein schwaches Item ohne besonderen Effekt',
-            modifierType: 'none',
-            value: 1,
-            glitzerValue: 1
-        },
-        ritualItem_weak_testdamage: {
-            id: 'ritualItem_weak_testdamage',
-            name: 'Schwaches Ritual-Item (Schaden)',
-            type: 'ritual',
-            description: 'Ein schwaches Item mit Schadensaffinit\u00e4t',
-            modifierType: 'testdamage',
-            value: 1,
-            glitzerValue: 1
-        },
-        ritualItem_medium_none: {
-            id: 'ritualItem_medium_none',
-            name: 'Mittleres Ritual-Item (Neutral)',
-            type: 'ritual',
-            description: 'Ein mittleres Item ohne besonderen Effekt',
-            modifierType: 'none',
-            value: 5,
-            glitzerValue: 1
-        },
-        ritualItem_medium_testdamage: {
-            id: 'ritualItem_medium_testdamage',
-            name: 'Mittleres Ritual-Item (Schaden)',
-            type: 'ritual',
-            description: 'Ein mittleres Item mit Schadensaffinit\u00e4t',
-            modifierType: 'testdamage',
-            value: 5,
-            glitzerValue: 1
-        },
-        ritualItem_strong_none: {
-            id: 'ritualItem_strong_none',
-            name: 'Starkes Ritual-Item (Neutral)',
-            type: 'ritual',
-            description: 'Ein starkes Item ohne besonderen Effekt',
-            modifierType: 'none',
-            value: 10,
-            glitzerValue: 1
-        },
-        ritualItem_strong_testdamage: {
-            id: 'ritualItem_strong_testdamage',
-            name: 'Starkes Ritual-Item (Schaden)',
-            type: 'ritual',
-            description: 'Ein starkes Item mit Schadensaffinit\u00e4t',
-            modifierType: 'testdamage',
-            value: 10,
-            glitzerValue: 1        },
-        ritualItem_weak_poison: {
-            id: 'ritualItem_weak_poison',
-            name: 'Schwaches Ritual-Item (Gift)',
-            type: 'ritual',
-            description: 'Ein schwaches Item mit Giftaffinität',
-            modifierType: 'poison',
-            value: 1,
-            glitzerValue: 1
-        },
-        ritualItem_medium_poison: {
-            id: 'ritualItem_medium_poison',
-            name: 'Mittleres Ritual-Item (Gift)',
-            type: 'ritual',
-            description: 'Ein mittleres Item mit Giftaffinität',
-            modifierType: 'poison',
-            value: 5,
-            glitzerValue: 1
-        },
-        ritualItem_strong_poison: {
-            id: 'ritualItem_strong_poison',
-            name: 'Starkes Ritual-Item (Gift)',
-            type: 'ritual',
-            description: 'Ein starkes Item mit Giftaffinität',
-            modifierType: 'poison',
-            value: 10,
-            glitzerValue: 1        }
+        // ===== RITUAL-ITEMS (CRAFTING MATS) =====
+        // Tier 1 (Welt 1)
+        ritual_knochen: { id: 'ritual_knochen', name: 'Morscher Knochen', type: 'ritual', description: 'Ein alter Knochen (Tier 1)', modifierType: 'none', value: 1, glitzerValue: 1 },
+        ritual_harz: { id: 'ritual_harz', name: 'Klebriges Harz', type: 'ritual', description: 'Riecht streng (Tier 1)', modifierType: 'poison', value: 2, glitzerValue: 2 },
+        
+        // Tier 2 (Welt 2)
+        ritual_sumpfkraut: { id: 'ritual_sumpfkraut', name: 'Sumpfkraut', type: 'ritual', description: 'Giftiges Gewächs (Tier 2)', modifierType: 'poison', value: 3, glitzerValue: 5 },
+        ritual_eisen: { id: 'ritual_eisen', name: 'Rostiges Eisen', type: 'ritual', description: 'Hartes Metall (Tier 2)', modifierType: 'testdamage', value: 4, glitzerValue: 8 },
+
+        // Tier 3 (Welt 3)
+        ritual_stahl: { id: 'ritual_stahl', name: 'Alter Stahl', type: 'ritual', description: 'Gut zum Schmieden (Tier 3)', modifierType: 'testdamage', value: 5, glitzerValue: 12 },
+        ritual_geiststaub: { id: 'ritual_geiststaub', name: 'Geiststaub', type: 'ritual', description: 'Schimmert fahl (Tier 3)', modifierType: 'none', value: 6, glitzerValue: 15 },
+
+        // Tier 4 (Welt 4)
+        ritual_magma: { id: 'ritual_magma', name: 'Erkaltetes Magma', type: 'ritual', description: 'Noch immer warm (Tier 4)', modifierType: 'testdamage', value: 7, glitzerValue: 25 },
+        ritual_obsidian: { id: 'ritual_obsidian', name: 'Scharfer Obsidian', type: 'ritual', description: 'Schneidet alles (Tier 4)', modifierType: 'poison', value: 8, glitzerValue: 30 },
+
+        // Tier 5 (Welt 5)
+        ritual_void: { id: 'ritual_void', name: 'Essenz der Leere', type: 'ritual', description: 'Verschluckt Licht (Tier 5)', modifierType: 'none', value: 9, glitzerValue: 50 },
+        ritual_sternensplitter: { id: 'ritual_sternensplitter', name: 'Sternensplitter', type: 'ritual', description: 'Pure Macht (Tier 5)', modifierType: 'testdamage', value: 10, glitzerValue: 100 }
     },
 
     // ===== WAFFENBASEN =====
-    // Basis-Definitionen ohne Effekte oder Variationen
     weaponBases: {
-        dagger: {
-            id: 'dagger',
-            name: 'Dolch',
-            type: 'physical',
-            damage: 1,
-            description: 'Ein einfacher Dolch für schnelle Angriffe',
-            baseGlitzerValue: 0,
-            ritualValue: 7  // Tier 1 (6-25)
-        },
-        sword: {
-            id: 'sword',
-            name: 'Schwert',
-            type: 'physical',
-            damage: 5,
-            description: 'Ein kraftvolles Schwert für starke Angriffe',
-            baseGlitzerValue: 2,
-            ritualValue: 35  // Tier 2 (26-45)
-        },
-        rubberSword: {
-            id: 'rubberSword',
-            name: 'Gummischwert',
-            type: 'physical',
-            damage: 0,
-            description: 'Ein harmloses Gummischwert',
-            baseGlitzerValue: 0,
-            ritualValue: 6
-        },
-        bigSword: {
-            id: 'bigSword',
-            name: 'Großes Schwert',
-            type: 'physical',
-            damage: 10,
-            description: 'Ein dickes Schwert',
-            baseGlitzerValue: 5,
-            ritualValue: 46
-        },
+        // Spieler Waffen
+        dagger: { id: 'dagger', name: 'Rostiger Dolch', type: 'physical', damage: 4, description: 'Besser als nichts.', baseGlitzerValue: 1, ritualValue: 5 },
+        shortsword: { id: 'shortsword', name: 'Kurzschwert', type: 'physical', damage: 8, description: 'Eine solide Waffe.', baseGlitzerValue: 10, ritualValue: 15 },
+        axe: { id: 'axe', name: 'Holzfälleraxt', type: 'physical', damage: 12, description: 'Wuchtig aber effektiv.', baseGlitzerValue: 20, ritualValue: 25 },
+        knightsword: { id: 'knightsword', name: 'Ritterschwert', type: 'physical', damage: 18, description: 'Von einem gefallenen Helden.', baseGlitzerValue: 50, ritualValue: 35 },
+        warhammer: { id: 'warhammer', name: 'Kriegshammer', type: 'physical', damage: 25, description: 'Zerschmettert Rüstungen.', baseGlitzerValue: 80, ritualValue: 45 },
+        voidblade: { id: 'voidblade', name: 'Klinge der Leere', type: 'physical', damage: 40, description: 'Eine Waffe aus einer anderen Welt.', baseGlitzerValue: 200, ritualValue: 60 },
+
+        // Monster Waffen
+        monster_claws: { id: 'monster_claws', name: 'Scharfe Klauen', type: 'physical', damage: 5, description: '', baseGlitzerValue: 0, ritualValue: 0 },
+        monster_teeth: { id: 'monster_teeth', name: 'Faulige Zähne', type: 'physical', damage: 8, description: '', baseGlitzerValue: 0, ritualValue: 0 },
+        monster_slime: { id: 'monster_slime', name: 'Säure-Spucke', type: 'physical', damage: 12, description: '', baseGlitzerValue: 0, ritualValue: 0 },
+        monster_fire: { id: 'monster_fire', name: 'Feuerball', type: 'physical', damage: 20, description: '', baseGlitzerValue: 0, ritualValue: 0 },
+        monster_void: { id: 'monster_void', name: 'Existenzlöschung', type: 'physical', damage: 35, description: '', baseGlitzerValue: 0, ritualValue: 0 }
     },
 
     // ===== EFFEKT-SYSTEM =====
     effects: {
-        testdamage: {
-            id: 'testdamage',
-            name: 'Testdamage',
-            description: 'Fügt +3 zusätzlichen Schaden hinzu',
-            glitzerValueMultiplier: 1.5,
-            type: 'damage',
-            value: 3
-        },
-        poison: {
-            id: 'poison',
-            name: 'Gift',
-            description: 'Hat eine 50% Chance, 2 Gift-Stacks aufzutragen',
-            glitzerValueMultiplier: 2.0,
-            type: 'poison',
-            value: 1,                    // Basis-Schaden pro Runde
-            applyChance: 0.5,            // 50% Chance
-            stacksToApply: 2,            // Anzahl Stacks die hinzugefügt werden
-            ignoreArmor: true            // Gift ignoriert Rüstung
-        }
+        testdamage: { id: 'testdamage', name: 'Schärfe', description: '+5 Direktschaden', glitzerValueMultiplier: 1.5, type: 'damage', value: 5 },
+        poison: { id: 'poison', name: 'Gift', description: 'Chance auf Gift', glitzerValueMultiplier: 2.0, type: 'poison', value: 3, applyChance: 0.4, stacksToApply: 3, ignoreArmor: true }
     },
 
     // ===== FÄHIGKEITEN-SYSTEM =====
     abilities: {
-        stich: {
-            id: 'stich',
-            name: 'Stich',
-            description: 'Ein einfacher Angriff mit der Waffe',
-            damageType: 'physical',      // 'physical' oder 'magical'
-            apCost: 1,                   // AP-Kosten pro Nutzung
-            attacks: 1,                  // Anzahl der Angriffe
-            damageMultiplier: 1.0,       // Multiplikator für Waffenschaden (1.0 = 100%)
-            hitChance: 1.0               // Trefferchance (1.0 = 100%)
-        },
-        doppelhit: {
-            id: 'doppelhit',
-            name: 'Doppelhit',
-            description: '2 schnelle Angriffe mit 60% Schaden pro Treffer',
-            damageType: 'physical',
-            apCost: 1,
-            attacks: 2,                  // 2 separate Angriffe
-            damageMultiplier: 0.6,       // 60% Schaden pro Angriff
-            hitChance: 1.0               // Trefferchance (1.0 = 100%)
-        },
-        riskanterSchlag: {
-            id: 'riskanterSchlag',
-            name: 'Riskanter Schlag',
-            description: 'Ein riskanter Angriff mit 70% Trefferchance, aber 150% Schaden',
-            damageType: 'physical',
-            apCost: 1,
-            attacks: 1,
-            damageMultiplier: 1.5,       // 150% Schaden
-            hitChance: 0.7               // 70% Trefferchance
-        },
-        rageAttack: {
-            id: 'rageAttack',
-            name: 'Wütende Schläge',
-            description: 'Sehr viele wütende Schläge',
-            damageType: 'physical',
-            apCost: 2,
-            attacks: 10,
-            damageMultiplier: 0.3,
-            hitChance: 1.0,
-        }
+        stich: { id: 'stich', name: 'Schneller Stich', description: 'Ein schneller Angriff.', damageType: 'physical', apCost: 1, attacks: 1, damageMultiplier: 1.0, hitChance: 1.0 },
+        doppelhit: { id: 'doppelhit', name: 'Doppelschlag', description: 'Zwei Angriffe, weniger Schaden pro Schlag.', damageType: 'physical', apCost: 2, attacks: 2, damageMultiplier: 0.8, hitChance: 0.9 },
+        wuchtschlag: { id: 'wuchtschlag', name: 'Wuchtschlag', description: 'Ein schwerer Treffer mit viel Schaden.', damageType: 'physical', apCost: 2, attacks: 1, damageMultiplier: 2.5, hitChance: 0.85 },
+        riskanterSchlag: { id: 'riskanterSchlag', name: 'Todesroulette', description: 'Massiver Schaden, aber trifft oft nicht.', damageType: 'physical', apCost: 1, attacks: 1, damageMultiplier: 3.5, hitChance: 0.5 },
+        rageAttack: { id: 'rageAttack', name: 'Raserei', description: 'Ein Hagel aus Schlägen.', damageType: 'physical', apCost: 3, attacks: 6, damageMultiplier: 0.5, hitChance: 0.9 }
     },
 
     // ===== GEGNER =====
-    // Normale Gegner für Kampfevents
     enemies: {
-        enemyTestDummy: {
-            id: 'enemyTestDummy',
-            name: 'Test Dummy',
-            hp: 50,
-            maxHp: 50,
-            stats: {
-                strength: 0,
-                defense: 0,
-                magic: 0,
-                speed: 0
-            },
-            weapon: {
-                baseId: 'rubberSword',
-                effects: []
-            },
-            drops: []  // Keine Drops
-        }
+        // Welt 1
+        ratte: { id: 'ratte', name: 'Riesenratte', hp: 30, maxHp: 30, stats: { strength: 0, defense: 0, magic: 0, speed: 2 }, weapon: { baseId: 'monster_teeth', effects: [] }, drops: ['ritual_knochen'] },
+        wolf: { id: 'wolf', name: 'Hungriger Wolf', hp: 50, maxHp: 50, stats: { strength: 2, defense: 0, magic: 0, speed: 5 }, weapon: { baseId: 'monster_claws', effects: [] }, drops: ['ritual_knochen', 'ritual_harz'] },
+        // Welt 2
+        schleim: { id: 'schleim', name: 'Giftschleim', hp: 70, maxHp: 70, stats: { strength: 0, defense: 2, magic: 0, speed: 1 }, weapon: { baseId: 'monster_slime', effects: ['poison'] }, drops: ['ritual_sumpfkraut', 'heiltrank'] },
+        sumpfhexe: { id: 'sumpfhexe', name: 'Sumpfhexe', hp: 90, maxHp: 90, stats: { strength: 0, defense: 0, magic: 5, speed: 3 }, weapon: { baseId: 'monster_claws', effects: ['poison'] }, drops: ['ritual_eisen', 'ritual_sumpfkraut'] },
+        // Welt 3
+        skelett: { id: 'skelett', name: 'Klappergestell', hp: 120, maxHp: 120, stats: { strength: 5, defense: 5, magic: 0, speed: 2 }, weapon: { baseId: 'shortsword', effects: [] }, drops: ['ritual_knochen', 'ritual_stahl'] },
+        ritter: { id: 'ritter', name: 'Dunkler Knappe', hp: 160, maxHp: 160, stats: { strength: 8, defense: 10, magic: 0, speed: 1 }, weapon: { baseId: 'knightsword', effects: [] }, drops: ['ritual_stahl', 'ritual_geiststaub'] },
+        // Welt 4
+        feuergeist: { id: 'feuergeist', name: 'Glutgeist', hp: 220, maxHp: 220, stats: { strength: 0, defense: 5, magic: 10, speed: 6 }, weapon: { baseId: 'monster_fire', effects: ['testdamage'] }, drops: ['ritual_magma'] },
+        golem: { id: 'golem', name: 'Lavagolem', hp: 300, maxHp: 300, stats: { strength: 15, defense: 20, magic: 0, speed: 0 }, weapon: { baseId: 'warhammer', effects: [] }, drops: ['ritual_obsidian', 'ritual_magma'] },
+        // Welt 5
+        schatten: { id: 'schatten', name: 'Schattenriss', hp: 400, maxHp: 400, stats: { strength: 20, defense: 10, magic: 20, speed: 10 }, weapon: { baseId: 'monster_void', effects: [] }, drops: ['ritual_void'] },
+        voidwalker: { id: 'voidwalker', name: 'Leerenwandler', hp: 550, maxHp: 550, stats: { strength: 25, defense: 15, magic: 20, speed: 8 }, weapon: { baseId: 'voidblade', effects: ['poison'] }, drops: ['ritual_sternensplitter'] }
     },
 
     // ===== BOSSE =====
     bosses: {
-        testBoss1: {
-            id: 'test_boss',
-            name: 'Test Boss 1',
-            hp: 500,
-            maxHp: 500,
-            actionPoints: 2,             // Aktionspunkte pro Zug
-            stats: {
-                strength: 0,
-                defense: 0
-            },
-            weapon: {                     // Waffeninstanz (wie beim Spieler)
-                baseId: 'rubberSword',
-                effects: []               // Keine Effekte
-            },
-            drops: ['testseed']          // Item-IDs die gedroppt werden
+        boss1: {
+            id: 'boss_faulwurz', name: 'Faulwurz der Alte', hp: 250, maxHp: 250, actionPoints: 2,
+            stats: { strength: 5, defense: 2 }, weapon: { baseId: 'monster_claws', effects: [] },
+            drops: [{ type: 'ability', id: 'doppelhit' }, 'ritual_harz']
         },
-        testBoss2: {
-            id: 'test_boss2',
-            name: 'Test Boss 2',
-            hp: 500,
-            maxHp: 500,
-            actionPoints: 1,             // Aktionspunkte pro Zug
-            stats: {
-                strength: 0,
-                defense: 0
-            },
-            weapon: {                     // Waffeninstanz mit Effekt
-                baseId: 'rubberSword',
-                effects: ['testdamage'] // +3 Schaden Effekt
-            },
-            drops: ['testseed']          // Item-IDs die gedroppt werden
+        boss2: {
+            id: 'boss_schlammkoenig', name: 'Gubba der Schlammkönig', hp: 600, maxHp: 600, actionPoints: 2,
+            stats: { strength: 8, defense: 5 }, weapon: { baseId: 'monster_slime', effects: ['poison'] },
+            drops: [{ type: 'ability', id: 'wuchtschlag' }, 'ritual_eisen']
         },
-        bibaBoss: {
-            id: 'bibaBoss',
-            name: 'BA! BA! BOSS!',
-            hp: 1000,
-            maxHp: 1000,
-            actionPoints: 1,             // Aktionspunkte pro Zug
-            stats: {
-                strength: 0,
-                defense: 5
-            },
-            weapon: {                     // Waffeninstanz mit Effekt
-                baseId: 'sword',
-                effects: ['poison'] // +3 Schaden Effekt
-            },
-            drops: [
-                { type: 'ability', id: 'rageAttack' }
-            ]
+        boss3: {
+            id: 'boss_schwarzer_ritter', name: 'Lord Rassel', hp: 1200, maxHp: 1200, actionPoints: 3,
+            stats: { strength: 15, defense: 20 }, weapon: { baseId: 'knightsword', effects: ['testdamage'] },
+            drops: [{ type: 'ability', id: 'riskanterSchlag' }, 'ritual_geiststaub']
+        },
+        boss4: {
+            id: 'boss_inferno', name: 'Ignis der Verbrenner', hp: 2500, maxHp: 2500, actionPoints: 3,
+            stats: { strength: 25, defense: 10 }, weapon: { baseId: 'monster_fire', effects: ['testdamage', 'testdamage'] },
+            drops: [{ type: 'ability', id: 'rageAttack' }, 'ritual_obsidian']
+        },
+        boss5: {
+            id: 'boss_endboss', name: 'DER WELTENFRESSER', hp: 5000, maxHp: 5000, actionPoints: 4,
+            stats: { strength: 40, defense: 30 }, weapon: { baseId: 'monster_void', effects: ['poison', 'testdamage'] },
+            drops: ['glitzer', 'glitzer']
         }
     },
 
     // ===== BOSS-WELTEN =====
-    //Key muss mit ID übereinstimmen
+    // Jede Welt hat min. 4 Events die IMMER möglich sind (min:0, max:null)
     bossWorlds: {
-        testwelt1: {
-            id: 'testwelt1',
-            name: 'Testwelt 1',
-            description: 'Eine mysteriöse Testwelt',
-            boss: 'testBoss1',                 // Welcher Boss in dieser Welt ist
-            allowedEvents: null                // null = alle Events erlaubt
+        welt1: {
+            id: 'welt1', name: 'Der Modrige Wald', description: 'Es riecht nach Erde.', boss: 'boss1',
+            allowedEvents: ['combat_w1_easy', 'combat_w1_med', 'combat_w1_hard', 'combat_w1_uni', 'story_w1_falle', 'story_w1_beere', 'story_generic_loot']
         },
-        testwelt2: {
-            id: 'testwelt2',
-            name: 'Testwelt 2',
-            description: 'Eine mysteriöse Testwelt',
-            boss: 'testBoss2',                 // Welcher Boss in dieser Welt ist
-            allowedEvents: ['choice_lorem', 'choice_lorem2', 'choice_lorem3']  // Nur Multiple Choice Events
+        welt2: {
+            id: 'welt2', name: 'Der Nebelsumpf', description: 'Giftige Dämpfe.', boss: 'boss2',
+            allowedEvents: ['combat_w2_easy', 'combat_w2_med', 'combat_w2_hard', 'combat_w2_uni', 'story_w2_gas', 'story_w2_leiche', 'story_generic_loot']
         },
-        bibaWelt: {
-            id: 'bibaWelt',
-            name: 'BiBa Welt',
-            description: 'Eine mysteriöse Biba Welt',
-            boss: 'bibaBoss',
-            allowedEvents: ['choice_lorem', 'choice_lorem2', 'choice_lorem3']  // Mindestens 3 Events für Auswahl
+        welt3: {
+            id: 'welt3', name: 'Die Rostigen Ruinen', description: 'Klappernde Knochen.', boss: 'boss3',
+            allowedEvents: ['combat_w3_easy', 'combat_w3_med', 'combat_w3_hard', 'combat_w3_uni', 'story_w3_altar', 'story_w3_schmiede', 'story_generic_loot']
+        },
+        welt4: {
+            id: 'welt4', name: 'Die Vulkanfestung', description: 'Unerträgliche Hitze.', boss: 'boss4',
+            allowedEvents: ['combat_w4_easy', 'combat_w4_med', 'combat_w4_hard', 'combat_w4_uni', 'story_w4_lava', 'story_w4_statue', 'story_generic_loot']
+        },
+        welt5: {
+            id: 'welt5', name: 'Die Leere', description: 'Nichts.', boss: 'boss5',
+            allowedEvents: ['combat_w5_easy', 'combat_w5_med', 'combat_w5_hard', 'combat_w5_uni', 'story_w5_whisper', 'story_w5_void', 'story_generic_loot']
         }
     },
 
     // ===== CRAWL-EVENTS =====
-    // Events die während des Crawls in einer Boss-Welt auftreten können
+    // Chaos 0-4 (Leicht), 5-7 (Mittel), 8-10 (Schwer)
+    // Universal Events (maxChaos: null) sind IMMER möglich.
+    // Erlaubte Effekte: 'addItem', 'addChaos'
     crawlEvents: {
-        // ===== KAMPF-EVENTS =====
-        combat_testdummy: {
-            id: 'combat_testdummy_diff1',
-            name: 'Test Dummy Kampf',
-            description: 'Drei Test Dummies versperren den Weg!',
-            type: 'combat',
-            minChaos: 0,
-            maxChaos: null,
-            securityDecrease: 2,
-            enemies: ['enemyTestDummy', 'enemyTestDummy', 'enemyTestDummy']
-        },
-        combat_testdummy2: {
-            id: 'combat_testdummy2_diff1',
-            name: 'Test Dummy Kampf 2',
-            description: 'Drei Test Dummies versperren den Weg!',
-            type: 'combat',
-            minChaos: 0,
-            maxChaos: null,
-            securityDecrease: 5,
-            enemies: ['enemyTestDummy', 'enemyTestDummy', 'enemyTestDummy']
-        },
-            combat_testdummy3: {
-            id: 'combat_testdummy3',
-            name: 'Test Dummy Kampf 3',
-            description: 'Drei Test Dummies versperren den Weg!',
-            type: 'combat',
-            minChaos: 0,
-            maxChaos: null,
-            securityDecrease: 8,
-            enemies: ['enemyTestDummy', 'enemyTestDummy', 'enemyTestDummy']
+        // --- GENERIC ---
+        // Ersatz für den Händler, immer verfügbar
+        story_generic_loot: {
+            id: 'story_generic_loot', name: 'Verlorener Rucksack', description: 'Jemand hat das hier liegen lassen.', type: 'multipleChoice',
+            minChaos: 0, maxChaos: null, securityDecrease: 1,
+            choices: [{ text: 'Durchsuchen', effects: [{ type: 'addItem', itemId: 'glitzer', amount: 5 }] }, { text: 'Liegen lassen', effects: [] }]
         },
 
-        // ===== MULTIPLE CHOICE EVENTS =====
-        choice_lorem: {
-            id: 'choice_lorem',
-            name: 'Mysteriöse Begegnung',
-            description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.\nSed do eiusmod tempor incididunt ut labore et dolore magna aliqua.\nUt enim ad minim veniam, quis nostrud exercitation ullamco.\nDuis aute irure dolor in reprehenderit in voluptate velit.',
-            type: 'multipleChoice',
-            minChaos: 0,
-            maxChaos: null,
-            securityDecrease: 2,
+        // --- WELT 1 EVENTS (Wald) ---
+        combat_w1_easy: { id: 'combat_w1_easy', name: 'Rattenplage', description: 'Ein paar Ratten greifen an!', type: 'combat', minChaos: 0, maxChaos: 4, securityDecrease: 2, enemies: ['ratte', 'ratte'] },
+        combat_w1_med: { id: 'combat_w1_med', name: 'Wolfsrudel', description: 'Wölfe kreisen dich ein.', type: 'combat', minChaos: 5, maxChaos: 7, securityDecrease: 5, enemies: ['wolf', 'ratte'] },
+        combat_w1_hard: { id: 'combat_w1_hard', name: 'Alphatier', description: 'Ein riesiger Wolf versperrt den Weg.', type: 'combat', minChaos: 8, maxChaos: 10, securityDecrease: 8, enemies: ['wolf', 'wolf'] },
+        
+        // Universal Combat (immer möglich)
+        combat_w1_uni: { id: 'combat_w1_uni', name: 'Streunender Wolf', description: 'Ein einzelner Wolf sucht Beute.', type: 'combat', minChaos: 0, maxChaos: null, securityDecrease: 3, enemies: ['wolf'] },
+
+        story_w1_falle: {
+            id: 'story_w1_falle', name: 'Bärenfalle', description: 'Eine rostige Falle liegt im Laub.', type: 'multipleChoice', minChaos: 0, maxChaos: null, securityDecrease: 3,
             choices: [
-                {
-                    text: 'Ja',
-                    effects: [
-                        { type: 'addItem', itemId: 'glitzer', amount: 1 }
-                    ]
-                },
-                {
-                    text: 'Nein',
-                    effects: [
-                        { type: 'addChaos', amount: 1 }
-                    ]
-                }
+                { text: 'Entschärfen (Riskant)', effects: [{ type: 'addChaos', amount: 1 }, { type: 'addItem', itemId: 'ritual_eisen', amount: 1 }] },
+                { text: 'Drumherum laufen', effects: [{ type: 'addChaos', amount: 2 }] }
             ]
         },
-        choice_lorem2: {
-            id: 'choice_lorem2',
-            name: 'Mysteriöse Begegnung',
-            description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.\nSed do eiusmod tempor incididunt ut labore et dolore magna aliqua.\nUt enim ad minim veniam, quis nostrud exercitation ullamco.\nDuis aute irure dolor in reprehenderit in voluptate velit.',
-            type: 'multipleChoice',
-            minChaos: 0,
-            maxChaos: null,
-            securityDecrease: 5,
+        story_w1_beere: {
+            id: 'story_w1_beere', name: 'Roter Busch', description: 'Sieht lecker aus.', type: 'multipleChoice', minChaos: 0, maxChaos: null, securityDecrease: 1,
             choices: [
-                {
-                    text: 'Ja',
-                    effects: [
-                        { type: 'addItem', itemId: 'glitzer', amount: 1 }
-                    ]
-                },
-                {
-                    text: 'Nein',
-                    effects: [
-                        { type: 'addChaos', amount: 1 }
-                    ]
-                }
+                { text: 'Essen', effects: [{ type: 'addItem', itemId: 'heiltrank', amount: 1 }] }, 
+                { text: 'Sammeln', effects: [{ type: 'addItem', itemId: 'ritual_harz', amount: 1 }] }
             ]
         },
-        choice_lorem3: {
-            id: 'choice_lorem3',
-            name: 'Mysteriöse Begegnung',
-            description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.\nSed do eiusmod tempor incididunt ut labore et dolore magna aliqua.\nUt enim ad minim veniam, quis nostrud exercitation ullamco.\nDuis aute irure dolor in reprehenderit in voluptate velit.',
-            type: 'multipleChoice',
-            minChaos: 0,
-            maxChaos: null,
-            securityDecrease: 8,
+
+        // --- WELT 2 EVENTS (Sumpf) ---
+        combat_w2_easy: { id: 'combat_w2_easy', name: 'Schleimpfütze', description: 'Der Boden lebt!', type: 'combat', minChaos: 0, maxChaos: 4, securityDecrease: 3, enemies: ['schleim'] },
+        combat_w2_med: { id: 'combat_w2_med', name: 'Hexenstunde', description: 'Eine Hexe kichert im Nebel.', type: 'combat', minChaos: 5, maxChaos: 7, securityDecrease: 6, enemies: ['sumpfhexe'] },
+        combat_w2_hard: { id: 'combat_w2_hard', name: 'Sumpf-Hinterhalt', description: 'Alles greift an!', type: 'combat', minChaos: 8, maxChaos: 10, securityDecrease: 10, enemies: ['sumpfhexe', 'schleim', 'schleim'] },
+
+        // Universal Combat
+        combat_w2_uni: { id: 'combat_w2_uni', name: 'Verirrter Schleim', description: 'Er glibbert vor sich hin.', type: 'combat', minChaos: 0, maxChaos: null, securityDecrease: 3, enemies: ['schleim'] },
+
+        story_w2_gas: {
+            id: 'story_w2_gas', name: 'Gaswolke', description: 'Grüner Nebel zieht auf.', type: 'multipleChoice', minChaos: 0, maxChaos: null, securityDecrease: 5,
             choices: [
-                {
-                    text: 'Ja',
-                    effects: [
-                        { type: 'addItem', itemId: 'glitzer', amount: 1 }
-                    ]
-                },
-                {
-                    text: 'Nein',
-                    effects: [
-                        { type: 'addChaos', amount: 1 }
-                    ]
-                }
+                { text: 'Luft anhalten und rennen', effects: [{ type: 'addChaos', amount: 1 }] },
+                { text: 'Atmen...', effects: [{ type: 'addChaos', amount: 3 }] } 
+            ]
+        },
+        story_w2_leiche: {
+            id: 'story_w2_leiche', name: 'Versunkener Abenteurer', description: 'Nur noch der Arm schaut heraus.', type: 'multipleChoice', minChaos: 0, maxChaos: null, securityDecrease: 2,
+            choices: [
+                { text: 'Plündern', effects: [{ type: 'addItem', itemId: 'heiltrank', amount: 1 }, { type: 'addChaos', amount: 2 }] },
+                { text: 'Ruhen lassen', effects: [{ type: 'addItem', itemId: 'heiltrank', amount: 1 }] }
+            ]
+        },
+
+        // --- WELT 3 EVENTS (Ruinen) ---
+        combat_w3_easy: { id: 'combat_w3_easy', name: 'Knochenhaufen', description: 'Skelette erheben sich.', type: 'combat', minChaos: 0, maxChaos: 4, securityDecrease: 4, enemies: ['skelett', 'skelett'] },
+        combat_w3_med: { id: 'combat_w3_med', name: 'Wache', description: 'Ein dunkler Ritter hält Wache.', type: 'combat', minChaos: 5, maxChaos: 7, securityDecrease: 7, enemies: ['ritter'] },
+        combat_w3_hard: { id: 'combat_w3_hard', name: 'Todespatrouille', description: 'Schwer gepanzerter Tod.', type: 'combat', minChaos: 8, maxChaos: 10, securityDecrease: 12, enemies: ['ritter', 'skelett', 'skelett'] },
+
+        // Universal Combat
+        combat_w3_uni: { id: 'combat_w3_uni', name: 'Einsames Skelett', description: 'Klapper, klapper.', type: 'combat', minChaos: 0, maxChaos: null, securityDecrease: 3, enemies: ['skelett'] },
+
+        story_w3_altar: {
+            id: 'story_w3_altar', name: 'Blutiger Altar', description: 'Ein Opfer wird verlangt.', type: 'multipleChoice', minChaos: 0, maxChaos: null, securityDecrease: 5,
+            choices: [
+                { text: 'Blut opfern (Riskant)', effects: [{ type: 'addChaos', amount: 4 }, { type: 'addItem', itemId: 'ritual_stahl', amount: 2 }] },
+                { text: 'Entweihen', effects: [{ type: 'addChaos', amount: 3 }, { type: 'addItem', itemId: 'glitzer', amount: 5 }] }
+            ]
+        },
+        story_w3_schmiede: {
+            id: 'story_w3_schmiede', name: 'Alte Schmiede', description: 'Hier liegt noch brauchbares Material.', type: 'multipleChoice', minChaos: 0, maxChaos: null, securityDecrease: 2,
+            choices: [
+                { text: 'Suchen', effects: [{ type: 'addItem', itemId: 'ritual_eisen', amount: 2 }] },
+                { text: 'Heilung suchen', effects: [{ type: 'addItem', itemId: 'heiltrank_gross', amount: 1 }] }
+            ]
+        },
+
+        // --- WELT 4 EVENTS (Vulkan) ---
+        combat_w4_easy: { id: 'combat_w4_easy', name: 'Funkenflug', description: 'Kleine Feuergeister.', type: 'combat', minChaos: 0, maxChaos: 4, securityDecrease: 5, enemies: ['feuergeist', 'feuergeist'] },
+        combat_w4_med: { id: 'combat_w4_med', name: 'Magma-Wall', description: 'Ein Golem blockiert den Weg.', type: 'combat', minChaos: 5, maxChaos: 7, securityDecrease: 8, enemies: ['golem'] },
+        combat_w4_hard: { id: 'combat_w4_hard', name: 'Inferno', description: 'Hitze und Tod.', type: 'combat', minChaos: 8, maxChaos: 10, securityDecrease: 15, enemies: ['golem', 'feuergeist', 'feuergeist'] },
+
+        // Universal Combat
+        combat_w4_uni: { id: 'combat_w4_uni', name: 'Laufende Flamme', description: 'Ein Feuergeist greift an.', type: 'combat', minChaos: 0, maxChaos: null, securityDecrease: 5, enemies: ['feuergeist'] },
+
+        story_w4_lava: {
+            id: 'story_w4_lava', name: 'Lavastrom', description: 'Der Weg ist weg.', type: 'multipleChoice', minChaos: 0, maxChaos: null, securityDecrease: 5,
+            choices: [
+                { text: 'Springen (Riskant)', effects: [{ type: 'addChaos', amount: 5 }] },
+                { text: 'Umweg suchen (Zeitverlust)', effects: [{ type: 'addChaos', amount: 2 }] }
+            ]
+        },
+        story_w4_statue: {
+            id: 'story_w4_statue', name: 'Weinende Statue', description: 'Ihre Tränen sind aus Gold.', type: 'multipleChoice', minChaos: 0, maxChaos: null, securityDecrease: 2,
+            choices: [
+                { text: 'Tränen nehmen', effects: [{ type: 'addItem', itemId: 'glitzer', amount: 10 }, { type: 'addChaos', amount: 2 }] },
+                { text: 'Beten', effects: [{ type: 'addItem', itemId: 'heiltrank_gross', amount: 1 }] }
+            ]
+        },
+
+        // --- WELT 5 EVENTS (Void) ---
+        combat_w5_easy: { id: 'combat_w5_easy', name: 'Schatten', description: 'Sie flüstern deinen Namen.', type: 'combat', minChaos: 0, maxChaos: 4, securityDecrease: 6, enemies: ['schatten', 'schatten'] },
+        combat_w5_med: { id: 'combat_w5_med', name: 'Leerenwächter', description: 'Er existiert kaum.', type: 'combat', minChaos: 5, maxChaos: 7, securityDecrease: 10, enemies: ['voidwalker'] },
+        combat_w5_hard: { id: 'combat_w5_hard', name: 'TOTALE FINSTERNIS', description: 'Du siehst nichts, aber es tut weh.', type: 'combat', minChaos: 8, maxChaos: 10, securityDecrease: 20, enemies: ['voidwalker', 'schatten', 'schatten'] },
+
+        // Universal Combat
+        combat_w5_uni: { id: 'combat_w5_uni', name: 'Schattenriss', description: 'Ein Schatten löst sich aus der Wand.', type: 'combat', minChaos: 0, maxChaos: null, securityDecrease: 6, enemies: ['schatten'] },
+
+        story_w5_whisper: {
+            id: 'story_w5_whisper', name: 'Stimmen', description: '"GIB AUF... GIB AUF..."', type: 'multipleChoice', minChaos: 0, maxChaos: null, securityDecrease: 5,
+            choices: [
+                { text: 'NIEMALS!', effects: [{ type: 'addChaos', amount: 3 }] },
+                { text: '...', effects: [{ type: 'addChaos', amount: 5 }] }
+            ]
+        },
+        story_w5_void: {
+            id: 'story_w5_void', name: 'Riss in der Realität', description: 'Ein Blick in die Unendlichkeit.', type: 'multipleChoice', minChaos: 0, maxChaos: null, securityDecrease: 5,
+            choices: [
+                { text: 'Hineingreifen', effects: [{ type: 'addItem', itemId: 'ritual_void', amount: 1 }, { type: 'addChaos', amount: 5 }] },
+                { text: 'Wegsehen', effects: [] }
             ]
         }
     },
 
     // ===== SHOP-SYSTEM =====
-    // Händler und ihre Angebote
     merchants: {
         testhaendler: {
-            id: 'testhaendler',
-            name: 'Testhändler',
-            description: 'Ein mysteriöser Händler mit nützlichen Waren',
+            id: 'testhaendler', name: 'Reisender Händler', description: 'Er hat Items aus allen Welten.',
             offers: [
-                {
-                    itemId: 'heiltrank',
-                    price: 2,           // Kosten in Glitzer
-                    currency: 'glitzer'
-                },
-                // Ritual-Items zum Testen
-                {
-                    itemId: 'ritualItem_weak_none',
-                    price: 0,
-                    currency: 'glitzer'
-                },
-                {
-                    itemId: 'ritualItem_weak_testdamage',
-                    price: 0,
-                    currency: 'glitzer'
-                },
-                {
-                    itemId: 'ritualItem_medium_none',
-                    price: 0,
-                    currency: 'glitzer'
-                },
-                {
-                    itemId: 'ritualItem_medium_testdamage',
-                    price: 0,
-                    currency: 'glitzer'
-                },
-                {
-                    itemId: 'ritualItem_strong_none',
-                    price: 0,
-                    currency: 'glitzer'
-                },
-                {
-                    itemId: 'ritualItem_strong_testdamage',
-                    price: 0,
-                    currency: 'glitzer'
-                },
-                {
-                    itemId: 'ritualItem_weak_poison',
-                    price: 0,
-                    currency: 'glitzer'
-                },
-                {
-                    itemId: 'ritualItem_medium_poison',
-                    price: 0,
-                    currency: 'glitzer'
-                },
-                {
-                    itemId: 'ritualItem_strong_poison',
-                    price: 0,
-                    currency: 'glitzer'
-                }
-            ]
-        },
-        testhaendler2: {
-            id: 'testhaendler2',
-            name: 'Testhändler 2',
-            description: 'Ein mysteriöser Händler mit nützlichen Waren',
-            offers: [
-                {
-                    itemId: 'heiltrank',
-                    price: 2,           // Kosten in Glitzer
-                    currency: 'glitzer'
-                }
+                { itemId: 'heiltrank', price: 10, currency: 'glitzer' },
+                { itemId: 'heiltrank_gross', price: 25, currency: 'glitzer' },
+                { itemId: 'ritual_knochen', price: 5, currency: 'glitzer' },
+                { itemId: 'ritual_eisen', price: 15, currency: 'glitzer' },
+                { itemId: 'ritual_magma', price: 50, currency: 'glitzer' }
             ]
         }
     }
