@@ -532,15 +532,6 @@ const Game = {
         // Bestimme ob es ein Gegner-Kampf oder Boss-Kampf ist
         const isEnemyBattle = battle.enemies && battle.enemies.length > 0;
         
-        // Boss holen (gemeinsam für beide Kampfarten)
-        const boss = battle.boss;
-        
-        // Boss-Waffe auflösen (Instanz zu vollständiger Waffe)
-        const bossWeaponInstance = boss.weapon;
-        const bossWeapon = this.resolveWeapon(bossWeaponInstance);
-        const attackDamage = bossWeapon ? bossWeapon.damage : 0;
-        const attackName = bossWeapon ? bossWeapon.name : 'Angriff';
-        
         // Bei Gegner-Kämpfen: Stelle sicher dass currentEnemyIndex initialisiert ist
         if (isEnemyBattle && (battle.currentEnemyIndex === undefined || battle.currentEnemyIndex === null)) {
             battle.currentEnemyIndex = 0;
@@ -582,6 +573,15 @@ const Game = {
             // Aktualisiere battle.boss auf den aktuell angreifenden Gegner
             battle.boss = battle.enemies[battle.currentEnemyIndex];
         }
+        
+        // Boss holen (NACH dem Update bei Gegner-Kämpfen)
+        const boss = battle.boss;
+        
+        // Boss-Waffe auflösen (Instanz zu vollständiger Waffe)
+        const bossWeaponInstance = boss.weapon;
+        const bossWeapon = this.resolveWeapon(bossWeaponInstance);
+        const attackDamage = bossWeapon ? bossWeapon.damage : 0;
+        const attackName = bossWeapon ? bossWeapon.name : 'Angriff';
 
         // Gift-Schaden VOR dem Angriff des aktuellen Gegners/Bosses
         if (boss.statusEffects && boss.statusEffects.length > 0) {
