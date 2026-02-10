@@ -122,7 +122,7 @@ const Definitions = {
         boss5: {
             id: 'boss_endboss', name: 'DER WELTENFRESSER', hp: 5000, maxHp: 5000, actionPoints: 4,
             stats: { strength: 40, defense: 30 }, weapon: { baseId: 'monster_void', effects: ['poison', 'testdamage'] },
-            drops: ['glitzer', 'glitzer']
+            drops: ['glitzer']//dafuq fehler
         }
     },
 
