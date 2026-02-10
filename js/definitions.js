@@ -325,7 +325,7 @@ const Definitions = {
             name: 'Testwelt 2',
             description: 'Eine mysteriöse Testwelt',
             boss: 'testBoss2',                 // Welcher Boss in dieser Welt ist
-            allowedEvents: ['choice_lorem', 'choice_lorem_diff2', 'choice_lorem_diff3']  // Nur Multiple Choice Events
+            allowedEvents: ['choice_lorem', 'choice_lorem2', 'choice_lorem3']  // Nur Multiple Choice Events
         },
         bibaWelt: {
             id: 'bibaWelt',
