@@ -16,7 +16,8 @@ const Definitions = {
             defense: 10,       // Verteidigung
             glitzer: 0        // Glitzer (Spielwährung)
         },
-        startWeapon: 'dagger'  // Waffe mit der der Spieler startet
+        startWeapon: 'dagger',  // Waffe mit der der Spieler startet
+        startAbilities: ['stich']      // Abilities mit denen der Spieler startet (z.B. ['rageAttack'])
     },
 
     // ===== ITEMS =====

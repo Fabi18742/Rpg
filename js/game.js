@@ -32,9 +32,9 @@ const Game = {
             // Ausgerüstete Waffe (Array-Index oder null)
             equippedWeapon: null,
             // Alle verfügbaren Fähigkeiten (Array von Ability-IDs)
-            abilities: ['stich', 'doppelhit', 'riskanterSchlag'],
+            abilities: [],
             // 4 ausgerüstete Fähigkeiten (Array-Indizes in abilities oder null)
-            equippedAbilities: [0, 1, 2, null],
+            equippedAbilities: [0, null, null, null],
             inventory: []
         },
         defeatedBosses: [],
@@ -61,6 +61,17 @@ const Game = {
                 this.addWeapon({ baseId: startWeaponBaseId, effects: [] });
                 // Automatisch ausrüsten
                 this.equipWeapon(0);
+            }
+            
+            // Start-Abilities aus Definitions hinzufügen
+            const startAbilities = Definitions.player.startAbilities;
+            if (startAbilities && startAbilities.length > 0) {
+                startAbilities.forEach(abilityId => {
+                    if (this.abilities[abilityId] && !this.state.player.abilities.includes(abilityId)) {
+                        this.state.player.abilities.push(abilityId);
+                        console.log(`Start-Ability hinzugefügt: ${this.abilities[abilityId].name}`);
+                    }
+                });
             }
         }
 

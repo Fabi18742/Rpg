@@ -812,22 +812,44 @@ img, svg {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
     padding: 20px;
     color: var(--text-color);
+    overflow: hidden;
 }
 
 .boss-selection h2 {
     font-size: 28px;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    flex-shrink: 0;
 }
 
 .boss-list {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 20px;
-    flex-wrap: wrap;
-    justify-content: center;
+    width: 100%;
+    max-width: 1200px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 10px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) transparent;
+    flex: 1;
+    min-height: 0;
+}
+
+.boss-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.boss-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.boss-list::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 0px;
 }
 
 .boss-card {
@@ -841,7 +863,7 @@ img, svg {
     flex-direction: column;
     align-items: center;
     gap: 15px;
-    min-width: 200px;
+    min-width: 0;
 }
 
 .boss-card:hover {
@@ -966,9 +988,31 @@ img, svg {
 /* Erkundung */
 .world-selection {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, 280px);
     gap: 20px;
-    padding: 20px;
+    width: 100%;
+    max-width: 1200px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 10px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) transparent;
+    flex: 1;
+    min-height: 0;
+    justify-content: center;
+}
+
+.world-selection::-webkit-scrollbar {
+    width: 8px;
+}
+
+.world-selection::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.world-selection::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 0px;
 }
 
 .world-card {
