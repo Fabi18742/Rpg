@@ -19,11 +19,11 @@ const Definitions = {
   // ===== ITEMS =====
   items: {
     // Währungen & Konsum
-    glitzer: {
-      id: "glitzer",
-      name: "Glitzer",
-      type: "currency",
-      description: "Funkelnder Glitzer.",
+    dafuq: {
+      id: "dafuq",
+      name: "Dafuq",
+      type: "HILFE HIER IST EIN FEHLER",
+      description: "DAFUQ.",
     },
     heiltrank: {
       id: "heiltrank",
@@ -484,7 +484,7 @@ const Definitions = {
       actionPoints: 4,
       stats: { strength: 40, defense: 30 },
       weapon: { baseId: "monster_void", effects: ["poison", "testdamage"] },
-      drops: ["glitzer"], //dafuq fehler
+      drops: ["dafuq"], //dafuq fehler
     },
   },
 
@@ -498,8 +498,10 @@ const Definitions = {
       boss: "boss1",
       allowedEvents: [
         "combat_w1_easy",
+        "combat_w1_easy",
         "combat_w1_med",
         "combat_w1_hard",
+        "combat_w1_uni",
         "combat_w1_uni",
         "story_w1_falle",
         "story_w1_beere",
@@ -514,8 +516,10 @@ const Definitions = {
       boss: "boss2",
       allowedEvents: [
         "combat_w2_easy",
+        "combat_w2_easy",
         "combat_w2_med",
         "combat_w2_hard",
+        "combat_w2_uni",
         "combat_w2_uni",
         "story_w2_gas",
         "story_w2_leiche",
@@ -530,8 +534,10 @@ const Definitions = {
       boss: "boss3",
       allowedEvents: [
         "combat_w3_easy",
+        "combat_w3_easy",
         "combat_w3_med",
         "combat_w3_hard",
+        "combat_w3_uni",
         "combat_w3_uni",
         "story_w3_altar",
         "story_w3_schmiede",
@@ -546,8 +552,10 @@ const Definitions = {
       boss: "boss4",
       allowedEvents: [
         "combat_w4_easy",
+        "combat_w4_easy",
         "combat_w4_med",
         "combat_w4_hard",
+        "combat_w4_uni",
         "combat_w4_uni",
         "story_w4_lava",
         "story_w4_statue",
@@ -562,8 +570,10 @@ const Definitions = {
       boss: "boss5",
       allowedEvents: [
         "combat_w5_easy",
+        "combat_w5_easy",
         "combat_w5_med",
         "combat_w5_hard",
+        "combat_w5_uni",
         "combat_w5_uni",
         "story_w5_whisper",
         "story_w5_void",
@@ -605,7 +615,7 @@ const Definitions = {
       name: "Geheimer Ausgang",
       description: "Ein kühler Luftzug verrät einen Spalt im Fels, der nach draußen führt. Willst du den Dungeon verlassen?",
       type: "multipleChoice",
-      minChaos: 5,
+      minChaos: 10,
       maxChaos: null, // Immer möglich
       securityDecrease: 0, // Kostet keine Sicherheit, da man ja geht (oder bleibt)
       choices: [
@@ -638,7 +648,7 @@ const Definitions = {
       type: "combat",
       minChaos: 5,
       maxChaos: 7,
-      securityDecrease: 5,
+      securityDecrease: 3,
       enemies: ["wolf", "ratte"],
     },
     combat_w1_hard: {
@@ -648,7 +658,7 @@ const Definitions = {
       type: "combat",
       minChaos: 8,
       maxChaos: null,
-      securityDecrease: 8,
+      securityDecrease: 5,
       enemies: ["wolf", "wolf"],
     },
 
@@ -660,7 +670,7 @@ const Definitions = {
       type: "combat",
       minChaos: 0,
       maxChaos: null,
-      securityDecrease: 3,
+      securityDecrease: 2,
       enemies: ["wolf"],
     },
 
@@ -674,7 +684,7 @@ const Definitions = {
       securityDecrease: 3,
       choices: [
         {
-          text: "Entschärfen (Riskant)",
+          text: "Entschärfen",
           effects: [
             { type: "addChaos", amount: 1 },
             { type: "addItem", itemId: "ritual_eisen", amount: 1 },
@@ -693,7 +703,7 @@ const Definitions = {
       type: "multipleChoice",
       minChaos: 0,
       maxChaos: null,
-      securityDecrease: 1,
+      securityDecrease: 4,
       choices: [
         {
           text: "Essen",
@@ -714,7 +724,7 @@ const Definitions = {
       type: "combat",
       minChaos: 0,
       maxChaos: 4,
-      securityDecrease: 3,
+      securityDecrease: 2,
       enemies: ["schleim"],
     },
     combat_w2_med: {
@@ -724,7 +734,7 @@ const Definitions = {
       type: "combat",
       minChaos: 5,
       maxChaos: 7,
-      securityDecrease: 6,
+      securityDecrease: 3,
       enemies: ["sumpfhexe"],
     },
     combat_w2_hard: {
@@ -734,7 +744,7 @@ const Definitions = {
       type: "combat",
       minChaos: 8,
       maxChaos: null,
-      securityDecrease: 10,
+      securityDecrease: 5,
       enemies: ["sumpfhexe", "schleim", "schleim"],
     },
 
@@ -757,7 +767,7 @@ const Definitions = {
       type: "multipleChoice",
       minChaos: 0,
       maxChaos: null,
-      securityDecrease: 5,
+      securityDecrease: 3,
       choices: [
         {
           text: "Luft anhalten und rennen",
@@ -773,7 +783,7 @@ const Definitions = {
       type: "multipleChoice",
       minChaos: 0,
       maxChaos: null,
-      securityDecrease: 2,
+      securityDecrease: 4,
       choices: [
         {
           text: "Plündern",
@@ -797,7 +807,7 @@ const Definitions = {
       type: "combat",
       minChaos: 0,
       maxChaos: 4,
-      securityDecrease: 4,
+      securityDecrease: 2,
       enemies: ["skelett", "skelett"],
     },
     combat_w3_med: {
@@ -807,7 +817,7 @@ const Definitions = {
       type: "combat",
       minChaos: 5,
       maxChaos: 7,
-      securityDecrease: 7,
+      securityDecrease: 4,
       enemies: ["ritter"],
     },
     combat_w3_hard: {
@@ -817,7 +827,7 @@ const Definitions = {
       type: "combat",
       minChaos: 8,
       maxChaos: null,
-      securityDecrease: 12,
+      securityDecrease: 5,
       enemies: ["ritter", "skelett", "skelett"],
     },
 
@@ -843,7 +853,7 @@ const Definitions = {
       securityDecrease: 5,
       choices: [
         {
-          text: "Blut opfern (Riskant)",
+          text: "Blut opfern",
           effects: [
             { type: "addChaos", amount: 4 },
             { type: "addItem", itemId: "ritual_stahl", amount: 2 },
@@ -865,7 +875,7 @@ const Definitions = {
       type: "multipleChoice",
       minChaos: 0,
       maxChaos: null,
-      securityDecrease: 2,
+      securityDecrease: 7,
       choices: [
         {
           text: "Suchen",
@@ -886,7 +896,7 @@ const Definitions = {
       type: "combat",
       minChaos: 0,
       maxChaos: 4,
-      securityDecrease: 5,
+      securityDecrease: 2,
       enemies: ["feuergeist", "feuergeist"],
     },
     combat_w4_med: {
@@ -896,7 +906,7 @@ const Definitions = {
       type: "combat",
       minChaos: 5,
       maxChaos: 7,
-      securityDecrease: 8,
+      securityDecrease: 3,
       enemies: ["golem"],
     },
     combat_w4_hard: {
@@ -904,7 +914,7 @@ const Definitions = {
       name: "Inferno",
       description: "Hitze und Tod.",
       type: "combat",
-      minChaos: 8,
+      minChaos: 5,
       maxChaos: null,
       securityDecrease: 15,
       enemies: ["golem", "feuergeist", "feuergeist"],
@@ -918,7 +928,7 @@ const Definitions = {
       type: "combat",
       minChaos: 0,
       maxChaos: null,
-      securityDecrease: 5,
+      securityDecrease: 3,
       enemies: ["feuergeist"],
     },
 
@@ -929,7 +939,7 @@ const Definitions = {
       type: "multipleChoice",
       minChaos: 0,
       maxChaos: null,
-      securityDecrease: 5,
+      securityDecrease: 3,
       choices: [
         {
           text: "Springen (Riskant)",
@@ -948,7 +958,7 @@ const Definitions = {
       type: "multipleChoice",
       minChaos: 0,
       maxChaos: null,
-      securityDecrease: 2,
+      securityDecrease: 4,
       choices: [
         {
           text: "Tränen nehmen",
@@ -972,7 +982,7 @@ const Definitions = {
       type: "combat",
       minChaos: 0,
       maxChaos: 4,
-      securityDecrease: 6,
+      securityDecrease: 2,
       enemies: ["schatten", "schatten"],
     },
     combat_w5_med: {
@@ -982,7 +992,7 @@ const Definitions = {
       type: "combat",
       minChaos: 5,
       maxChaos: 7,
-      securityDecrease: 10,
+      securityDecrease: 4,
       enemies: ["voidwalker"],
     },
     combat_w5_hard: {
@@ -992,7 +1002,7 @@ const Definitions = {
       type: "combat",
       minChaos: 8,
       maxChaos: null,
-      securityDecrease: 20,
+      securityDecrease: 6,
       enemies: ["voidwalker", "schatten", "schatten"],
     },
 
@@ -1004,7 +1014,7 @@ const Definitions = {
       type: "combat",
       minChaos: 0,
       maxChaos: null,
-      securityDecrease: 6,
+      securityDecrease: 4,
       enemies: ["schatten"],
     },
 
@@ -1015,7 +1025,7 @@ const Definitions = {
       type: "multipleChoice",
       minChaos: 0,
       maxChaos: null,
-      securityDecrease: 5,
+      securityDecrease: 4,
       choices: [
         { text: "NIEMALS!", effects: [{ type: "addChaos", amount: 3 }] },
         { text: "...", effects: [{ type: "addChaos", amount: 5 }] },
@@ -1028,7 +1038,7 @@ const Definitions = {
       type: "multipleChoice",
       minChaos: 0,
       maxChaos: null,
-      securityDecrease: 5,
+      securityDecrease: 4,
       choices: [
         {
           text: "Hineingreifen",

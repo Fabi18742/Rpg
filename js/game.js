@@ -1275,62 +1275,55 @@ const Game = {
   },
 
   // 3 zufällige Events generieren
-  generateRandomEvents() {
-    const crawl = this.state.currentCrawl;
-    if (!crawl) return [];
+    generateRandomEvents() {
+        const crawl = this.state.currentCrawl;
+        if (!crawl) return [];
 
-    const bossWorld = this.bossWorlds[crawl.bossWorldId];
+        const bossWorld = this.bossWorlds[crawl.bossWorldId];
+        let eventsToChooseFrom = [];
 
-    // Alle Events holen
-    const allEvents = Object.values(this.crawlEvents);
+        // NEUE LOGIK:
+        // Fall A: allowedEvents ist definiert -> Wir nutzen diese Liste als Basis (ermöglicht Gewichtung!)
+        if (bossWorld.allowedEvents && bossWorld.allowedEvents.length > 0) {
+            bossWorld.allowedEvents.forEach(eventId => {
+                const event = this.crawlEvents[eventId];
+                
+                // Existiert das Event überhaupt?
+                if (!event) {
+                    console.warn(`[EVENT] ID '${eventId}' in allowedEvents nicht gefunden!`);
+                    return; 
+                }
 
-    // Nach Chaos-Range und allowedEvents filtern
-    let filteredEvents = allEvents.filter((event) => {
-      // Chaos-Level muss im Event-Bereich liegen
-      if (event.minChaos > crawl.chaosLevel) return false;
-      if (
-        event.maxChaos !== null &&
-        event.maxChaos !== undefined &&
-        crawl.chaosLevel > event.maxChaos
-      )
-        return false;
+                // Chaos-Checks prüfen
+                if (event.minChaos > crawl.chaosLevel) return;
+                if (event.maxChaos !== null && event.maxChaos !== undefined && crawl.chaosLevel > event.maxChaos) return;
 
-      // allowedEvents prüfen (null = alle erlaubt)
-      if (
-        bossWorld.allowedEvents !== null &&
-        bossWorld.allowedEvents !== undefined
-      ) {
-        if (!bossWorld.allowedEvents.includes(event.id)) {
-          console.log(
-            `[EVENT] Blockiert: ${event.id} (nicht in allowedEvents)`,
-          );
-          return false;
+                // Wenn alles passt: Ab in den Topf! 
+                // (Wenn die ID 3x in allowedEvents steht, landet das Event hier auch 3x drin)
+                eventsToChooseFrom.push(event);
+            });
         }
-      }
+        // Fall B: allowedEvents ist null -> Wir nehmen ALLE definierten Events (Fallback)
+        else {
+            const allEvents = Object.values(this.crawlEvents);
+            eventsToChooseFrom = allEvents.filter(event => {
+                if (event.minChaos > crawl.chaosLevel) return false;
+                if (event.maxChaos !== null && event.maxChaos !== undefined && crawl.chaosLevel > event.maxChaos) return false;
+                return true;
+            });
+        }
 
-      return true;
-    });
+        // Falls keine Events vorhanden sind
+        if (eventsToChooseFrom.length === 0) {
+            console.error('[EVENT] Keine passenden Events gefunden! Prüfe allowedEvents oder minChaos/maxChaos');
+            return [];
+        }
 
-    console.log(
-      `[EVENT] Chaos: ${crawl.chaosLevel}, Gefilterte Events: ${filteredEvents.length}`,
-      filteredEvents.map((e) => e.id),
-    );
-    console.log(`[EVENT] Erlaubte Events:`, bossWorld.allowedEvents);
-
-    // Falls keine Events vorhanden, Fehler (KEIN Fallback mehr)
-    if (filteredEvents.length === 0) {
-      console.error(
-        "[EVENT] Keine passenden Events gefunden! Prüfe allowedEvents oder minChaos/maxChaos",
-      );
-      return [];
-    }
-
-    const eventsToChooseFrom = filteredEvents;
-
-    const shuffled = [...eventsToChooseFrom].sort(() => Math.random() - 0.5);
-    const selected = shuffled.slice(0, 3);
-    return selected;
-  },
+        // Mischen und 3 auswählen
+        const shuffled = [...eventsToChooseFrom].sort(() => Math.random() - 0.5);
+        const selected = shuffled.slice(0, 3);
+        return selected;
+    },
 
   // Event-Auswahl anzeigen (Debug-Version)
   showEventSelection() {
