@@ -2313,7 +2313,7 @@ const UI = {
         }
         localStorage.setItem('windowVisibility', JSON.stringify(windowVisibility));
         
-        // ResizeObserver cleanup VOR dem Entfernen!
+        // ResizeObserver cleanup VOR dem Entfernen
         // Stats und Inventar: keepMinimizedState = true (Minimiert-Status merken)
         if (enemyWindow) DraggableManager.cleanupWindow('enemy-window');
         if (logWindow) DraggableManager.cleanupWindow('battle-log-window');
