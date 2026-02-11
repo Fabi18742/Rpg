@@ -613,7 +613,8 @@ const Definitions = {
     story_generic_exit: {
       id: "story_generic_exit",
       name: "Geheimer Ausgang",
-      description: "Ein kühler Luftzug verrät einen Spalt im Fels, der nach draußen führt. Willst du den Dungeon verlassen?",
+      description:
+        "Ein kühler Luftzug verrät einen Spalt im Fels, der nach draußen führt. Willst du den Dungeon verlassen?",
       type: "multipleChoice",
       minChaos: 10,
       maxChaos: null, // Immer möglich
@@ -706,11 +707,11 @@ const Definitions = {
       securityDecrease: 4,
       choices: [
         {
-          text: "Essen",
+          text: "Beeren pflücken",
           effects: [{ type: "addItem", itemId: "heiltrank", amount: 1 }],
         },
         {
-          text: "Sammeln",
+          text: "Rinde abkratzen",
           effects: [{ type: "addItem", itemId: "ritual_harz", amount: 1 }],
         },
       ],
@@ -773,7 +774,9 @@ const Definitions = {
           text: "Luft anhalten und rennen",
           effects: [{ type: "addChaos", amount: 1 }],
         },
-        { text: "Atmen...", effects: [{ type: "addChaos", amount: 3 }] },
+        { text: "Atmen...",
+          effects: [{ type: "addChaos", amount: 3 }]
+        },
       ],
     },
     story_w2_leiche: {
@@ -878,11 +881,11 @@ const Definitions = {
       securityDecrease: 7,
       choices: [
         {
-          text: "Suchen",
+          text: "Schmiede durchwühlen",
           effects: [{ type: "addItem", itemId: "ritual_eisen", amount: 2 }],
         },
         {
-          text: "Heilung suchen",
+          text: "Toilette plündern",
           effects: [{ type: "addItem", itemId: "heiltrank_gross", amount: 1 }],
         },
       ],
@@ -895,7 +898,7 @@ const Definitions = {
       description: "Kleine Feuergeister.",
       type: "combat",
       minChaos: 0,
-      maxChaos: 4,
+      maxChaos: 3,
       securityDecrease: 2,
       enemies: ["feuergeist", "feuergeist"],
     },
@@ -905,7 +908,7 @@ const Definitions = {
       description: "Ein Golem blockiert den Weg.",
       type: "combat",
       minChaos: 5,
-      maxChaos: 7,
+      maxChaos: 4,
       securityDecrease: 3,
       enemies: ["golem"],
     },
@@ -916,7 +919,7 @@ const Definitions = {
       type: "combat",
       minChaos: 5,
       maxChaos: null,
-      securityDecrease: 15,
+      securityDecrease: 7,
       enemies: ["golem", "feuergeist", "feuergeist"],
     },
 
@@ -942,11 +945,11 @@ const Definitions = {
       securityDecrease: 3,
       choices: [
         {
-          text: "Springen (Riskant)",
+          text: "Springen",
           effects: [{ type: "addChaos", amount: 5 }],
         },
         {
-          text: "Umweg suchen (Zeitverlust)",
+          text: "Umweg suchen",
           effects: [{ type: "addChaos", amount: 2 }],
         },
       ],
@@ -958,7 +961,7 @@ const Definitions = {
       type: "multipleChoice",
       minChaos: 0,
       maxChaos: null,
-      securityDecrease: 4,
+      securityDecrease: 7,
       choices: [
         {
           text: "Tränen nehmen",
@@ -1025,7 +1028,7 @@ const Definitions = {
       type: "multipleChoice",
       minChaos: 0,
       maxChaos: null,
-      securityDecrease: 4,
+      securityDecrease: 5,
       choices: [
         { text: "NIEMALS!", effects: [{ type: "addChaos", amount: 3 }] },
         { text: "...", effects: [{ type: "addChaos", amount: 5 }] },
@@ -1038,7 +1041,7 @@ const Definitions = {
       type: "multipleChoice",
       minChaos: 0,
       maxChaos: null,
-      securityDecrease: 4,
+      securityDecrease: 5,
       choices: [
         {
           text: "Hineingreifen",
