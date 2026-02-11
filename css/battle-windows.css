@@ -109,7 +109,7 @@
 /* AP Display */
 .ap-display {
     font-size: 16px;
-    color: var(--text-color);
+    color: goldenrod;
     font-weight: bold;
 }
 
