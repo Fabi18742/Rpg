@@ -100,8 +100,6 @@ const Game = {
         console.log(`Strafe: ${glitzerLoss} Glitzer durch Flucht verloren.`);
       }
 
-
-
       // Speichern und zum Hideout
       this.save();
       this.showScreen("hideout");
@@ -1451,9 +1449,14 @@ const Game = {
     this.save();
 
     // Boss-Spawn prüfen
-    setTimeout(() => {
-      this.checkBossSpawn();
-    }, 1000);
+    if (this.state.currentCrawl) {
+      setTimeout(() => {
+        // Zur Sicherheit im Timeout nochmal prüfen
+        if (this.state.currentCrawl) {
+          this.checkBossSpawn();
+        }
+      }, 1000);
+    }
   },
 
   // Wahl-Effekt anwenden
@@ -1499,6 +1502,16 @@ const Game = {
         );
         console.log(`HP -${effect.amount || 0}`);
         break;
+      case "returnToHideout":
+        console.log("Spieler verlässt den Dungeon vorzeitig.");
+        // Crawl sauber beenden
+        this.state.currentCrawl = null;
+        this.state.currentEvent = null;
+        // Speichern und Scene wechseln
+        this.save();
+        this.showScreen("hideout");
+        break;
+
       default:
         console.warn("Unbekannter Effekt-Typ:", effect.type);
     }

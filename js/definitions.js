@@ -504,6 +504,7 @@ const Definitions = {
         "story_w1_falle",
         "story_w1_beere",
         "story_generic_loot",
+        "story_generic_exit",
       ],
     },
     welt2: {
@@ -519,6 +520,7 @@ const Definitions = {
         "story_w2_gas",
         "story_w2_leiche",
         "story_generic_loot",
+        "story_generic_exit",
       ],
     },
     welt3: {
@@ -534,6 +536,7 @@ const Definitions = {
         "story_w3_altar",
         "story_w3_schmiede",
         "story_generic_loot",
+        "story_generic_exit",
       ],
     },
     welt4: {
@@ -549,6 +552,7 @@ const Definitions = {
         "story_w4_lava",
         "story_w4_statue",
         "story_generic_loot",
+        "story_generic_exit",
       ],
     },
     welt5: {
@@ -564,6 +568,7 @@ const Definitions = {
         "story_w5_whisper",
         "story_w5_void",
         "story_generic_loot",
+        "story_generic_exit",
       ],
     },
   },
@@ -591,6 +596,26 @@ const Definitions = {
         {
           text: "Liegen lassen",
           effects: [],
+        },
+      ],
+    },
+
+    story_generic_exit: {
+      id: "story_generic_exit",
+      name: "Geheimer Ausgang",
+      description: "Ein kühler Luftzug verrät einen Spalt im Fels, der nach draußen führt. Willst du den Dungeon verlassen?",
+      type: "multipleChoice",
+      minChaos: 5,
+      maxChaos: null, // Immer möglich
+      securityDecrease: 0, // Kostet keine Sicherheit, da man ja geht (oder bleibt)
+      choices: [
+        {
+          text: "Gebiet verlassen",
+          effects: [{ type: "returnToHideout" }],
+        },
+        {
+          text: "Weiter erkunden",
+          effects: [{ type: "addChaos", amount: 1 }], // Kleiner Zeitverlust
         },
       ],
     },
