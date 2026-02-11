@@ -77,7 +77,50 @@ const Game = {
 
         // UI initialisieren
         UI.init();
-        this.showScreen('hideout');
+
+if (this.state.currentBattle) {
+            console.log('Aktiver Kampf beim Neuladen erkannt -> WIRD ALS TOD GEWERTET.');
+
+            // Aufräumen: Kampf und Crawl beenden
+            this.state.currentBattle = null;
+            this.state.currentCrawl = null; // Ein Tod beendet auch den aktuellen Run/Crawl
+
+            // Bestrafung/Reset: Volle HP (Respawn), aber Fortschritt weg
+            this.state.player.hp = this.state.player.maxHp;
+
+            // Speichern und zum Hideout
+            this.save();
+            this.showScreen('hideout');
+            
+            // Optional: Alert oder Log für Spieler (kann entfernt werden)
+            console.log('Du bist durch das Neuladen im Kampf "gestorben" und im Hideout aufgewacht.');
+        }
+        // 2. Priorität: Aktives Multiple-Choice Event (innerhalb eines Crawls)
+        else if (this.state.currentEvent) {
+            console.log('Laufendes Event wiederherstellen...');
+            UI.showMultipleChoiceEvent();
+        }
+        // 3. Priorität: Laufender Crawl (Event-Auswahl)
+        else if (this.state.currentCrawl) {
+            console.log('Laufenden Crawl wiederherstellen...');
+            UI.showCrawlEventSelection();
+        }
+        // 4. Priorität: Statische Screens (Shop, Boss-Auswahl, Hideout)
+        else {
+            switch (this.state.currentScreen) {
+                case 'shop':
+                    UI.showShop();
+                    break;
+                case 'boss':
+                    UI.showBossSelection();
+                    break;
+                // Falls man in einem Untermenü war (z.B. Inventar), 
+                // ist es meist sicherer, zum Hideout zurückzukehren, 
+                // da diese oft als Overlays implementiert sind.
+                default:
+                    this.showScreen('hideout');
+            }
+        }
     },
 
     // Screen wechseln
