@@ -583,7 +583,6 @@ const Definitions = {
         "story_w5_whisper",
         "story_w5_void",
         "story_generic_loot",
-        "story_generic_exit",
       ],
     },
   },
