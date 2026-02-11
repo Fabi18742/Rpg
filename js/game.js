@@ -47,7 +47,7 @@ const Game = {
     // Initialisierung
     init() {
         console.log('Game wird initialisiert...');
-        
+
         // Spielstand laden falls vorhanden
         const savedState = Storage.loadGameState();
         if (savedState) {
@@ -62,7 +62,7 @@ const Game = {
                 // Automatisch ausrüsten
                 this.equipWeapon(0);
             }
-            
+
             // Start-Abilities aus Definitions hinzufügen
             const startAbilities = Definitions.player.startAbilities;
             if (startAbilities && startAbilities.length > 0) {
@@ -84,8 +84,8 @@ const Game = {
     showScreen(screenName) {
         this.state.currentScreen = screenName;
         console.log('Wechsel zu Screen:', screenName);
-        
-        switch(screenName) {
+
+        switch (screenName) {
             case 'hideout':
                 UI.showHideout();
                 break;
@@ -115,19 +115,19 @@ const Game = {
             console.error('Waffe muss baseId haben');
             return false;
         }
-        
+
         const weaponBase = this.weaponBases[weaponInstance.baseId];
         if (!weaponBase) {
             console.error('Waffenbasis nicht gefunden:', weaponInstance.baseId);
             return false;
         }
-        
+
         // Waffeninstanz mit baseId und effects Array
         const instance = {
             baseId: weaponInstance.baseId,
             effects: weaponInstance.effects || []
         };
-        
+
         this.state.player.weapons.push(instance);
         this.save();
         console.log(`[WAFFE] ${weaponBase.name} erhalten (${instance.effects.length} Effekte)`);
@@ -137,10 +137,10 @@ const Game = {
     // Waffeninstanz zu vollständiger Waffe auflösen
     resolveWeapon(weaponInstance) {
         if (!weaponInstance) return null;
-        
+
         const base = this.weaponBases[weaponInstance.baseId];
         if (!base) return null;
-        
+
         // Glitzer-Wert berechnen (Basis * Multiplikatoren aller Effekte)
         let glitzerValue = base.baseGlitzerValue;
         weaponInstance.effects.forEach(effectId => {
@@ -149,7 +149,7 @@ const Game = {
                 glitzerValue = Math.floor(glitzerValue * effect.glitzerValueMultiplier);
             }
         });
-        
+
         return {
             ...base,
             effects: weaponInstance.effects,
@@ -162,15 +162,15 @@ const Game = {
     applyEffects(baseDamage, effectIds, attacker, target, battle) {
         let damage = baseDamage;
         let logs = [];
-        
+
         if (!effectIds || effectIds.length === 0) {
             return { damage, logs };
         }
-        
+
         effectIds.forEach(effectId => {
             const effect = this.effects[effectId];
             if (!effect) return;
-            
+
             // Verschiedene Effekt-Typen
             switch (effect.type) {
                 case 'damage':
@@ -189,7 +189,7 @@ const Game = {
                 // case 'defense': ...
             }
         });
-        
+
         return { damage, logs };
     },
 
@@ -201,7 +201,7 @@ const Game = {
 
         // Prüfe ob bereits ein Gift-Effekt vorhanden ist
         let existingPoison = target.statusEffects.find(se => se.type === 'poison');
-        
+
         if (existingPoison) {
             // Addiere neue Stacks
             existingPoison.stacks += effect.stacksToApply;
@@ -219,7 +219,7 @@ const Game = {
     // Waffe ausrüsten - verwendet Array-Index
     equipWeapon(weaponIndex) {
         if (weaponIndex < 0 || weaponIndex >= this.state.player.weapons.length) return false;
-        
+
         this.state.player.equippedWeapon = weaponIndex;
         this.save();
         return true;
@@ -246,12 +246,12 @@ const Game = {
     equipAbility(abilityIndex, slot) {
         if (slot < 0 || slot > 3) return false;
         if (abilityIndex < 0 || abilityIndex >= this.state.player.abilities.length) return false;
-        
+
         // Prüfe ob diese Fähigkeit bereits ausgewählt ist
         if (this.state.player.equippedAbilities.includes(abilityIndex)) {
             return false;
         }
-        
+
         const abilityId = this.state.player.abilities[abilityIndex];
         const ability = this.abilities[abilityId];
         if (ability) {
@@ -318,47 +318,47 @@ const Game = {
         if (!weapon) return;
 
         const battle = this.state.currentBattle;
-        
+
         // Bei Gegner-Kämpfen: Stelle sicher, dass battle.boss auf das ausgewählte Ziel zeigt
         const isEnemyBattle = battle.enemies && battle.enemies.length > 0;
         if (isEnemyBattle) {
             battle.boss = battle.enemies[battle.selectedTarget || 0];
         }
-        
+
         // Prüfe ob genug Aktionspunkte vorhanden sind
         if (battle.playerActionPoints < ability.apCost) {
             console.log('Nicht genug Aktionspunkte!');
             return;
         }
-        
+
         // Aktionspunkte abziehen
         battle.playerActionPoints -= ability.apCost;
-        
+
         const boss = battle.boss;
-        
+
         console.log('Boss HP vor Angriff:', boss.hp);
-        
+
         // Mehrere Angriffe ausführen
         let totalDamage = 0;
         let attackLogs = [];
-        
+
         for (let i = 0; i < ability.attacks; i++) {
             // Trefferchance prüfen
             const hitChance = ability.hitChance || 1.0;
             const hitRoll = Math.random();
-            
+
             if (hitRoll > hitChance) {
                 // Verfehlt!
                 attackLogs.push('Verfehlt!');
                 continue;
             }
-            
+
             // Schaden berechnen: (Waffenschaden × Multiplikator) + Stats
             let baseDamage = weapon.damage * ability.damageMultiplier;
-            
+
             // Damage-Teile für Log sammeln
             let damageLog = [`${Math.floor(baseDamage)} Basis (${weapon.name} ${Math.floor(ability.damageMultiplier * 100)}%)`];
-            
+
             // Effekte anwenden (vor Stats!)
             if (weapon.effects && weapon.effects.length > 0) {
                 const effectResult = this.applyEffects(baseDamage, weapon.effects, this.state.player, boss, battle);
@@ -367,9 +367,9 @@ const Game = {
                     damageLog.push(...effectResult.logs);
                 }
             }
-            
+
             let damage = baseDamage;
-            
+
             // Nur physische Fähigkeiten bekommen Strength-Bonus
             if (ability.damageType === 'physical') {
                 const playerStrength = this.state.player.stats.strength;
@@ -378,28 +378,28 @@ const Game = {
                     damageLog.push(`${playerStrength} Stärke`);
                 }
             }
-            
+
             // Verteidigung abziehen
             const bossDefense = boss.stats.defense;
             if (bossDefense > 0) {
                 damage -= bossDefense;
                 damageLog.push(`-${bossDefense} Vert.`);
             }
-            
-            console.log(`[SCHADEN Angriff ${i+1}] ${ability.name}: Basis=${Math.floor(baseDamage)} + Boni - Verteidigung=${bossDefense} = ${Math.floor(damage)}`);
-            
+
+            console.log(`[SCHADEN Angriff ${i + 1}] ${ability.name}: Basis=${Math.floor(baseDamage)} + Boni - Verteidigung=${bossDefense} = ${Math.floor(damage)}`);
+
             if (damage < 0) {
                 console.log(`[SCHADEN] Schaden unter 0, setze auf 0`);
                 damage = 0;
             }
-            
+
             damage = Math.floor(damage);
             totalDamage += damage;
             boss.hp -= damage;
-            
+
             attackLogs.push(`${damage} (${damageLog.join(' + ')})`);
         }
-        
+
         // Log-Eintrag erstellen
         if (ability.attacks > 1) {
             battle.log.push(`${ability.name}: ${attackLogs.join(', ')} = ${totalDamage} gesamt`);
@@ -410,18 +410,18 @@ const Game = {
         // Boss/Gegner besiegt?
         if (boss.hp <= 0) {
             boss.hp = 0;
-            
+
             // Prüfe ob es ein Gegner-Kampf ist
             const isEnemyBattle = battle.enemies && battle.enemies.length > 0;
-            
+
             if (isEnemyBattle) {
                 // Gegner besiegt - markiere als besiegt, entferne NICHT aus Array
                 boss.defeated = true;
                 battle.log.push(`${boss.name} wurde besiegt!`);
-                
+
                 // Zähle lebende Gegner
                 const aliveEnemies = battle.enemies.filter(e => !e.defeated);
-                
+
                 // Prüfe ob noch lebende Gegner übrig sind
                 if (aliveEnemies.length === 0) {
                     // Alle Gegner besiegt
@@ -431,7 +431,7 @@ const Game = {
                 } else {
                     // Noch Gegner übrig
                     battle.log.push(`Noch ${aliveEnemies.length} Gegner übrig!`);
-                    
+
                     // Falls aktuelles Target besiegt wurde, wähle nächsten lebenden Gegner
                     if (battle.enemies[battle.selectedTarget].defeated) {
                         // Finde nächsten lebenden Gegner
@@ -443,7 +443,7 @@ const Game = {
                             }
                         }
                     }
-                    
+
                     // Prüfe ob Spieler noch AP hat
                     if (battle.playerActionPoints > 0) {
                         // Spieler kann weiter angreifen
@@ -475,12 +475,12 @@ const Game = {
         } else {
             // Spieler-Zug beendet, Gegner ist dran
             battle.turn = 'enemy';
-            
+
             // Reset attack counter für neue Gegner-Runde
             if (battle.enemies && battle.enemies.length > 0) {
                 battle.enemiesAttackedThisRound = 0;
             }
-            
+
             this.save();
             UI.updateBattleScreen();
 
@@ -494,17 +494,17 @@ const Game = {
         if (!this.state.currentBattle || this.state.currentBattle.turn !== 'player') return;
 
         const battle = this.state.currentBattle;
-        
+
         // Prüfe ob genug Aktionspunkte vorhanden sind
         if (battle.playerActionPoints < 1) return;
-        
+
         // Block-Wert berechnen: Nur AP-Bonus (Defense wird bereits normal vom Schaden abgezogen!)
         const availableAP = battle.playerActionPoints; // AP BEVOR wir abziehen
         const blockBonus = availableAP * 2; // Alle verfügbaren AP geben +2 Block pro AP
-        
+
         battle.blockBonus = blockBonus;
         battle.log.push(`Block! (+${blockBonus} Verteidigung)`);
-        
+
         // NACH der Berechnung: Alle AP verbrauchen (Zug ist beendet)
         battle.playerActionPoints = 0;
         battle.turn = 'enemy';
@@ -520,63 +520,63 @@ const Game = {
         if (!this.state.currentBattle) return;
 
         const battle = this.state.currentBattle;
-        
+
         console.log('[ENEMY ATTACK] Turn:', battle.turn);
-        
+
         // Turn-Prüfung: Nur angreifen wenn enemy dran ist
         if (battle.turn !== 'enemy') {
             console.log('[ENEMY ATTACK] Abgebrochen - nicht enemy turn');
             return;
         }
-        
+
         // Bestimme ob es ein Gegner-Kampf oder Boss-Kampf ist
         const isEnemyBattle = battle.enemies && battle.enemies.length > 0;
-        
+
         // Bei Gegner-Kämpfen: Stelle sicher dass currentEnemyIndex initialisiert ist
         if (isEnemyBattle && (battle.currentEnemyIndex === undefined || battle.currentEnemyIndex === null)) {
             battle.currentEnemyIndex = 0;
         }
-        
+
         // Bei Gegner-Kämpfen: Suche zirkulär nach lebendem Gegner
         if (isEnemyBattle) {
             // Initialisiere Attack-Counter
             if (battle.enemiesAttackedThisRound === undefined) {
                 battle.enemiesAttackedThisRound = 0;
             }
-            
+
             let attempts = 0;
             const totalEnemies = battle.enemies.length;
-            
+
             // Zirkuläre Suche mit Wrap-Around
             while (attempts < totalEnemies) {
                 // Wrap-around: Index auf 0 zurücksetzen wenn >= Länge
                 if (battle.currentEnemyIndex >= totalEnemies) {
                     battle.currentEnemyIndex = 0;
                 }
-                
+
                 // Lebenden Gegner gefunden?
                 if (!battle.enemies[battle.currentEnemyIndex].defeated) {
                     break; // Gefunden, verlasse Schleife
                 }
-                
+
                 // Dieser ist tot, weiter zum nächsten
                 battle.currentEnemyIndex++;
                 attempts++;
             }
-            
+
             // Wenn alle durchsucht und alle tot sind
             if (attempts >= totalEnemies) {
                 this.endBattle(true);
                 return;
             }
-            
+
             // Aktualisiere battle.boss auf den aktuell angreifenden Gegner
             battle.boss = battle.enemies[battle.currentEnemyIndex];
         }
-        
+
         // Boss holen (NACH dem Update bei Gegner-Kämpfen)
         const boss = battle.boss;
-        
+
         // Boss-Waffe auflösen (Instanz zu vollständiger Waffe)
         const bossWeaponInstance = boss.weapon;
         const bossWeapon = this.resolveWeapon(bossWeaponInstance);
@@ -610,7 +610,7 @@ const Game = {
                 if (boss.hp <= 0) {
                     boss.defeated = true;
                     battle.log.push(`${boss.name} wurde durch Gift besiegt!`);
-                    
+
                     if (isEnemyBattle) {
                         // Prüfe ob alle Gegner besiegt sind
                         const allDefeated = battle.enemies.every(e => e.defeated);
@@ -618,7 +618,7 @@ const Game = {
                             this.endBattle(true);
                             return;
                         }
-                        
+
                         // Nächster Gegner ist dran
                         battle.currentEnemyIndex++;
                         this.save();
@@ -642,27 +642,27 @@ const Game = {
             const playerDefense = this.state.player.stats.defense;
             const blockBonus = battle.blockBonus || 0;
             let damage = bossBaseDamage + bossStrength - playerDefense - blockBonus;
-            
+
             // Damage-Teile für Log sammeln
             let damageLog = [`${bossBaseDamage} Basis`];
             if (bossStrength > 0) damageLog.push(`${bossStrength} Stärke`);
             if (playerDefense > 0) damageLog.push(`-${playerDefense} Vert.`);
             if (blockBonus > 0) damageLog.push(`-${blockBonus} Block`);
-            
+
             // Effekte anwenden
             if (bossWeapon && bossWeapon.effects && bossWeapon.effects.length > 0) {
                 const effectResult = this.applyEffects(damage, bossWeapon.effects, boss, this.state.player, battle);
                 damage = effectResult.damage;
                 damageLog.push(...effectResult.logs);
             }
-            
+
             if (damage < 0) damage = 0;
 
             this.state.player.hp -= damage;
             if (this.state.player.hp < 0) this.state.player.hp = 0;
 
             battle.log.push(`${boss.name}: ${attackName} = ${damage} (${damageLog.join(' + ')})`);
-            
+
             // Block-Bonus nach dem Angriff zurücksetzen
             if (battle.blockBonus > 0) {
                 battle.blockBonus = 0;
@@ -678,14 +678,14 @@ const Game = {
             // Inkrementiere Attack-Counter
             battle.enemiesAttackedThisRound++;
             const livingEnemies = battle.enemies.filter(e => !e.defeated).length;
-            
+
             // Prüfe ob alle lebenden Gegner bereits angegriffen haben
             if (battle.enemiesAttackedThisRound >= livingEnemies) {
                 // Alle haben angegriffen, Spieler ist dran
                 battle.turn = 'player';
                 battle.currentEnemyIndex = 0;
                 battle.enemiesAttackedThisRound = 0; // Reset für nächste Runde
-                
+
                 // Stelle battle.boss auf das ausgewählte Ziel zurück
                 // Prüfe ob aktuelles Target noch lebt, sonst finde nächsten lebenden Gegner
                 if (battle.enemies[battle.selectedTarget] && !battle.enemies[battle.selectedTarget].defeated) {
@@ -700,36 +700,36 @@ const Game = {
                         }
                     }
                 }
-                
+
                 battle.playerActionPoints = this.state.player.maxActionPoints;
                 this.save();
                 UI.updateBattleScreen();
             } else {
                 // Noch nicht alle haben angegriffen, zum nächsten wechseln
                 battle.currentEnemyIndex++;
-                
+
                 // Zirkuläre Suche nach nächstem lebenden Gegner
                 let attempts = 0;
                 const totalEnemies = battle.enemies.length;
                 let foundNext = false;
-                
+
                 while (attempts < totalEnemies) {
                     // Wrap-around
                     if (battle.currentEnemyIndex >= totalEnemies) {
                         battle.currentEnemyIndex = 0;
                     }
-                    
+
                     // Lebenden Gegner gefunden?
                     if (!battle.enemies[battle.currentEnemyIndex].defeated) {
                         foundNext = true;
                         break;
                     }
-                    
+
                     // Weiter suchen
                     battle.currentEnemyIndex++;
                     attempts++;
                 }
-                
+
                 // Sollte immer einen finden (weil enemiesAttackedThisRound < livingEnemies)
                 if (foundNext) {
                     battle.boss = battle.enemies[battle.currentEnemyIndex];
@@ -749,34 +749,34 @@ const Game = {
         } else {
             // Boss-Kampf: Einfacher Angriff ohne AP-System
             console.log('[BOSS ATTACK] Boss greift an mit:', bossWeapon ? bossWeapon.name : 'Angriff');
-            
+
             // Schaden berechnen
             const bossBaseDamage = attackDamage;
             const bossStrength = boss.stats.strength;
             const playerDefense = this.state.player.stats.defense;
             const blockBonus = battle.blockBonus || 0;
             let damage = bossBaseDamage + bossStrength - playerDefense - blockBonus;
-            
+
             // Damage-Teile für Log sammeln
             let damageLog = [`${bossBaseDamage} Basis`];
             if (bossStrength > 0) damageLog.push(`${bossStrength} Stärke`);
             if (playerDefense > 0) damageLog.push(`-${playerDefense} Vert.`);
             if (blockBonus > 0) damageLog.push(`-${blockBonus} Block`);
-            
+
             // Effekte anwenden
             if (bossWeapon && bossWeapon.effects && bossWeapon.effects.length > 0) {
                 const effectResult = this.applyEffects(damage, bossWeapon.effects, boss, this.state.player, battle);
                 damage = effectResult.damage;
                 damageLog.push(...effectResult.logs);
             }
-            
+
             if (damage < 0) damage = 0;
 
             this.state.player.hp -= damage;
             if (this.state.player.hp < 0) this.state.player.hp = 0;
 
             battle.log.push(`Boss: ${attackName} = ${damage} (${damageLog.join(' + ')})`);
-            
+
             // Block-Bonus nach dem Angriff zurücksetzen
             if (battle.blockBonus > 0) {
                 battle.blockBonus = 0;
@@ -788,7 +788,7 @@ const Game = {
                 this.endBattle(false);
                 return;
             }
-            
+
             // Boss-Angriff beendet, Spieler ist dran
             console.log('Boss-Angriff beendet, Spieler ist dran');
             battle.turn = 'player';
@@ -798,63 +798,74 @@ const Game = {
         }
     },
 
-    // Kampf beenden
+   // Kampf beenden
     endBattle(victory) {
         const battle = this.state.currentBattle;
         const isEnemyBattle = battle && battle.enemies && battle.enemies.length > 0;
         const isBossBattle = !isEnemyBattle;
         
         if (victory) {
-            const boss = battle.boss;
-            const bossId = boss.id;
+            // Liste aller Gegner erstellen, von denen wir Loot bekommen
+            // Bei Boss-Kampf ist es nur der Boss, bei Gruppen-Kampf alle Gegner
+            let enemiesToLoot = [];
             
-            // Nur bei Boss-Kämpfen den Boss als besiegt markieren
-            if (isBossBattle && !this.state.defeatedBosses.includes(bossId)) {
-                this.state.defeatedBosses.push(bossId);
+            if (isEnemyBattle) {
+                enemiesToLoot = battle.enemies;
+            } else {
+                enemiesToLoot = [battle.boss];
+                
+                // Nur bei echten Boss-Kämpfen den Boss in der Statistik als besiegt markieren
+                const bossId = battle.boss.id;
+                if (!this.state.defeatedBosses.includes(bossId)) {
+                    this.state.defeatedBosses.push(bossId);
+                }
             }
             
-            // Drops hinzufügen
-            if (boss.drops && boss.drops.length > 0) {
-                boss.drops.forEach(drop => {
-                    // Unterstütze altes Format (nur String) und neues Format (Object mit type)
-                    if (typeof drop === 'string') {
-                        // Altes Format: Nur Item-ID als String
-                        const item = this.items[drop];
-                        if (item) {
-                            this.addItemToInventory(item);
-                            battle.log.push(`${item.name} erhalten!`);
-                        }
-                    } else {
-                        // Neues Format: { type: 'item'/'weapon'/'ability', id: '...' }
-                        const dropType = drop.type;
-                        const dropId = drop.id;
-                        
-                        if (dropType === 'item') {
-                            const item = this.items[dropId];
+            // Jetzt über ALLE Gegner loopen und Drops verteilen
+            enemiesToLoot.forEach(enemy => {
+                if (enemy.drops && enemy.drops.length > 0) {
+                    enemy.drops.forEach(drop => {
+                        // Unterstütze altes Format (nur String) und neues Format (Object mit type)
+                        if (typeof drop === 'string') {
+                            // Altes Format: Nur Item-ID als String
+                            const item = this.items[drop];
                             if (item) {
                                 this.addItemToInventory(item);
-                                battle.log.push(`${item.name} erhalten!`);
+                                battle.log.push(`${item.name} von ${enemy.name} erhalten!`);
                             }
-                        } else if (dropType === 'weapon') {
-                            const weapon = this.weapons[dropId];
-                            if (weapon) {
-                                // Waffe als Instanz zum Inventar hinzufügen
-                                this.state.player.weapons.push({
-                                    baseId: weapon.id,
-                                    effects: []
-                                });
-                                battle.log.push(`Waffe erhalten: ${weapon.name}!`);
-                            }
-                        } else if (dropType === 'ability') {
-                            const ability = this.abilities[dropId];
-                            if (ability && !this.state.player.abilities.includes(dropId)) {
-                                this.state.player.abilities.push(dropId);
-                                battle.log.push(`Fähigkeit erhalten: ${ability.name}!`);
+                        } else {
+                            // Neues Format: { type: 'item'/'weapon'/'ability', id: '...' }
+                            const dropType = drop.type;
+                            const dropId = drop.id;
+                            
+                            if (dropType === 'item') {
+                                const item = this.items[dropId];
+                                if (item) {
+                                    this.addItemToInventory(item);
+                                    battle.log.push(`${item.name} von ${enemy.name} erhalten!`);
+                                }
+                            } else if (dropType === 'weapon') {
+                                // Hier nutzen wir wieder "this.weapons" wie im Original (ohne den zusätzlichen Fix)
+                                const weapon = this.weapons[dropId];
+                                if (weapon) {
+                                    // Waffe als Instanz zum Inventar hinzufügen
+                                    this.state.player.weapons.push({
+                                        baseId: weapon.id,
+                                        effects: []
+                                    });
+                                    battle.log.push(`Waffe erhalten: ${weapon.name}!`);
+                                }
+                            } else if (dropType === 'ability') {
+                                const ability = this.abilities[dropId];
+                                if (ability && !this.state.player.abilities.includes(dropId)) {
+                                    this.state.player.abilities.push(dropId);
+                                    battle.log.push(`Fähigkeit erhalten: ${ability.name}!`);
+                                }
                             }
                         }
-                    }
-                });
-            }
+                    });
+                }
+            });
         } else {
             // Bei Niederlage: HP vollständig auffüllen und zurück ins Hideout
             this.state.player.hp = this.state.player.maxHp;
@@ -894,7 +905,7 @@ const Game = {
     // Item zum Inventar hinzufügen
     addItemToInventory(item) {
         const existingItem = this.state.player.inventory.find(i => i.id === item.id);
-        
+
         if (existingItem) {
             // Item existiert bereits, erhöhe Anzahl
             existingItem.quantity = (existingItem.quantity || 1) + 1;
@@ -909,32 +920,32 @@ const Game = {
             });
             console.log(`${item.name} zum Inventar hinzugefügt`);
         }
-        
+
         this.save();
     },
 
     // Item aus Inventar entfernen
     removeItemFromInventory(itemId, quantity = 1) {
         console.log('removeItemFromInventory aufgerufen:', itemId, 'Anzahl:', quantity);
-        
+
         const itemIndex = this.state.player.inventory.findIndex(i => i.id === itemId);
-        
+
         if (itemIndex !== -1) {
             const item = this.state.player.inventory[itemIndex];
             item.quantity -= quantity;
-            
+
             console.log(`${item.name} Anzahl reduziert auf ${item.quantity}`);
-            
+
             // Wenn Anzahl 0 oder weniger, aus Inventar entfernen
             if (item.quantity <= 0) {
                 this.state.player.inventory.splice(itemIndex, 1);
                 console.log(`${item.name} aus Inventar entfernt`);
             }
-            
+
             this.save();
             return true;
         }
-        
+
         console.log('Item nicht im Inventar gefunden');
         return false;
     },
@@ -983,7 +994,7 @@ const Game = {
             console.log('Waffe konnte nicht aufgelöst werden');
             return false;
         }
-        
+
         const glitzerValue = weapon.glitzerValue || 0;
 
         // Prüfe ob Waffe ausgerüstet ist
@@ -1055,20 +1066,40 @@ const Game = {
         if (!itemInInventory) return false;
 
         const item = this.items[itemId];
-        
+
         // Heiltrank
         if (item.type === 'consumable' && item.healAmount) {
             const healAmount = item.healAmount;
             const oldHp = this.state.player.hp;
             this.state.player.hp = Math.min(this.state.player.maxHp, this.state.player.hp + healAmount);
             const actualHeal = this.state.player.hp - oldHp;
-            
+
             // Item aus Inventar entfernen
             this.removeItemFromInventory(itemId, 1);
             this.save();
-            
+
             console.log(`${item.name} genutzt! +${actualHeal} HP`);
             return actualHeal;
+        }
+
+        if (item.type === 'consumable' && item.maxHpIncrease) {
+
+            this.state.player.maxHp += item.maxHpIncrease;
+            this.state.player.hp += item.maxHpIncrease;
+
+            this.removeItemFromInventory(itemId, 1);
+            this.save();
+
+            console.log(`${item.name} verbraucht! Max HP erhöht.`);
+            if (document.getElementById('stats-panel-window')) {
+                // Trick: Stats-Fenster kurz schließen und öffnen zum Aktualisieren
+                UI.toggleStatsPanel();
+                UI.toggleStatsPanel();
+            } else if (this.state.currentBattle) {
+                // Falls man es im Kampf nutzt
+                UI.updateBattleScreen();
+            }
+            return true;
         }
 
         return false;
@@ -1116,13 +1147,13 @@ const Game = {
 
         // Alle Events holen
         const allEvents = Object.values(this.crawlEvents);
-        
+
         // Nach Chaos-Range und allowedEvents filtern
         let filteredEvents = allEvents.filter(event => {
             // Chaos-Level muss im Event-Bereich liegen
             if (event.minChaos > crawl.chaosLevel) return false;
             if (event.maxChaos !== null && event.maxChaos !== undefined && crawl.chaosLevel > event.maxChaos) return false;
-            
+
             // allowedEvents prüfen (null = alle erlaubt)
             if (bossWorld.allowedEvents !== null && bossWorld.allowedEvents !== undefined) {
                 if (!bossWorld.allowedEvents.includes(event.id)) {
@@ -1130,21 +1161,21 @@ const Game = {
                     return false;
                 }
             }
-            
+
             return true;
         });
-        
+
         console.log(`[EVENT] Chaos: ${crawl.chaosLevel}, Gefilterte Events: ${filteredEvents.length}`, filteredEvents.map(e => e.id));
         console.log(`[EVENT] Erlaubte Events:`, bossWorld.allowedEvents);
-        
+
         // Falls keine Events vorhanden, Fehler (KEIN Fallback mehr)
         if (filteredEvents.length === 0) {
             console.error('[EVENT] Keine passenden Events gefunden! Prüfe allowedEvents oder minChaos/maxChaos');
             return [];
         }
-        
+
         const eventsToChooseFrom = filteredEvents;
-        
+
         const shuffled = [...eventsToChooseFrom].sort(() => Math.random() - 0.5);
         const selected = shuffled.slice(0, 3);
         return selected;
@@ -1163,7 +1194,7 @@ const Game = {
         const event = crawl.availableEvents[eventIndex];
 
         if (!event) return;
-        
+
         // Je nach Event-Typ unterschiedlich behandeln
         if (event.type === 'combat') {
             // Kampf-Event: Direkt zum Kampf
@@ -1188,7 +1219,7 @@ const Game = {
                 console.error('Gegner nicht gefunden:', enemyId);
                 return null;
             }
-            
+
             // Kopie des Gegners erstellen
             return JSON.parse(JSON.stringify(enemyDef));
         }).filter(e => e !== null);
@@ -1319,7 +1350,7 @@ const Game = {
     processEventEffects(event) {
         const crawl = this.state.currentCrawl;
         if (!crawl) return;
-        
+
         // Sicherheit verringern
         crawl.security = Math.max(0, crawl.security - event.securityDecrease);
 
@@ -1339,13 +1370,13 @@ const Game = {
     // Prüfen ob Boss erscheint
     checkBossSpawn() {
         const crawl = this.state.currentCrawl;
-        
+
         // Sicherheit: Prüfen ob crawl existiert
         if (!crawl) {
             console.error('checkBossSpawn aufgerufen, aber currentCrawl ist null');
             return;
         }
-        
+
         // Spawn-Wahrscheinlichkeit berechnen (basierend auf fehlender Sicherheit)
         const spawnChance = 100 - crawl.security; // 0% Sicherheit = 100% Spawn-Chance
         const roll = Math.random() * 100;
@@ -1360,7 +1391,7 @@ const Game = {
             // Neue Events generieren
             crawl.availableEvents = this.generateRandomEvents();
             this.save();
-            
+
             setTimeout(() => {
                 // Prüfen ob Crawl noch aktiv ist
                 if (this.state.currentCrawl) {
@@ -1379,12 +1410,12 @@ const Game = {
         // Crawl beenden und Kampf starten
         this.state.currentCrawl = null;
         this.save();
-        
+
         this.startBattle(boss);
     },
 
     // ===== RITUAL-SYSTEM =====
-    
+
     // Ritual durchführen
     performRitual() {
         const ritual = this.state.currentRitual;
@@ -1392,71 +1423,71 @@ const Game = {
             console.log('Ritual benötigt exakt 6 Items');
             return false;
         }
-        
+
         // Items aus Inventar entfernen
         const itemDetails = ritual.selectedItems.map(itemId => {
             const itemDef = this.items[itemId];
             this.removeItemFromInventory(itemId, 1);
             return itemDef;
         });
-        
+
         // 1. Power-Score berechnen
         const powerScore = itemDetails.reduce((sum, item) => sum + item.value, 0);
         console.log(`[RITUAL] Power-Score: ${powerScore}`);
-        
+
         // 2. Modifier-Wahrscheinlichkeit berechnen
         const modifierCounts = {};
         itemDetails.forEach(item => {
             const type = item.modifierType;
             modifierCounts[type] = (modifierCounts[type] || 0) + 1;
         });
-        
+
         console.log('[RITUAL] Modifier-Counts:', modifierCounts);
-        
+
         // 3. Waffen-Pool erstellen: Alle Waffen im Bereich powerScore ±5
         const minValue = powerScore - 5;
         const maxValue = powerScore + 5;
-        
+
         let weaponPool = Object.values(this.weaponBases).filter(weapon => {
             if (!weapon.ritualValue) return false;
             return weapon.ritualValue >= minValue && weapon.ritualValue <= maxValue;
         });
-        
+
         console.log(`[RITUAL] Waffen-Pool (${minValue}-${maxValue}): ${weaponPool.length} Waffen`);
-        
+
         // Fallback: Wenn keine Waffe im ±5 Bereich, nimm die nächstgelegene
         if (weaponPool.length === 0) {
             console.log('[RITUAL] Kein Waffenpool im ±5 Bereich, suche nächstgelegene Waffe');
-            
+
             const allWeapons = Object.values(this.weaponBases).filter(weapon => weapon.ritualValue);
-            
+
             if (allWeapons.length === 0) {
                 console.log('[RITUAL] Keine Waffen mit ritualValue gefunden');
                 return false;
             }
-            
+
             // Sortiere nach Distanz zum powerScore
             allWeapons.sort((a, b) => {
                 const distA = Math.abs(a.ritualValue - powerScore);
                 const distB = Math.abs(b.ritualValue - powerScore);
                 return distA - distB;
             });
-            
+
             // Nimm die nächstgelegene
             weaponPool = [allWeapons[0]];
             console.log(`[RITUAL] Nächstgelegene Waffe: ${weaponPool[0].name} (ritualValue: ${weaponPool[0].ritualValue}, Distanz: ${Math.abs(weaponPool[0].ritualValue - powerScore)})`);
         }
-        
+
         // Zufällig eine Waffe aus dem Pool wählen
         const randomIndex = Math.floor(Math.random() * weaponPool.length);
         const selectedWeapon = weaponPool[randomIndex];
-        
+
         console.log(`[RITUAL] Gewählte Waffe: ${selectedWeapon.name} (ritualValue: ${selectedWeapon.ritualValue})`);
-        
+
         // 5. Effekt würfeln basierend auf Modifier-Wahrscheinlichkeit
         // Gewichtete Zufallsauswahl - maximal EIN Effekt
         let selectedEffect = null;
-        
+
         // Erstelle gewichteten Pool (ALLE Items, auch 'none')
         const weightedPool = [];
         for (const [modifierType, count] of Object.entries(modifierCounts)) {
@@ -1464,20 +1495,20 @@ const Game = {
             for (let i = 0; i < count; i++) {
                 weightedPool.push(modifierType);
             }
-            
+
             const percentage = (count / 6 * 100).toFixed(1);
             console.log(`[RITUAL] ${modifierType}: ${count}/6 = ${percentage}% Chance`);
         }
-        
+
         console.log(`[RITUAL] Pool-Größe: ${weightedPool.length} Items`);
-        
+
         // Zufällig einen Modifier aus Pool wählen
         if (weightedPool.length > 0) {
             const randomEffectIndex = Math.floor(Math.random() * weightedPool.length);
             const chosenModifier = weightedPool[randomEffectIndex];
-            
+
             console.log(`[RITUAL] Gezogen: ${chosenModifier}`);
-            
+
             // None = kein Effekt
             if (chosenModifier === 'none') {
                 console.log(`[RITUAL] 'none' gezogen - kein Effekt`);
@@ -1493,25 +1524,25 @@ const Game = {
         } else {
             console.log(`[RITUAL] Leerer Pool - kein Effekt`);
         }
-        
+
         // 6. Waffe hinzufügen
         const weaponInstance = {
             baseId: selectedWeapon.id,
             effects: selectedEffect ? [selectedEffect] : []
         };
-        
+
         this.addWeapon(weaponInstance);
-        
+
         // 7. Ritual abschließen
         this.state.currentRitual = null;
         this.save();
-        
+
         const effectCount = selectedEffect ? 1 : 0;
         console.log(`[RITUAL] Ritual abgeschlossen! Waffe: ${selectedWeapon.name}, Effekte: ${effectCount} (${selectedEffect || 'keiner'})`);
-        
+
         // UI zurück zum Hideout mit Erfolgsmeldung
         UI.showHideout();
-        
+
         return true;
     }
 };

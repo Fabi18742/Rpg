@@ -43,6 +43,14 @@ const Definitions = {
             healAmount: 5,
             glitzerValue: 1
         },
+        maxHpTrank: {
+            id: 'maxHpTrank',
+            name: 'Lebenselixier',
+            type: 'consumable',
+            description: 'Erhöht Maximale HP um 50',
+            maxHpIncrease: 50,
+            glitzerValue: 1
+        },
         
         // ===== RITUAL-ITEMS =====
         ritualItem_weak_none: {
