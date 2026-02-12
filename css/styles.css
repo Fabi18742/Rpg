@@ -622,6 +622,13 @@ img, svg {
     left: auto;
     right: calc(100% + 10px);
 }
+/* Tooltip beim Hovern einblenden */
+.equipment-slot:hover .equipment-tooltip {
+    opacity: 1;
+    visibility: visible;
+    top: 50%; /* Stellt sicher, dass die Positionierung greift */
+    transition-delay: 0.5s;
+}
 
 .equipment-tooltip .tooltip-title {
     font-size: 16px;
