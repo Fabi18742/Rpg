@@ -46,7 +46,7 @@ const Game = {
 
   // Initialisierung
   init() {
-    console.log("Game wird initialisiert... 0.2.10");
+    console.log("Game wird initialisiert... 0.2.11");
 
     // Spielstand laden falls vorhanden
     const savedState = Storage.loadGameState();
@@ -93,7 +93,7 @@ const Game = {
       this.state.currentCrawl = null; // Ein Tod beendet auch den aktuellen Run/Crawl
 
       const currentGlitzer = this.state.player.stats.glitzer;
-      const glitzerLoss = Math.floor(currentGlitzer / 5);
+      const glitzerLoss = Math.ceil(currentGlitzer / 5);
 
       if (glitzerLoss > 0) {
         this.state.player.stats.glitzer -= glitzerLoss;
@@ -930,7 +930,7 @@ const Game = {
     } else {
       // --- LOGIK FÜR TOD / NIEDERLAGE ---
       const currentGlitzer = this.state.player.stats.glitzer;
-      const glitzerLoss = Math.floor(currentGlitzer / 5); // 20% Verlust
+      const glitzerLoss = Math.ceil(currentGlitzer / 5); // 20% Verlust
 
       resultMessages.push("Die Dunkelheit umfängt dich...");
 
