@@ -2341,3 +2341,34 @@ img, svg {
     padding: 40px;
     font-style: italic;
 }
+
+/* ===== RESULT SCREEN ===== */
+.result-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.85);
+    border: 3px solid var(--border-color);
+    padding: 40px;
+    text-align: center;
+    max-width: 600px;
+    width: 90%;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+}
+
+.result-screen h2 {
+    font-size: 32px;
+    color: #fbbf24;
+    margin-bottom: 30px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.result-messages {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    font-size: 18px;
+    color: var(--text-color);
+    line-height: 1.5;
+}

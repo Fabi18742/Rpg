@@ -46,7 +46,7 @@ const Game = {
 
   // Initialisierung
   init() {
-    console.log("Game wird initialisiert... 0.1.0");
+    console.log("Game wird initialisiert... 0.1.1");
 
     // Spielstand laden falls vorhanden
     const savedState = Storage.loadGameState();
@@ -1718,8 +1718,23 @@ const Game = {
       `[RITUAL] Ritual abgeschlossen! Waffe: ${selectedWeapon.name}, Effekte: ${effectCount} (${selectedEffect || "keiner"})`,
     );
 
-    // UI zurück zum Hideout mit Erfolgsmeldung
-    UI.showHideout();
+// === Result Screen vorbereiten und aufrufen ===
+    const messages = [
+        `Du hast erfolgreich eine neue Waffe erschaffen:`,
+        `<strong style="color: var(--accent-color); font-size: 1.3em;">${selectedWeapon.name}</strong>`
+    ];
+
+    if (selectedEffect) {
+        const effectDef = this.effects[selectedEffect];
+        messages.push(`<br>Mit dem Zusatzeffekt: <span style="color: #e74c3c;">${effectDef.name}</span>`);
+    } else {
+        messages.push(`<br><span style="color: var(--placeholder-color);">Keine Zusatzeffekte aufgetreten.</span>`);
+    }
+
+    // Zeige den Result-Screen. Wenn man "Weiter" klickt, geht's ins Hideout.
+    UI.showResultScreen("Ritual erfolgreich!", messages, () => {
+        this.showScreen('hideout');
+    });
 
     return true;
   },

@@ -53,6 +53,43 @@ const UI = {
         this.setupHideoutListeners();
     },
 
+
+// === Universeller Result Screen ===
+    showResultScreen(title, messages, callback) {
+        this.elements.visualArea.classList.remove('hideout-bg');
+        
+        // Verstecke Stats-Panel falls offen, damit es nicht stört
+        const existingPanel = this.elements.visualArea.querySelector('.stats-panel');
+        if (existingPanel) existingPanel.classList.remove('visible');
+        
+        // HTML für die Nachrichten zusammenbauen
+        const messagesHTML = messages.map(msg => `<div>${msg}</div>`).join('');
+
+        this.elements.sceneContent.innerHTML = `
+            <div class="result-screen">
+                <h2>${title}</h2>
+                <div class="result-messages">
+                    ${messagesHTML}
+                </div>
+            </div>
+        `;
+
+        // Nur ein einziger "Weiter" Button
+        this.elements.buttonGrid.innerHTML = `
+            <button class="game-button" id="btn-result-next">Weiter</button>
+        `;
+        this.elements.buttonGrid.className = 'button-grid single-button';
+
+        // Was passiert beim Klick?
+        document.getElementById('btn-result-next').addEventListener('click', () => {
+            if (callback && typeof callback === 'function') {
+                callback(); // Ruft die übergebene Funktion auf (z.B. zurück zum Hideout)
+            } else {
+                Game.showScreen('hideout'); // Fallback
+            }
+        });
+    },
+
     // Hideout-spezifische Event Listeners
     setupHideoutListeners() {
         document.getElementById('btn-stats').addEventListener('click', () => {
