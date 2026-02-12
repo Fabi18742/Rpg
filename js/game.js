@@ -1436,7 +1436,7 @@ const Game = {
     }
   },
 
-  // Multiple Choice Antwort wählen
+// Multiple Choice Antwort wählen
   selectChoice(choiceIndex) {
     const event = this.state.currentEvent;
     if (!event || !event.choices) return;
@@ -1444,33 +1444,65 @@ const Game = {
     const choice = event.choices[choiceIndex];
     if (!choice) return;
 
+    let resultMessages = [];
+    let isReturningToHideout = false;
+
     // Effekte der Antwort verarbeiten
     if (choice.effects) {
       choice.effects.forEach((effect) => {
-        this.applyChoiceEffect(effect);
+        const msg = this.applyChoiceEffect(effect);
+        if (msg) resultMessages.push(msg);
+        
+        if (effect.type === "returnToHideout") {
+          isReturningToHideout = true;
+        }
       });
     }
 
-    // Event-Basiseffekte verarbeiten
-    this.processEventEffects(event);
+    // Falls das Event "returnToHideout" beinhaltet, brechen wir hier ab 
+    // und gehen nach dem Klick auf "Weiter" direkt ins Hideout
+    if (isReturningToHideout) {
+      this.state.currentCrawl = null;
+      this.state.currentEvent = null;
+      this.save();
+      
+      UI.showResultScreen(event.name, resultMessages, () => {
+        this.showScreen("hideout");
+      });
+      return;
+    }
 
+    // Event-Basiseffekte verarbeiten (Sicherheit sinkt, Chaos steigt im Hintergrund immer um +1)
+    this.processEventEffects(event);
+    
+    // Basis-Infos für den Screen anhängen (Wir zeigen nur noch die Sicherheit, das Standard-Chaos lassen wir weg)
+    resultMessages.push(`<span style="color: #fca5a5;">Sicherheit: -${event.securityDecrease}%</span>`);
+
+    // Falls die Auswahl keine besonderen Effekte (wie Items oder zusätzliches Chaos) hatte, 
+    // steht jetzt nur noch die Sicherheit im Array (Länge = 1)
+    if (resultMessages.length === 1) {
+      resultMessages.unshift("Du entscheidest dich, deinen Weg fortzusetzen...");
+    }
+
+    const eventName = event.name;
+    
     // Event beenden
     this.state.currentEvent = null;
     this.save();
 
-    // Boss-Spawn prüfen
-    if (this.state.currentCrawl) {
-      setTimeout(() => {
-        // Zur Sicherheit im Timeout nochmal prüfen
-        if (this.state.currentCrawl) {
-          this.checkBossSpawn();
-        }
-      }, 1000);
-    }
+    // Zeige den Resultscreen und prüfe danach den Boss-Spawn (wenn man "Weiter" klickt)
+    UI.showResultScreen(eventName, resultMessages, () => {
+      if (this.state.currentCrawl) {
+        this.checkBossSpawn();
+      } else {
+        this.showScreen("hideout");
+      }
+    });
   },
 
-  // Wahl-Effekt anwenden
+  // Wahl-Effekt anwenden und formatierte Nachricht für Resultscreen zurückgeben
   applyChoiceEffect(effect) {
+    let message = "";
     switch (effect.type) {
       case "addItem":
         const itemDef = this.items[effect.itemId];
@@ -1478,12 +1510,12 @@ const Game = {
           // Spezielle Behandlung für Glitzer: als Stat statt Inventar-Item
           if (effect.itemId === "glitzer") {
             this.state.player.stats.glitzer += effect.amount || 1;
-            console.log(`+${effect.amount || 1} ${itemDef.name}`);
+            message = `<span style="color: #fbbf24;">Erhalten: +${effect.amount || 1} Glitzer</span>`;
           } else {
             for (let i = 0; i < (effect.amount || 1); i++) {
               this.addItemToInventory(itemDef);
             }
-            console.log(`+${effect.amount || 1} ${itemDef.name}`);
+            message = `Erhalten: <strong style="color: var(--accent-color);">${effect.amount || 1}x ${itemDef.name}</strong>`;
           }
         }
         break;
@@ -1491,40 +1523,35 @@ const Game = {
         const crawl = this.state.currentCrawl;
         if (crawl) {
           crawl.chaosLevel += effect.amount || 1;
-          console.log(`Chaos +${effect.amount || 1}`);
+          message = `<span style="color: #a855f7;">Zusätzliches Chaos: +${effect.amount || 1}</span>`;
         }
         break;
       case "addGold":
         this.state.player.gold += effect.amount || 0;
-        console.log(`Gold +${effect.amount || 0}`);
+        message = `<span style="color: #fbbf24;">Gold: +${effect.amount || 0}</span>`;
         break;
       case "addHp":
         this.state.player.hp = Math.min(
           this.state.player.maxHp,
           this.state.player.hp + (effect.amount || 0),
         );
-        console.log(`HP +${effect.amount || 0}`);
+        message = `<span style="color: #22c55e;">HP: +${effect.amount || 0}</span>`;
         break;
       case "removeHp":
         this.state.player.hp = Math.max(
           0,
           this.state.player.hp - (effect.amount || 0),
         );
-        console.log(`HP -${effect.amount || 0}`);
+        message = `<span style="color: #e74c3c;">Du verlierst ${effect.amount || 0} HP!</span>`;
         break;
       case "returnToHideout":
-        console.log("Spieler verlässt den Dungeon vorzeitig.");
-        // Crawl sauber beenden
-        this.state.currentCrawl = null;
-        this.state.currentEvent = null;
-        // Speichern und Scene wechseln
-        this.save();
-        this.showScreen("hideout");
+        // Die Logik für den Abbruch (state null setzen etc.) wird nun sicher in selectChoice behandelt
+        message = "Du verlässt den Dungeon sicher und kehrst zurück.";
         break;
-
       default:
         console.warn("Unbekannter Effekt-Typ:", effect.type);
     }
+    return message;
   },
 
   // Event-Basiseffekte verarbeiten (Sicherheit, Chaos)
