@@ -47,7 +47,7 @@ const Definitions = {
       type: "consumable",
       description: "Erhöht Maximale HP um 50",
       maxHpIncrease: 50,
-      glitzerValue: 1,
+      glitzerValue: 25,
     },
 
     // ===== RITUAL-ITEMS (CRAFTING MATS) =====
