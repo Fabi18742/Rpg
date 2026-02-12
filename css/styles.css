@@ -2392,3 +2392,52 @@ img, svg {
     box-shadow: none;
     background: #000000;
 }
+
+/* ===== BATTLE LOG STYLING ===== */
+.log-entry {
+    border-bottom: 1px solid #333;
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+    line-height: 1.5;
+}
+
+.log-miss {
+    color: #ff4444; /* Knalliges Rot für Verfehlt */
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.log-source {
+    font-weight: bold;
+}
+.log-source.player { color: #69db7c; } /* Grün für Spieler */
+.log-source.enemy { color: #ff6b6b; }  /* Rot für Gegner */
+
+.log-hit-item {
+    padding-left: 15px; /* Einrückung für einzelne Treffer */
+    position: relative;
+    color: #ccc;
+}
+
+.log-hit-item::before {
+    content: "↳";
+    position: absolute;
+    left: 0;
+    color: #666;
+}
+
+.log-damage-val {
+    color: #fff;
+    font-weight: bold;
+}
+
+.log-details {
+    color: #888;
+    font-size: 0.85em;
+    font-style: italic;
+}
+
+.log-summary {
+    color: #ffd700; /* Gold für Gesamtschaden */
+    font-weight: bold;
+}

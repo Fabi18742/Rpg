@@ -483,7 +483,7 @@ const Definitions = {
       maxHp: 5000,
       actionPoints: 4,
       stats: { strength: 40, defense: 25 },
-      weapon: { baseId: "monster_void", effects: ["poison", "testdamage"] },
+      weapon: { baseId: "monster_void", effects: ["testdamage"] },
       drops: ["dafuq"], //dafuq fehler
     },
   },
