@@ -1505,17 +1505,21 @@ const Game = {
     let message = "";
     switch (effect.type) {
       case "addItem":
-        const itemDef = this.items[effect.itemId];
-        if (itemDef) {
-          // Spezielle Behandlung für Glitzer: als Stat statt Inventar-Item
-          if (effect.itemId === "glitzer") {
-            this.state.player.stats.glitzer += effect.amount || 1;
-            message = `<span style="color: #fbbf24;">Erhalten: +${effect.amount || 1} Glitzer</span>`;
-          } else {
+        // 1. Sonderregel für Glitzer: Unabhängig davon, ob es als normales Item definiert ist!
+        if (effect.itemId === "glitzer") {
+          this.state.player.stats.glitzer += effect.amount || 1;
+          message = `<span style="color: #fbbf24;">Erhalten: +${effect.amount || 1} Glitzer</span>`;
+        } 
+        // 2. Normale Items
+        else {
+          const itemDef = this.items[effect.itemId];
+          if (itemDef) {
             for (let i = 0; i < (effect.amount || 1); i++) {
               this.addItemToInventory(itemDef);
             }
             message = `Erhalten: <strong style="color: var(--accent-color);">${effect.amount || 1}x ${itemDef.name}</strong>`;
+          } else {
+            console.warn("Item nicht gefunden:", effect.itemId);
           }
         }
         break;
@@ -1545,7 +1549,6 @@ const Game = {
         message = `<span style="color: #e74c3c;">Du verlierst ${effect.amount || 0} HP!</span>`;
         break;
       case "returnToHideout":
-        // Die Logik für den Abbruch (state null setzen etc.) wird nun sicher in selectChoice behandelt
         message = "Du verlässt den Dungeon sicher und kehrst zurück.";
         break;
       default:
