@@ -94,10 +94,10 @@ const UI = {
   showDeathScreen(messages, callback) {
     // Nutzt die universelle showResultScreen Logik mit festem Titel
     this.showResultScreen("DU BIST GESTORBEN", messages, callback);
-    
+
     // Fügt nachträglich die CSS-Klasse für das Styling hinzu
-    const screen = document.querySelector('.result-screen');
-    if (screen) screen.classList.add('death-screen');
+    const screen = document.querySelector(".result-screen");
+    if (screen) screen.classList.add("death-screen");
   },
 
   // Hideout-spezifische Event Listeners
@@ -1047,12 +1047,11 @@ const UI = {
 
     let itemHTML = "";
 
-    // --- VERKAUFEN ---
+    // --- VERKAUFEN (HTML GENERIERUNG) ---
     if (type === "sell") {
-      const entry = sellableList && sellableList[index];
+      const entry = sellableList[index];
 
       if (!entry) {
-        // Leere Ansicht falls nichts gewählt/da
         this.elements.buttonGrid.innerHTML = `<button class="game-button shop-back-btn" id="btn-back-shop">Zurück</button>`;
         document
           .getElementById("btn-back-shop")
@@ -1065,9 +1064,8 @@ const UI = {
       const description = entry.def.description;
       const sellValue = entry.def.glitzerValue || 0;
 
-      // Bei Waffen immer Menge 1 (da unique Instanzen), bei Items wählbar
-      const maxQuantity = isWeapon ? 1 : entry.data.quantity || 1;
-
+      // Wir berechnen hier die Gruppen-Infos für die Anzeige (optional, aber sauber)
+      // Wichtig wird es gleich unten im Event-Teil
       itemHTML = `
                 <div class="shop-action-details">
                     <div class="shop-action-item">
@@ -1090,7 +1088,7 @@ const UI = {
                 </div>
             `;
 
-      // --- KAUFEN ---
+    // --- KAUFEN (HTML GENERIERUNG) ---
     } else if (type === "buy") {
       const offer = merchant.offers[index];
       if (!offer) {
@@ -1146,17 +1144,32 @@ const UI = {
     const plusBtn = document.getElementById("shop-plus");
     const actionBtn = document.getElementById("shop-action-btn");
 
+    // --- VERKAUFEN LOGIK ---
     if (type === "sell") {
       const entry = sellableList[index];
       const isWeapon = entry.type === "weapon";
       const sellValue = entry.def.glitzerValue || 0;
-      // Bei Waffen ist maxQuantity immer 1, sonst Inventarmenge
-      const maxQuantity = isWeapon ? 1 : entry.data.quantity || 1;
+      
+      // === FIX: GRUPPEN-INFOS & MAXQUANTITY HIER BERECHNEN ===
+      // Damit sie im Event-Listener verfügbar sind
+      let groupStartIndex = index;
+      while(groupStartIndex > 0 && sellableList[groupStartIndex-1].sourceIndex === entry.sourceIndex) {
+          groupStartIndex--;
+      }
+      
+      let groupEndIndex = index;
+      while(groupEndIndex < sellableList.length - 1 && sellableList[groupEndIndex+1].sourceIndex === entry.sourceIndex) {
+          groupEndIndex++;
+      }
+      
+      const groupSize = groupEndIndex - groupStartIndex + 1;
+      const maxQuantity = isWeapon ? 1 : groupSize;
+      // ========================================================
 
-      // Visuelle Auswahl-Updates (nur für Items relevant, Waffen sind unique)
+      // Visuelle Auswahl-Updates
       const updateSelectionHighlight = (qty) => {
         if (!isWeapon) {
-          this.updateShopItemSelection(entry.sourceIndex, qty, index);
+          this.updateShopItemSelection(index, qty, groupStartIndex, groupSize);
         }
       };
 
@@ -1170,6 +1183,7 @@ const UI = {
       });
 
       plusBtn.addEventListener("click", () => {
+        // Jetzt ist maxQuantity hier bekannt!
         if (quantity < maxQuantity) {
           quantity++;
           quantityDisplay.textContent = quantity;
@@ -1196,6 +1210,8 @@ const UI = {
           });
         }
       });
+
+    // --- KAUFEN LOGIK ---
     } else if (type === "buy") {
       const offer = merchant.offers[index];
       const updateBuyButton = () => {
@@ -1236,6 +1252,36 @@ const UI = {
       });
     }
   },
+  updateShopItemSelection(clickedIndex, quantity, groupStartIndex, groupSize) {
+    const cards = document.querySelectorAll(
+      '.shop-item-card[data-type="sell"]',
+    );
+
+    // Auswahl zurücksetzen
+    cards.forEach((card) => card.classList.remove("selected"));
+
+    // Startposition berechnen
+    // Standard: Wir starten beim angeklickten Item
+    let start = clickedIndex;
+
+    // Korrektur: Wenn die Menge über das Gruppen-Ende hinausgehen würde,
+    // verschieben wir den Startpunkt nach oben
+    // (groupStartIndex + groupSize) ist der Index des ersten Items NACH der Gruppe
+    if (start + quantity > groupStartIndex + groupSize) {
+      start = groupStartIndex + groupSize - quantity;
+    }
+
+    const end = start + quantity;
+
+    // Bereich markieren
+    cards.forEach((card) => {
+      const idx = parseInt(card.dataset.index);
+      // Prüfen ob die Karte im berechneten Bereich liegt
+      if (idx >= start && idx < end) {
+        card.classList.add("selected");
+      }
+    });
+  },
 
   updateBuyDisplay(merchantId, offerIndex, quantity) {
     // Diese Funktion wird nicht mehr benötigt
@@ -1245,46 +1291,32 @@ const UI = {
     // Diese Funktion wird nicht mehr benötigt
   },
 
-  updateShopItemSelection(sourceIndex, quantity, startIndex) {
-    // Alle Verkaufs-Karten suchen
-    const cards = document.querySelectorAll('.shop-item-card[data-type="sell"]');
-    
-    // Auswahl zurücksetzen
-    cards.forEach(card => card.classList.remove('selected'));
-    
-    // Bereich markieren
-    cards.forEach(card => {
-        const idx = parseInt(card.dataset.index);
-        // Da die Liste jedes Item einzeln anzeigt, markieren wir einfach 
-        // ab dem Start-Index die gewünschte Anzahl an Karten
-        if (idx >= startIndex && idx < startIndex + quantity) {
-            card.classList.add('selected');
-        }
-    });
-  },
+  // Boss-Welten Screen anzeigen
+  showBossSelection() {
+    this.elements.visualArea.classList.remove("hideout-bg");
+    // Stats Panel schließen
+    this.statsVisible = false;
+    const existingPanel =
+      this.elements.visualArea.querySelector(".stats-panel");
+    if (existingPanel) {
+      existingPanel.classList.remove("visible");
+    }
 
-// Boss-Welten Screen anzeigen
-    showBossSelection() {
-        this.elements.visualArea.classList.remove('hideout-bg');
-        // Stats Panel schließen
-        this.statsVisible = false;
-        const existingPanel = this.elements.visualArea.querySelector('.stats-panel');
-        if (existingPanel) {
-            existingPanel.classList.remove('visible');
-        }
-        
-        const bossWorlds = Game.bossWorlds;
-        
-        this.elements.sceneContent.innerHTML = `
+    const bossWorlds = Game.bossWorlds;
+
+    this.elements.sceneContent.innerHTML = `
             <div class="boss-selection">
                 <h2>Wähle eine Welt</h2>
                 <div class="world-selection">
-                    ${Object.values(bossWorlds).map(world => {
+                    ${Object.values(bossWorlds)
+                      .map((world) => {
                         const boss = Game.bosses[world.boss];
                         const isUnlocked = Game.isWorldUnlocked(world.id);
-                        const lockClass = isUnlocked ? '' : 'locked';
-                        const desc = isUnlocked ? world.description : 'Gesperrt';
-                        
+                        const lockClass = isUnlocked ? "" : "locked";
+                        const desc = isUnlocked
+                          ? world.description
+                          : "Gesperrt";
+
                         return `
                             <div class="world-card boss-world-card ${lockClass}" data-world-id="${world.id}">
                                 <div class="world-name">${world.name}</div>
@@ -1295,30 +1327,31 @@ const UI = {
                                 </div>
                             </div>
                         `;
-                    }).join('')}
+                      })
+                      .join("")}
                 </div>
             </div>
         `;
 
-        this.elements.buttonGrid.innerHTML = `
+    this.elements.buttonGrid.innerHTML = `
             <button class="game-button" id="btn-back">Zurück</button>
         `;
 
-        document.getElementById('btn-back').addEventListener('click', () => {
-            Game.showScreen('hideout');
-        });
+    document.getElementById("btn-back").addEventListener("click", () => {
+      Game.showScreen("hideout");
+    });
 
-        // Event Listeners für Boss-Welten
-        document.querySelectorAll('.boss-world-card').forEach(card => {
-            card.addEventListener('click', () => {
-                // Wenn gesperrt, Klick ignorieren
-                if (card.classList.contains('locked')) return;
-                
-                const worldId = card.dataset.worldId;
-                Game.startCrawl(worldId);
-            });
-        });
-    },
+    // Event Listeners für Boss-Welten
+    document.querySelectorAll(".boss-world-card").forEach((card) => {
+      card.addEventListener("click", () => {
+        // Wenn gesperrt, Klick ignorieren
+        if (card.classList.contains("locked")) return;
+
+        const worldId = card.dataset.worldId;
+        Game.startCrawl(worldId);
+      });
+    });
+  },
 
   // Crawl Event-Auswahl anzeigen
   showCrawlEventSelection() {
@@ -1484,7 +1517,7 @@ const UI = {
     this.updateBattleScreen();
   },
 
- // Kampf-Screen aktualisieren
+  // Kampf-Screen aktualisieren
   updateBattleScreen() {
     const battle = Game.state.currentBattle;
     if (!battle) return;
@@ -2390,7 +2423,7 @@ const UI = {
     }
 
     const player = Game.state.player;
-    
+
     // ÄNDERUNG: Prüfen, wer am Zug ist
     const isPlayerTurn = battle.turn === "player";
 
@@ -2411,9 +2444,10 @@ const UI = {
         }
 
         // ÄNDERUNG: Button ist disabled, wenn AP fehlen ODER wenn nicht Player-Turn ist
-        const canUse = isPlayerTurn && (battle.playerActionPoints >= ability.apCost);
+        const canUse =
+          isPlayerTurn && battle.playerActionPoints >= ability.apCost;
         const disabledClass = canUse ? "" : "disabled";
-        
+
         const hitInfo =
           ability.hitChance < 1.0
             ? ` | ${Math.floor(ability.hitChance * 100)}%`
@@ -2432,10 +2466,10 @@ const UI = {
 
     // Block-Button
     // ÄNDERUNG: Blocken auch nur im Player-Turn möglich
-    const canBlock = isPlayerTurn && (battle.playerActionPoints >= 1);
+    const canBlock = isPlayerTurn && battle.playerActionPoints >= 1;
     const blockButtonClass = canBlock ? "" : "disabled";
     const blockValue = battle.playerActionPoints * 2;
-    
+
     const blockButton = `
             <div class="ability-button-card ${blockButtonClass}" data-action="block">
                 <div class="ability-icon-placeholder"></div>
