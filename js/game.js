@@ -46,7 +46,7 @@ const Game = {
 
   // Initialisierung
   init() {
-    console.log("Game wird initialisiert... 0.1.1");
+    console.log("Game wird initialisiert... 0.2.1");
 
     // Spielstand laden falls vorhanden
     const savedState = Storage.loadGameState();
@@ -913,6 +913,8 @@ const Game = {
     const isEnemyBattle = battle && battle.enemies && battle.enemies.length > 0;
     const isBossBattle = !isEnemyBattle;
 
+    let resultMessages = []; // Sammelt die Nachrichten für den Resultscreen
+
     if (victory) {
       // Liste aller Gegner erstellen, von denen wir Loot bekommen
       // Bei Boss-Kampf ist es nur der Boss, bei Gruppen-Kampf alle Gegner
@@ -941,6 +943,7 @@ const Game = {
               if (item) {
                 this.addItemToInventory(item);
                 battle.log.push(`${item.name} von ${enemy.name} erhalten!`);
+                resultMessages.push(`Item: <strong style="color: var(--accent-color);">${item.name}</strong>`);
               }
             } else {
               // Neues Format: { type: 'item'/'weapon'/'ability', id: '...' }
@@ -952,10 +955,11 @@ const Game = {
                 if (item) {
                   this.addItemToInventory(item);
                   battle.log.push(`${item.name} von ${enemy.name} erhalten!`);
+                  resultMessages.push(`Item: <strong style="color: var(--accent-color);">${item.name}</strong>`);
                 }
               } else if (dropType === "weapon") {
-                // Hier nutzen wir wieder "this.weapons" wie im Original (ohne den zusätzlichen Fix)
-                const weapon = this.weapons[dropId];
+                // Hier greifen wir sicherheitshalber auf weaponBases zu
+                const weapon = this.weaponBases ? this.weaponBases[dropId] : this.weapons[dropId];
                 if (weapon) {
                   // Waffe als Instanz zum Inventar hinzufügen
                   this.state.player.weapons.push({
@@ -963,27 +967,39 @@ const Game = {
                     effects: [],
                   });
                   battle.log.push(`Waffe erhalten: ${weapon.name}!`);
+                  resultMessages.push(`Waffe: <strong style="color: var(--accent-color);">${weapon.name}</strong>`);
                 }
               } else if (dropType === "ability") {
                 const ability = this.abilities[dropId];
                 if (ability && !this.state.player.abilities.includes(dropId)) {
                   this.state.player.abilities.push(dropId);
                   battle.log.push(`Fähigkeit erhalten: ${ability.name}!`);
+                  resultMessages.push(`Fähigkeit: <strong style="color: var(--accent-color);">${ability.name}</strong>`);
                 }
               }
             }
           });
         }
       });
+      
+      // Beute-Titel hinzufügen falls vorhanden, sonst Meldung für leere Beute
+      if (resultMessages.length > 0) {
+          resultMessages.unshift("Du hast folgende Beute erhalten:");
+      } else {
+          resultMessages.push(`<span style="color: var(--placeholder-color);">Keine Beute gefunden.</span>`);
+      }
+      
     } else {
       // Bei Niederlage
-
       const currentGlitzer = this.state.player.stats.glitzer;
       const glitzerLoss = Math.floor(currentGlitzer / 5);
 
       if (glitzerLoss > 0) {
         this.state.player.stats.glitzer -= glitzerLoss;
         battle.log.push(`Du hast ${glitzerLoss} Glitzer verloren!`);
+        resultMessages.push(`<span style="color: #e74c3c;">Du hast ${glitzerLoss} Glitzer verloren!</span>`);
+      } else {
+        resultMessages.push("Du hast glücklicherweise nichts verloren.");
       }
 
       this.state.player.hp = this.state.player.maxHp;
@@ -992,32 +1008,33 @@ const Game = {
 
     this.save();
 
-    // UI aktualisieren für Drop-Nachricht
+    // UI aktualisieren (damit der letzte Schlag und das Log noch kurz sichtbar sind)
     UI.updateBattleScreen();
 
-    // Bei Niederlage oder Boss-Kampf: Zurück zum Hideout
-    if (!victory || isBossBattle) {
-      // Crawl-Zustand löschen
-      if (this.state.currentCrawl) {
-        this.state.currentCrawl = null;
-      }
+    // Kurze Verzögerung, bevor der Resultscreen kommt (1.5 Sekunden)
+    setTimeout(() => {
+      // Alle Kampffenster (Gegner, Log etc.) schließen, damit der Screen sauber ist
+      UI.removeBattleWindows();
 
-      // Zurück zum Hideout nach 3 Sekunden
-      setTimeout(() => {
-        this.state.currentBattle = null;
-        this.save();
-        this.showScreen("hideout");
-      }, 3000);
-    } else {
-      // Bei Sieg im Gegner-Kampf: Weiter im Crawl
-      setTimeout(() => {
+      const title = victory ? "Kampf gewonnen!" : "Du wurdest besiegt!";
+      
+      // Resultscreen aufrufen und die Logik aus dem alten Timeout als Callback übergeben
+      UI.showResultScreen(title, resultMessages, () => {
         this.state.currentBattle = null;
         this.save();
 
-        // Boss-Spawn prüfen
-        this.checkBossSpawn();
-      }, 2000);
-    }
+        if (!victory || isBossBattle) {
+          // Crawl-Zustand löschen
+          if (this.state.currentCrawl) {
+            this.state.currentCrawl = null;
+          }
+          this.showScreen("hideout");
+        } else {
+          // Bei Sieg im Gegner-Kampf: Weiter im Crawl
+          this.checkBossSpawn();
+        }
+      });
+    }, 1500);
   },
 
   // Item zum Inventar hinzufügen
