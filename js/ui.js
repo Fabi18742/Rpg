@@ -740,7 +740,7 @@ const UI = {
         const player = Game.state.player;
         const glitzerCount = player.stats.glitzer;
         
-        // Scroll-Position speichern (falls bereits vorhanden)
+        // Scroll-Position speichern
         let leftPanelScrollPos = 0;
         let rightPanelScrollPos = 0;
         const existingLeftPanel = document.querySelector('.shop-left-panel .shop-item-list');
@@ -748,56 +748,98 @@ const UI = {
         if (existingLeftPanel) leftPanelScrollPos = existingLeftPanel.scrollTop;
         if (existingRightPanel) rightPanelScrollPos = existingRightPanel.scrollTop;
 
-        // Linke Seite: Verkaufbare Items - EINZELN anzeigen (expanded)
-        const expandedSellableItems = [];
+        // --- LISTE DER VERKAUFBAREN DINGE ERSTELLEN (Waffen + Items) ---
+        const sellableList = [];
+
+        // 1. Waffen hinzufügen (nur nicht ausgerüstete)
+        player.weapons.forEach((weaponInstance, index) => {
+            // Überspringe ausgerüstete Waffe
+            if (player.equippedWeapon === index) return;
+            
+            const weapon = Game.resolveWeapon(weaponInstance);
+            const sellValue = weapon.glitzerValue || 0;
+
+            if (sellValue > 0) {
+                sellableList.push({
+                    type: 'weapon',
+                    sourceIndex: index, // Index im weapons Array
+                    def: weapon,        // Aufgelöste Waffe (Name, Stats...)
+                    data: weaponInstance,
+                    displayIndex: sellableList.length
+                });
+            }
+        });
+
+        // 2. Items hinzufügen
         player.inventory.forEach((item, inventoryIndex) => {
             const itemDef = Game.items[item.id];
             if (!itemDef) return;
             
+            const sellValue = itemDef.glitzerValue || 0;
+            if (sellValue <= 0) return;
+
             const quantity = item.quantity || 1;
             for (let i = 0; i < quantity; i++) {
-                expandedSellableItems.push({
-                    item: item,
-                    itemDef: itemDef,
-                    inventoryIndex: inventoryIndex,
-                    displayIndex: expandedSellableItems.length
+                sellableList.push({
+                    type: 'item',
+                    sourceIndex: inventoryIndex, // Index im inventory Array
+                    def: itemDef,
+                    data: item,
+                    displayIndex: sellableList.length
                 });
             }
         });
 
         // State für ausgewähltes Item
-        let selectedType = preserveSelection ? preserveSelection.type : 'buy'; // Standardmäßig 'buy'
+        let selectedType = preserveSelection ? preserveSelection.type : 'buy'; // 'buy' oder 'sell'
         let selectedIndex = preserveSelection ? preserveSelection.index : 0;
         
-        // Wenn kein Inventar vorhanden und sell ausgewählt ist, auf buy wechseln
-        if (expandedSellableItems.length === 0 && selectedType === 'sell') {
+        // Fallback: Wenn Liste leer/kleiner geworden ist
+        if (selectedType === 'sell' && sellableList.length === 0) {
             selectedType = 'buy';
             selectedIndex = 0;
+        } else if (selectedType === 'sell' && selectedIndex >= sellableList.length) {
+            selectedIndex = Math.max(0, sellableList.length - 1);
         }
         
-        let sellInventoryHTML = '';
-        if (expandedSellableItems.length === 0) {
-            sellInventoryHTML = '<div class="no-items">Keine Items zum Verkaufen</div>';
+        // --- RENDERING LINKE SEITE (VERKAUFEN) ---
+        let sellListHTML = '';
+        if (sellableList.length === 0) {
+            sellListHTML = '<div class="no-items">Nichts zu verkaufen</div>';
         } else {
-            sellInventoryHTML = '<div class="shop-item-list">';
-            expandedSellableItems.forEach(({item, itemDef, inventoryIndex, displayIndex}) => {
-                const sellValue = itemDef.glitzerValue || 0;
-                const isSelected = selectedType === 'sell' && selectedIndex === displayIndex;
+            sellListHTML = '<div class="shop-item-list">';
+            sellableList.forEach((entry) => {
+                const isSelected = selectedType === 'sell' && selectedIndex === entry.displayIndex;
+                const sellValue = entry.def.glitzerValue || 0;
                 
-                sellInventoryHTML += `
-                    <div class="shop-item-card ${isSelected ? 'selected' : ''}" data-type="sell" data-index="${displayIndex}" data-inventory-index="${inventoryIndex}">
+                // Effekt-Badges für Waffen
+                let effectsHTML = '';
+                if (entry.type === 'weapon' && entry.data.effects && entry.data.effects.length > 0) {
+                    effectsHTML = '<div class="weapon-effects-compact">';
+                    entry.data.effects.forEach(effectId => {
+                        const effect = Game.effects[effectId];
+                        if (effect) {
+                            effectsHTML += `<span class="effect-badge">${effect.name}</span>`;
+                        }
+                    });
+                    effectsHTML += '</div>';
+                }
+
+                sellListHTML += `
+                    <div class="shop-item-card ${isSelected ? 'selected' : ''}" data-type="sell" data-index="${entry.displayIndex}">
                         <div class="item-icon-placeholder"></div>
                         <div class="shop-item-info">
-                            <div class="item-name">${itemDef.name}</div>
+                            <div class="item-name ${entry.type === 'weapon' && entry.data.effects.length > 0 ? 'weapon-with-effects' : ''}">${entry.def.name}</div>
+                            ${effectsHTML}
                             <div class="item-value">${sellValue} G</div>
                         </div>
                     </div>
                 `;
             });
-            sellInventoryHTML += '</div>';
+            sellListHTML += '</div>';
         }
 
-        // Rechte Seite: Kaufbare Items
+        // --- RENDERING RECHTE SEITE (KAUFEN) ---
         let buyOffersHTML = '<div class="shop-item-list">';
         merchant.offers.forEach((offer, index) => {
             const item = Game.items[offer.itemId];
@@ -820,7 +862,7 @@ const UI = {
                 <div class="shop-left-panel">
                     <h3>Verkaufen</h3>
                     <div class="glitzer-display">Dein Glitzer: ${glitzerCount}</div>
-                    ${sellInventoryHTML}
+                    ${sellListHTML}
                 </div>
                 <div class="shop-right-panel">
                     <h3>${merchant.name} - Shop</h3>
@@ -829,13 +871,10 @@ const UI = {
             </div>
         `;
 
-        // Initiale Auswahl rendern
-        const initialInventoryIndex = selectedType === 'sell' && expandedSellableItems.length > 0 
-            ? expandedSellableItems[selectedIndex]?.inventoryIndex 
-            : null;
-        this.renderShopActionArea(merchantId, selectedType, selectedIndex, initialInventoryIndex, expandedSellableItems);
+        // Action Area rendern
+        this.renderShopActionArea(merchantId, selectedType, selectedIndex, sellableList);
 
-        // Scroll-Position wiederherstellen (requestAnimationFrame für smooth update)
+        // Scroll-Position wiederherstellen
         requestAnimationFrame(() => {
             const leftPanel = document.querySelector('.shop-left-panel .shop-item-list');
             const rightPanel = document.querySelector('.shop-right-panel .shop-item-list');
@@ -848,98 +887,57 @@ const UI = {
             card.addEventListener('click', () => {
                 const type = card.dataset.type;
                 const index = parseInt(card.dataset.index);
-                const inventoryIndex = card.dataset.inventoryIndex ? parseInt(card.dataset.inventoryIndex) : null;
                 
-                // Auswahl aktualisieren - nur das geklickte Item markieren
+                // Visuelle Auswahl
                 document.querySelectorAll('.shop-item-card').forEach(c => c.classList.remove('selected'));
                 card.classList.add('selected');
                 
-                // Action-Area aktualisieren
-                selectedType = type;
-                selectedIndex = index;
-                this.renderShopActionArea(merchantId, type, index, inventoryIndex, expandedSellableItems);
+                // Action Area aktualisieren
+                this.renderShopActionArea(merchantId, type, index, sellableList);
             });
         });
     },
 
-    updateShopItemSelection(inventoryIndex, quantity, startDisplayIndex) {
-        // Alle Sell-Items mit diesem inventoryIndex
-        const items = document.querySelectorAll(`.shop-item-card[data-type="sell"][data-inventory-index="${inventoryIndex}"]`);
-        
-        // Alle zuerst demarkieren
-        items.forEach(item => item.classList.remove('selected'));
-        
-        // Finde den Start-Index innerhalb der gefilterten Items
-        let startIdx = 0;
-        items.forEach((item, idx) => {
-            const displayIdx = parseInt(item.dataset.index);
-            if (displayIdx === startDisplayIndex) {
-                startIdx = idx;
-            }
-        });
-        
-        // Berechne wie viele Items nach unten verfügbar sind
-        const itemsBelow = items.length - startIdx;
-        
-        if (quantity <= itemsBelow) {
-            // Genug Platz nach unten: markiere ab startIdx
-            for (let i = startIdx; i < startIdx + quantity; i++) {
-                items[i].classList.add('selected');
-            }
-        } else {
-            // Nicht genug Platz nach unten: fülle nach oben auf
-            const itemsNeededAbove = quantity - itemsBelow;
-            const startAbove = Math.max(0, startIdx - itemsNeededAbove);
-            
-            // Markiere von startAbove bis Ende
-            for (let i = startAbove; i < startAbove + quantity; i++) {
-                if (i < items.length) {
-                    items[i].classList.add('selected');
-                }
-            }
-        }
-    },
-
-    renderShopActionArea(merchantId, type, index, inventoryIndex = null, expandedSellableItems = null) {
+    // Action Area (Kaufen/Verkaufen Details & Button)
+    renderShopActionArea(merchantId, type, index, sellableList = null) {
         const merchant = Game.merchants[merchantId];
         const player = Game.state.player;
         const glitzerCount = player.stats.glitzer;
 
         let itemHTML = '';
-        let actionType = '';
         
+        // --- VERKAUFEN ---
         if (type === 'sell') {
-            // actualInventoryIndex nutzen falls vorhanden, sonst aus expandedSellableItems holen
-            const actualInventoryIndex = inventoryIndex !== null ? inventoryIndex : 
-                (expandedSellableItems && expandedSellableItems[index] ? expandedSellableItems[index].inventoryIndex : index);
+            const entry = sellableList && sellableList[index];
             
-            const item = player.inventory[actualInventoryIndex];
-            if (!item) {
-                this.elements.buttonGrid.innerHTML = `<button class="game-button" id="btn-back-shop">Zurück</button>`;
+            if (!entry) {
+                // Leere Ansicht falls nichts gewählt/da
+                this.elements.buttonGrid.innerHTML = `<button class="game-button shop-back-btn" id="btn-back-shop">Zurück</button>`;
+                document.getElementById('btn-back-shop').addEventListener('click', () => this.showShop());
                 return;
             }
+
+            const isWeapon = entry.type === 'weapon';
+            const name = entry.def.name;
+            const description = entry.def.description;
+            const sellValue = entry.def.glitzerValue || 0;
             
-            const itemDef = Game.items[item.id];
-            if (!itemDef) {
-                this.elements.buttonGrid.innerHTML = `<button class="game-button" id="btn-back-shop">Zurück</button>`;
-                return;
-            }
-            
-            const sellValue = itemDef.glitzerValue || 0;
-            const maxQuantity = item.quantity || 1;
-            
+            // Bei Waffen immer Menge 1 (da unique Instanzen), bei Items wählbar
+            const maxQuantity = isWeapon ? 1 : (entry.data.quantity || 1);
+
             itemHTML = `
                 <div class="shop-action-details">
                     <div class="shop-action-item">
                         <div class="item-icon-placeholder-large"></div>
                         <div class="shop-action-info">
-                            <div class="shop-action-name">${itemDef.name}</div>
-                            <div class="shop-action-description">${itemDef.description}</div>
+                            <div class="shop-action-name ${isWeapon && entry.data.effects.length > 0 ? 'weapon-with-effects' : ''}">${name}</div>
+                            <div class="shop-action-description">${description}</div>
+                            ${isWeapon ? '<div class="shop-action-description" style="color: #666; font-size: 0.8em; margin-top: 5px;">(Waffen werden einzeln verkauft)</div>' : ''}
                         </div>
                     </div>
                     <div class="shop-action-controls">
                         <div class="shop-action-price" id="shop-total-price">${sellValue} G</div>
-                        <div class="shop-quantity-controls">
+                        <div class="shop-quantity-controls" style="${isWeapon ? 'visibility: hidden;' : ''}">
                             <button class="quantity-btn" id="shop-minus">-</button>
                             <span class="quantity-display" id="shop-quantity">1</span>
                             <button class="quantity-btn" id="shop-plus">+</button>
@@ -948,12 +946,13 @@ const UI = {
                     </div>
                 </div>
             `;
-            actionType = 'sell';
-            
+
+        // --- KAUFEN ---
         } else if (type === 'buy') {
             const offer = merchant.offers[index];
             if (!offer) {
-                this.elements.buttonGrid.innerHTML = `<button class="game-button" id="btn-back-shop">Zurück</button>`;
+                this.elements.buttonGrid.innerHTML = `<button class="game-button shop-back-btn" id="btn-back-shop">Zurück</button>`;
+                document.getElementById('btn-back-shop').addEventListener('click', () => this.showShop());
                 return;
             }
             
@@ -980,21 +979,21 @@ const UI = {
                     </div>
                 </div>
             `;
-            actionType = 'buy';
         }
 
+        // HTML setzen
         this.elements.buttonGrid.className = 'button-grid shop-grid';
         this.elements.buttonGrid.innerHTML = `
             <button class="game-button shop-back-btn" id="btn-back-shop">Zurück</button>
             ${itemHTML}
         `;
 
-        // Event Listener für Zurück
+        // Event Listener: Zurück
         document.getElementById('btn-back-shop').addEventListener('click', () => {
             this.showShop();
         });
 
-        // Quantity Controls
+        // LOGIK FÜR BUTTONS (Plus, Minus, Aktion)
         let quantity = 1;
         const quantityDisplay = document.getElementById('shop-quantity');
         const priceDisplay = document.getElementById('shop-total-price');
@@ -1003,22 +1002,25 @@ const UI = {
         const actionBtn = document.getElementById('shop-action-btn');
 
         if (type === 'sell') {
-            // actualInventoryIndex erneut berechnen für die Event Handlers
-            const actualInventoryIndex = inventoryIndex !== null ? inventoryIndex : 
-                (expandedSellableItems && expandedSellableItems[index] ? expandedSellableItems[index].inventoryIndex : index);
-            
-            const item = player.inventory[actualInventoryIndex];
-            const itemDef = Game.items[item.id];
-            const sellValue = itemDef.glitzerValue || 0;
-            const maxQuantity = item.quantity || 1;
+            const entry = sellableList[index];
+            const isWeapon = entry.type === 'weapon';
+            const sellValue = entry.def.glitzerValue || 0;
+            // Bei Waffen ist maxQuantity immer 1, sonst Inventarmenge
+            const maxQuantity = isWeapon ? 1 : (entry.data.quantity || 1);
+
+            // Visuelle Auswahl-Updates (nur für Items relevant, Waffen sind unique)
+            const updateSelectionHighlight = (qty) => {
+                if (!isWeapon) {
+                    this.updateShopItemSelection(entry.sourceIndex, qty, index);
+                }
+            };
 
             minusBtn.addEventListener('click', () => {
                 if (quantity > 1) {
                     quantity--;
                     quantityDisplay.textContent = quantity;
                     priceDisplay.textContent = `${sellValue * quantity} G`;
-                    // Visuelle Markierung aktualisieren
-                    this.updateShopItemSelection(actualInventoryIndex, quantity, index);
+                    updateSelectionHighlight(quantity);
                 }
             });
 
@@ -1027,24 +1029,28 @@ const UI = {
                     quantity++;
                     quantityDisplay.textContent = quantity;
                     priceDisplay.textContent = `${sellValue * quantity} G`;
-                    // Visuelle Markierung aktualisieren
-                    this.updateShopItemSelection(actualInventoryIndex, quantity, index);
+                    updateSelectionHighlight(quantity);
                 }
             });
 
             actionBtn.addEventListener('click', () => {
-                const actualInventoryIndex = inventoryIndex !== null ? inventoryIndex : 
-                    (expandedSellableItems && expandedSellableItems[index] ? expandedSellableItems[index].inventoryIndex : index);
-                const success = Game.sellItem(actualInventoryIndex, quantity);
+                let success = false;
+                if (isWeapon) {
+                    // Waffe verkaufen (immer Menge 1)
+                    success = Game.sellWeapon(entry.sourceIndex);
+                } else {
+                    // Item verkaufen
+                    success = Game.sellItem(entry.sourceIndex, quantity);
+                }
+
                 if (success) {
-                    // Auswahl im Verkaufen-Bereich erhalten (oder zurück zu Index 0 falls nicht mehr vorhanden)
-                    this.showMerchantOffers(merchantId, {type: 'sell', index: Math.max(0, index - quantity)});
+                    // Liste neu laden, Auswahl versuchen beizubehalten (oder Index verringern)
+                    this.showMerchantOffers(merchantId, {type: 'sell', index: Math.max(0, index - (isWeapon ? 1 : quantity))});
                 }
             });
 
         } else if (type === 'buy') {
             const offer = merchant.offers[index];
-
             const updateBuyButton = () => {
                 const totalPrice = offer.price * quantity;
                 priceDisplay.textContent = `${totalPrice} G`;
@@ -1078,7 +1084,6 @@ const UI = {
                 if (actionBtn.disabled) return;
                 const success = Game.buyItem(merchantId, index, quantity);
                 if (success) {
-                    // Auswahl im Kaufen-Bereich erhalten
                     this.showMerchantOffers(merchantId, {type: 'buy', index: index});
                 }
             });
