@@ -1456,7 +1456,7 @@ const UI = {
     this.updateBattleScreen();
   },
 
-  // Kampf-Screen aktualisieren
+ // Kampf-Screen aktualisieren
   updateBattleScreen() {
     const battle = Game.state.currentBattle;
     if (!battle) return;
@@ -1549,6 +1549,9 @@ const UI = {
     // Control-Fenster erstellen/updaten
     this.createOrUpdateControlWindow();
 
+    // ÄNDERUNG: Ability Window IMMER updaten (auch im Gegner-Zug), damit es ausgegraut werden kann
+    this.createOrUpdateAbilityWindow();
+
     // Stats und Inventar automatisch öffnen wenn sie im vorherigen Kampf offen waren
     const windowVisibility = JSON.parse(
       localStorage.getItem("windowVisibility") || "{}",
@@ -1588,9 +1591,6 @@ const UI = {
 
     // Fähigkeiten-Buttons (nur im Spieler-Zug)
     if (battle.turn === "player") {
-      // Ability-Fenster erstellen/updaten
-      this.createOrUpdateAbilityWindow();
-
       // Toggle-Button States im Control-Window aktualisieren
       const controlWindow = document.getElementById("control-window");
       if (controlWindow) {
@@ -2344,9 +2344,11 @@ const UI = {
   },
 
   // Ability-Fenster erstellen/updaten
+  // Ability-Fenster erstellen/updaten
   createOrUpdateAbilityWindow() {
     const battle = Game.state.currentBattle;
-    if (!battle || battle.turn !== "player") return;
+    // ÄNDERUNG: Wir brechen hier NICHT mehr ab, wenn der Gegner am Zug ist
+    if (!battle) return;
 
     // Prüfe ob Fenster sichtbar sein soll
     const windowVisibility = JSON.parse(
@@ -2360,6 +2362,9 @@ const UI = {
     }
 
     const player = Game.state.player;
+    
+    // ÄNDERUNG: Prüfen, wer am Zug ist
+    const isPlayerTurn = battle.turn === "player";
 
     // Fähigkeiten mit korrektem Slot-Index verarbeiten
     const abilityButtons = player.equippedAbilities
@@ -2377,8 +2382,10 @@ const UI = {
           return null;
         }
 
-        const canUse = battle.playerActionPoints >= ability.apCost;
+        // ÄNDERUNG: Button ist disabled, wenn AP fehlen ODER wenn nicht Player-Turn ist
+        const canUse = isPlayerTurn && (battle.playerActionPoints >= ability.apCost);
         const disabledClass = canUse ? "" : "disabled";
+        
         const hitInfo =
           ability.hitChance < 1.0
             ? ` | ${Math.floor(ability.hitChance * 100)}%`
@@ -2396,9 +2403,11 @@ const UI = {
       .join("");
 
     // Block-Button
-    const canBlock = battle.playerActionPoints >= 1;
+    // ÄNDERUNG: Blocken auch nur im Player-Turn möglich
+    const canBlock = isPlayerTurn && (battle.playerActionPoints >= 1);
     const blockButtonClass = canBlock ? "" : "disabled";
     const blockValue = battle.playerActionPoints * 2;
+    
     const blockButton = `
             <div class="ability-button-card ${blockButtonClass}" data-action="block">
                 <div class="ability-icon-placeholder"></div>
