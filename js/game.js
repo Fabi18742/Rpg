@@ -46,7 +46,7 @@ const Game = {
 
   // Initialisierung
   init() {
-    console.log("Game wird initialisiert... 0.2.9");
+    console.log("Game wird initialisiert... 0.2.10");
 
     // Spielstand laden falls vorhanden
     const savedState = Storage.loadGameState();
@@ -424,9 +424,7 @@ const Game = {
       let baseDamage = weapon.damage * ability.damageMultiplier;
 
       // Damage-Teile für Log sammeln
-      let damageLog = [
-        `${Math.floor(baseDamage)} Basis`,
-      ];
+      let damageLog = [`${Math.floor(baseDamage)} Basis`];
 
       // Effekte anwenden (vor Stats!)
       if (weapon.effects && weapon.effects.length > 0) {
@@ -467,7 +465,9 @@ const Game = {
       boss.hp -= damage;
 
       // Formatierung für einzelnen Treffer
-      attackLogs.push(`<span class="log-damage-val">${damage}</span> <span class="log-details">(${damageLog.join(" + ")})</span>`);
+      attackLogs.push(
+        `<span class="log-damage-val">${damage}</span> <span class="log-details">(${damageLog.join(" + ")})</span>`,
+      );
     }
 
     // === NEUES LOG FORMAT ===
@@ -477,12 +477,14 @@ const Game = {
       // Mehrfachangriff: Zeige Gesamtschaden und Liste
       logEntry += ` <span class="log-summary">(${totalDamage} Gesamt)</span>`;
       // Jeden Treffer in eine neue Zeile
-      logEntry += attackLogs.map(log => `<br><div class="log-hit-item">${log}</div>`).join("");
+      logEntry += attackLogs
+        .map((log) => `<br><div class="log-hit-item">${log}</div>`)
+        .join("");
     } else {
       // Einzelangriff
       logEntry += `: ${attackLogs[0]}`;
     }
-    
+
     battle.log.push(logEntry);
     // ========================
 
@@ -496,7 +498,9 @@ const Game = {
       if (isEnemyBattle) {
         // Gegner besiegt - markiere als besiegt
         boss.defeated = true;
-        battle.log.push(`<strong style="color: #888;">✝ ${boss.name} wurde besiegt!</strong>`);
+        battle.log.push(
+          `<strong style="color: #888;">✝ ${boss.name} wurde besiegt!</strong>`,
+        );
 
         // Zähle lebende Gegner
         const aliveEnemies = battle.enemies.filter((e) => !e.defeated);
@@ -603,7 +607,11 @@ const Game = {
     const isEnemyBattle = battle.enemies && battle.enemies.length > 0;
 
     // Bei Gegner-Kämpfen: Stelle sicher dass currentEnemyIndex initialisiert ist
-    if (isEnemyBattle && (battle.currentEnemyIndex === undefined || battle.currentEnemyIndex === null)) {
+    if (
+      isEnemyBattle &&
+      (battle.currentEnemyIndex === undefined ||
+        battle.currentEnemyIndex === null)
+    ) {
       battle.currentEnemyIndex = 0;
     }
 
@@ -646,7 +654,9 @@ const Game = {
 
     // --- TEIL 1: GIFTSCHADEN DES GEGNERS ---
     if (boss.statusEffects && boss.statusEffects.length > 0) {
-      const poisonEffect = boss.statusEffects.find((se) => se.type === "poison");
+      const poisonEffect = boss.statusEffects.find(
+        (se) => se.type === "poison",
+      );
       if (poisonEffect && poisonEffect.stacks > 0) {
         const poisonDamage = poisonEffect.baseDamage + poisonEffect.stacks;
         boss.hp -= poisonDamage;
@@ -726,7 +736,9 @@ const Game = {
     }
 
     if (this.state.player.hp <= 0) {
-      battle.log.push('<strong style="color: #ff4444;">Du wurdest besiegt!</strong>');
+      battle.log.push(
+        '<strong style="color: #ff4444;">Du wurdest besiegt!</strong>',
+      );
       this.endBattle(false);
       return;
     }
@@ -748,7 +760,8 @@ const Game = {
         let foundNext = false;
 
         while (attempts < totalEnemies) {
-          if (battle.currentEnemyIndex >= totalEnemies) battle.currentEnemyIndex = 0;
+          if (battle.currentEnemyIndex >= totalEnemies)
+            battle.currentEnemyIndex = 0;
           if (!battle.enemies[battle.currentEnemyIndex].defeated) {
             foundNext = true;
             break;
@@ -762,7 +775,7 @@ const Game = {
           this.save();
           UI.updateBattleScreen();
           setTimeout(() => this.enemyAttack(), 1500);
-          return; 
+          return;
         } else {
           playerTurnNext = true;
         }
@@ -773,23 +786,35 @@ const Game = {
 
     // --- TEIL 4: GIFTSCHADEN DES SPIELERS (BEVOR ER DRAN IST) ---
     if (playerTurnNext) {
-      if (this.state.player.statusEffects && this.state.player.statusEffects.length > 0) {
-        const playerPoison = this.state.player.statusEffects.find(se => se.type === 'poison');
-        
+      if (
+        this.state.player.statusEffects &&
+        this.state.player.statusEffects.length > 0
+      ) {
+        const playerPoison = this.state.player.statusEffects.find(
+          (se) => se.type === "poison",
+        );
+
         if (playerPoison && playerPoison.stacks > 0) {
           const pDamage = playerPoison.baseDamage + playerPoison.stacks;
           this.state.player.hp -= pDamage;
           if (this.state.player.hp < 0) this.state.player.hp = 0;
 
-          battle.log.push(`<span style="color: #a855f7;">🧪 Du erleidest ${pDamage} Gift-Schaden (${playerPoison.stacks} Stacks)</span>`);
+          battle.log.push(
+            `<span style="color: #a855f7;">🧪 Du erleidest ${pDamage} Gift-Schaden (${playerPoison.stacks} Stacks)</span>`,
+          );
 
           playerPoison.stacks--;
           if (playerPoison.stacks <= 0) {
-            this.state.player.statusEffects = this.state.player.statusEffects.filter(se => se !== playerPoison);
+            this.state.player.statusEffects =
+              this.state.player.statusEffects.filter(
+                (se) => se !== playerPoison,
+              );
           }
 
           if (this.state.player.hp <= 0) {
-            battle.log.push('<strong style="color: #ff4444;">Du bist am Gift gestorben!</strong>');
+            battle.log.push(
+              '<strong style="color: #ff4444;">Du bist am Gift gestorben!</strong>',
+            );
             this.endBattle(false);
             return;
           }
@@ -801,9 +826,12 @@ const Game = {
       if (isEnemyBattle) {
         battle.currentEnemyIndex = 0;
         battle.enemiesAttackedThisRound = 0;
-        
+
         // Target Reset: Prüfen ob das alte Ziel noch lebt, sonst neues suchen
-        if (!battle.enemies[battle.selectedTarget] || battle.enemies[battle.selectedTarget].defeated) {
+        if (
+          !battle.enemies[battle.selectedTarget] ||
+          battle.enemies[battle.selectedTarget].defeated
+        ) {
           for (let i = 0; i < battle.enemies.length; i++) {
             if (!battle.enemies[i].defeated) {
               battle.selectedTarget = i;
@@ -812,160 +840,144 @@ const Game = {
             }
           }
         } else {
-            battle.boss = battle.enemies[battle.selectedTarget];
+          battle.boss = battle.enemies[battle.selectedTarget];
         }
       }
-      
+
       battle.playerActionPoints = this.state.player.maxActionPoints;
       this.save();
       UI.updateBattleScreen();
     }
   },
 
-// Kampf beenden
+  // Kampf beenden
   endBattle(victory) {
     const battle = this.state.currentBattle;
     const isEnemyBattle = battle && battle.enemies && battle.enemies.length > 0;
     const isBossBattle = !isEnemyBattle;
 
-    let resultMessages = []; // Sammelt die Nachrichten für den Resultscreen
+    let resultMessages = [];
 
     if (victory) {
-      // Liste aller Gegner erstellen, von denen wir Loot bekommen
-      // Bei Boss-Kampf ist es nur der Boss, bei Gruppen-Kampf alle Gegner
-      let enemiesToLoot = [];
+      let enemiesToLoot = isEnemyBattle ? battle.enemies : [battle.boss];
 
-      if (isEnemyBattle) {
-        enemiesToLoot = battle.enemies;
-      } else {
-        enemiesToLoot = [battle.boss];
-
-        // Nur bei echten Boss-Kämpfen den Boss in der Statistik als besiegt markieren
+      if (isBossBattle) {
         const bossId = battle.boss.id;
         if (!this.state.defeatedBosses.includes(bossId)) {
           this.state.defeatedBosses.push(bossId);
         }
       }
 
-      // Jetzt über ALLE Gegner loopen und Drops verteilen
       enemiesToLoot.forEach((enemy) => {
         if (enemy.drops && enemy.drops.length > 0) {
           enemy.drops.forEach((drop) => {
-            let dropId, dropType;
+            let dropId = typeof drop === "string" ? drop : drop.id;
+            let dropType = typeof drop === "string" ? "item" : drop.type;
 
-            // 1. Normalisierung: Egal ob String oder Objekt, wir extrahieren ID und Typ
-            if (typeof drop === "string") {
-              dropId = drop;
-              dropType = "item"; // Standard-Annahme bei Strings
-            } else {
-              dropId = drop.id;
-              dropType = drop.type;
-            }
-
-            // 2. SONDERREGEL: GLITZER (Währung)
-            // Abfangen, bevor wir in den Item-Pools suchen
             if (dropId === "glitzer") {
-                // Menge bestimmen (Standard 1, oder falls im Drop-Objekt definiert)
-                const amount = (typeof drop === "object" && drop.amount) ? drop.amount : 1;
-                this.state.player.stats.glitzer += amount;
-                
-                battle.log.push(`${amount} Glitzer erhalten!`);
-                resultMessages.push(`<span style="color: #fbbf24;">Erhalten: +${amount} Glitzer</span>`);
-                return; // Wichtig: Hier abbrechen, damit nicht nach einem Item "glitzer" gesucht wird
+              const amount =
+                typeof drop === "object" && drop.amount ? drop.amount : 1;
+              this.state.player.stats.glitzer += amount;
+              resultMessages.push(
+                `<span style="color: #fbbf24;">Erhalten: +${amount} Glitzer</span>`,
+              );
+              return;
             }
 
-            // 3. Normale Verarbeitung der Typen
             if (dropType === "item") {
-                const item = this.items[dropId];
-                if (item) {
-                  this.addItemToInventory(item);
-                  battle.log.push(`${item.name} von ${enemy.name} erhalten!`);
-                  resultMessages.push(`Item: <strong style="color: var(--accent-color);">${item.name}</strong>`);
-                } else {
-                  console.warn(`Drop-Item '${dropId}' nicht in Definitions gefunden!`);
-                }
+              const item = this.items[dropId];
+              if (item) {
+                this.addItemToInventory(item);
+                resultMessages.push(
+                  `Item: <strong style="color: var(--accent-color);">${item.name}</strong>`,
+                );
+              }
             } else if (dropType === "weapon") {
-                // KORREKTUR: Nur noch weaponBases nutzen
-                const weaponBase = this.weaponBases[dropId];
-                if (weaponBase) {
-                  this.state.player.weapons.push({ baseId: dropId, effects: [] });
-                  battle.log.push(`Waffe erhalten: ${weaponBase.name}!`);
-                  resultMessages.push(`Waffe: <strong style="color: var(--accent-color);">${weaponBase.name}</strong>`);
-                } else {
-                   console.warn(`Drop-Waffe '${dropId}' nicht in Definitions gefunden!`);
-                }
+              const weaponBase = this.weaponBases[dropId];
+              if (weaponBase) {
+                this.state.player.weapons.push({ baseId: dropId, effects: [] });
+                resultMessages.push(
+                  `Waffe: <strong style="color: var(--accent-color);">${weaponBase.name}</strong>`,
+                );
+              }
             } else if (dropType === "ability") {
-                const ability = this.abilities[dropId];
-                if (ability) {
-                    if (!this.state.player.abilities.includes(dropId)) {
-                        this.state.player.abilities.push(dropId);
-                        battle.log.push(`Fähigkeit erhalten: ${ability.name}!`);
-                        resultMessages.push(`Fähigkeit: <strong style="color: var(--accent-color);">${ability.name}</strong>`);
-                    } else {
-                        // Fallback: Wenn man die Fähigkeit schon hat -> 10 Glitzer Trostpreis
-                        this.state.player.stats.glitzer += 10;
-                        resultMessages.push(`<span style="color: #888;">(Fähigkeit ${ability.name} bereits bekannt -> +10 Glitzer)</span>`);
-                    }
+              const ability = this.abilities[dropId];
+              if (ability) {
+                if (!this.state.player.abilities.includes(dropId)) {
+                  this.state.player.abilities.push(dropId);
+                  resultMessages.push(
+                    `Fähigkeit: <strong style="color: var(--accent-color);">${ability.name}</strong>`,
+                  );
                 } else {
-                   console.warn(`Drop-Ability '${dropId}' nicht in Definitions gefunden!`);
+                  this.state.player.stats.glitzer += 10;
+                  resultMessages.push(
+                    `<span style="color: #888;">(Fähigkeit bekannt: +10 Glitzer)</span>`,
+                  );
                 }
+              }
             }
           });
         }
       });
-      
-      // Beute-Titel hinzufügen falls vorhanden
+
       if (resultMessages.length > 0) {
-          resultMessages.unshift("Du hast folgende Beute erhalten:");
+        resultMessages.unshift("Du hast folgende Beute erhalten:");
       } else {
-          resultMessages.push(`<span style="color: var(--placeholder-color);">Keine Beute gefunden.</span>`);
+        resultMessages.push(
+          `<span style="color: var(--placeholder-color);">Keine Beute gefunden.</span>`,
+        );
       }
-      
     } else {
-      // Bei Niederlage
+      // --- LOGIK FÜR TOD / NIEDERLAGE ---
       const currentGlitzer = this.state.player.stats.glitzer;
-      const glitzerLoss = Math.floor(currentGlitzer / 5);
+      const glitzerLoss = Math.floor(currentGlitzer / 5); // 20% Verlust
+
+      resultMessages.push("Die Dunkelheit umfängt dich...");
 
       if (glitzerLoss > 0) {
         this.state.player.stats.glitzer -= glitzerLoss;
-        battle.log.push(`Du hast ${glitzerLoss} Glitzer verloren!`);
-        resultMessages.push(`<span style="color: #e74c3c;">Du hast ${glitzerLoss} Glitzer verloren!</span>`);
+        resultMessages.push(
+          `<span style="color: #ff4444; font-weight: bold; font-size: 1.1em;">Verlust: -${glitzerLoss} Glitzer</span>`,
+        );
       } else {
-        resultMessages.push("Du hast glücklicherweise nichts verloren.");
+        resultMessages.push(
+          "Du hattest keinen Glitzer bei dir, den man dir rauben konnte.",
+        );
       }
 
-      this.state.player.hp = this.state.player.maxHp;
+      // HP auf 0 für den visuellen Effekt im Kampf-Log
+      this.state.player.hp = 0;
       battle.log.push("Du wurdest besiegt! Zurück ins Hideout...");
     }
 
     this.save();
+    UI.updateBattleScreen(); // UI aktualisieren, um die 0 HP anzuzeigen
 
-    // UI aktualisieren (damit der letzte Schlag und das Log noch kurz sichtbar sind)
-    UI.updateBattleScreen();
-
-    // Kurze Verzögerung, bevor der Resultscreen kommt (1.5 Sekunden)
     setTimeout(() => {
-      // Alle Kampffenster schließen
       UI.removeBattleWindows();
 
-      const title = victory ? "Kampf gewonnen!" : "Du wurdest besiegt!";
-      
-      // Resultscreen anzeigen
-      UI.showResultScreen(title, resultMessages, () => {
+      if (victory) {
+        UI.showResultScreen("Kampf gewonnen!", resultMessages, () => {
+          this.state.currentBattle = null;
+          this.save();
+          if (isBossBattle) {
+            if (this.state.currentCrawl) this.state.currentCrawl = null;
+            this.showScreen("hideout");
+          } else {
+            this.checkBossSpawn();
+          }
+        });
+      } else {
+        // --- TODESSCREEN ANZEIGEN ---
+        this.state.player.hp = this.state.player.maxHp;
         this.state.currentBattle = null;
+        if (this.state.currentCrawl) this.state.currentCrawl = null;
         this.save();
 
-        if (!victory || isBossBattle) {
-          // Crawl-Zustand löschen bei Niederlage oder Boss-Sieg
-          if (this.state.currentCrawl) {
-            this.state.currentCrawl = null;
-          }
+        UI.showDeathScreen(resultMessages, () => {
           this.showScreen("hideout");
-        } else {
-          // Bei Sieg im normalen Kampf: Boss-Spawn prüfen (Crawl geht weiter)
-          this.checkBossSpawn();
-        }
-      });
+        });
+      }
     }, 1500);
   },
 
@@ -1192,23 +1204,23 @@ const Game = {
 
   // Prüfen ob Welt freigeschaltet ist
   isWorldUnlocked(worldId) {
-      const world = this.bossWorlds[worldId];
-      if (!world) return false;
-      
-      // Wenn kein requiredBoss definiert ist, ist die Welt immer offen (Welt 1)
-      if (!world.requiredBoss) return true;
-      
-      // Prüfen ob der benötigte Boss in der Besiegt-Liste ist
-      return this.state.defeatedBosses.includes(world.requiredBoss);
+    const world = this.bossWorlds[worldId];
+    if (!world) return false;
+
+    // Wenn kein requiredBoss definiert ist, ist die Welt immer offen (Welt 1)
+    if (!world.requiredBoss) return true;
+
+    // Prüfen ob der benötigte Boss in der Besiegt-Liste ist
+    return this.state.defeatedBosses.includes(world.requiredBoss);
   },
 
   // ===== CRAWL-SYSTEM (Boss-Welt-Erkundung) =====
 
   // Boss-Welt-Crawl starten
-startCrawl(bossWorldId) {
+  startCrawl(bossWorldId) {
     if (!this.isWorldUnlocked(bossWorldId)) {
-        console.log("Diese Welt ist noch gesperrt!");
-        return;
+      console.log("Diese Welt ist noch gesperrt!");
+      return;
     }
 
     const bossWorld = this.bossWorlds[bossWorldId];
@@ -1237,55 +1249,69 @@ startCrawl(bossWorldId) {
   },
 
   // 3 zufällige Events generieren
-    generateRandomEvents() {
-        const crawl = this.state.currentCrawl;
-        if (!crawl) return [];
+  generateRandomEvents() {
+    const crawl = this.state.currentCrawl;
+    if (!crawl) return [];
 
-        const bossWorld = this.bossWorlds[crawl.bossWorldId];
-        let eventsToChooseFrom = [];
+    const bossWorld = this.bossWorlds[crawl.bossWorldId];
+    let eventsToChooseFrom = [];
 
-        // NEUE LOGIK:
-        // Fall A: allowedEvents ist definiert -> Wir nutzen diese Liste als Basis (ermöglicht Gewichtung!)
-        if (bossWorld.allowedEvents && bossWorld.allowedEvents.length > 0) {
-            bossWorld.allowedEvents.forEach(eventId => {
-                const event = this.crawlEvents[eventId];
-                
-                // Existiert das Event überhaupt?
-                if (!event) {
-                    console.warn(`[EVENT] ID '${eventId}' in allowedEvents nicht gefunden!`);
-                    return; 
-                }
+    // NEUE LOGIK:
+    // Fall A: allowedEvents ist definiert -> Wir nutzen diese Liste als Basis (ermöglicht Gewichtung!)
+    if (bossWorld.allowedEvents && bossWorld.allowedEvents.length > 0) {
+      bossWorld.allowedEvents.forEach((eventId) => {
+        const event = this.crawlEvents[eventId];
 
-                // Chaos-Checks prüfen
-                if (event.minChaos > crawl.chaosLevel) return;
-                if (event.maxChaos !== null && event.maxChaos !== undefined && crawl.chaosLevel > event.maxChaos) return;
-
-                // Wenn alles passt: Ab in den Topf! 
-                // (Wenn die ID 3x in allowedEvents steht, landet das Event hier auch 3x drin)
-                eventsToChooseFrom.push(event);
-            });
-        }
-        // Fall B: allowedEvents ist null -> Wir nehmen ALLE definierten Events (Fallback)
-        else {
-            const allEvents = Object.values(this.crawlEvents);
-            eventsToChooseFrom = allEvents.filter(event => {
-                if (event.minChaos > crawl.chaosLevel) return false;
-                if (event.maxChaos !== null && event.maxChaos !== undefined && crawl.chaosLevel > event.maxChaos) return false;
-                return true;
-            });
+        // Existiert das Event überhaupt?
+        if (!event) {
+          console.warn(
+            `[EVENT] ID '${eventId}' in allowedEvents nicht gefunden!`,
+          );
+          return;
         }
 
-        // Falls keine Events vorhanden sind
-        if (eventsToChooseFrom.length === 0) {
-            console.error('[EVENT] Keine passenden Events gefunden! Prüfe allowedEvents oder minChaos/maxChaos');
-            return [];
-        }
+        // Chaos-Checks prüfen
+        if (event.minChaos > crawl.chaosLevel) return;
+        if (
+          event.maxChaos !== null &&
+          event.maxChaos !== undefined &&
+          crawl.chaosLevel > event.maxChaos
+        )
+          return;
 
-        // Mischen und 3 auswählen
-        const shuffled = [...eventsToChooseFrom].sort(() => Math.random() - 0.5);
-        const selected = shuffled.slice(0, 3);
-        return selected;
-    },
+        // Wenn alles passt: Ab in den Topf!
+        // (Wenn die ID 3x in allowedEvents steht, landet das Event hier auch 3x drin)
+        eventsToChooseFrom.push(event);
+      });
+    }
+    // Fall B: allowedEvents ist null -> Wir nehmen ALLE definierten Events (Fallback)
+    else {
+      const allEvents = Object.values(this.crawlEvents);
+      eventsToChooseFrom = allEvents.filter((event) => {
+        if (event.minChaos > crawl.chaosLevel) return false;
+        if (
+          event.maxChaos !== null &&
+          event.maxChaos !== undefined &&
+          crawl.chaosLevel > event.maxChaos
+        )
+          return false;
+        return true;
+      });
+    }
+
+    // Falls keine Events vorhanden sind
+    if (eventsToChooseFrom.length === 0) {
+      console.error(
+        "[EVENT] Keine passenden Events gefunden! Prüfe allowedEvents oder minChaos/maxChaos",
+      );
+      return [];
+    }
+
+    // Mischen und 3 auswählen
+    const shuffled = [...eventsToChooseFrom].sort(() => Math.random() - 0.5);
+    const selected = shuffled.slice(0, 3);
+    return selected;
+  },
 
   // Event-Auswahl anzeigen (Debug-Version)
   showEventSelection() {
@@ -1384,7 +1410,7 @@ startCrawl(bossWorldId) {
     }
   },
 
-// Multiple Choice Antwort wählen
+  // Multiple Choice Antwort wählen
   selectChoice(choiceIndex) {
     const event = this.state.currentEvent;
     if (!event || !event.choices) return;
@@ -1400,20 +1426,20 @@ startCrawl(bossWorldId) {
       choice.effects.forEach((effect) => {
         const msg = this.applyChoiceEffect(effect);
         if (msg) resultMessages.push(msg);
-        
+
         if (effect.type === "returnToHideout") {
           isReturningToHideout = true;
         }
       });
     }
 
-    // Falls das Event "returnToHideout" beinhaltet, brechen wir hier ab 
+    // Falls das Event "returnToHideout" beinhaltet, brechen wir hier ab
     // und gehen nach dem Klick auf "Weiter" direkt ins Hideout
     if (isReturningToHideout) {
       this.state.currentCrawl = null;
       this.state.currentEvent = null;
       this.save();
-      
+
       UI.showResultScreen(event.name, resultMessages, () => {
         this.showScreen("hideout");
       });
@@ -1422,18 +1448,22 @@ startCrawl(bossWorldId) {
 
     // Event-Basiseffekte verarbeiten (Sicherheit sinkt, Chaos steigt im Hintergrund immer um +1)
     this.processEventEffects(event);
-    
-    // Basis-Infos für den Screen anhängen (Wir zeigen nur noch die Sicherheit, das Standard-Chaos lassen wir weg)
-    resultMessages.push(`<span style="color: #fca5a5;">Sicherheit: -${event.securityDecrease}%</span>`);
 
-    // Falls die Auswahl keine besonderen Effekte (wie Items oder zusätzliches Chaos) hatte, 
+    // Basis-Infos für den Screen anhängen (Wir zeigen nur noch die Sicherheit, das Standard-Chaos lassen wir weg)
+    resultMessages.push(
+      `<span style="color: #fca5a5;">Sicherheit: -${event.securityDecrease}%</span>`,
+    );
+
+    // Falls die Auswahl keine besonderen Effekte (wie Items oder zusätzliches Chaos) hatte,
     // steht jetzt nur noch die Sicherheit im Array (Länge = 1)
     if (resultMessages.length === 1) {
-      resultMessages.unshift("Du entscheidest dich, deinen Weg fortzusetzen...");
+      resultMessages.unshift(
+        "Du entscheidest dich, deinen Weg fortzusetzen...",
+      );
     }
 
     const eventName = event.name;
-    
+
     // Event beenden
     this.state.currentEvent = null;
     this.save();
@@ -1457,7 +1487,7 @@ startCrawl(bossWorldId) {
         if (effect.itemId === "glitzer") {
           this.state.player.stats.glitzer += effect.amount || 1;
           message = `<span style="color: #fbbf24;">Erhalten: +${effect.amount || 1} Glitzer</span>`;
-        } 
+        }
         // 2. Normale Items
         else {
           const itemDef = this.items[effect.itemId];
@@ -1713,22 +1743,26 @@ startCrawl(bossWorldId) {
       `[RITUAL] Ritual abgeschlossen! Waffe: ${selectedWeapon.name}, Effekte: ${effectCount} (${selectedEffect || "keiner"})`,
     );
 
-// === Result Screen vorbereiten und aufrufen ===
+    // === Result Screen vorbereiten und aufrufen ===
     const messages = [
-        `Du hast erfolgreich eine neue Waffe erschaffen:`,
-        `<strong style="color: var(--accent-color); font-size: 1.3em;">${selectedWeapon.name}</strong>`
+      `Du hast erfolgreich eine neue Waffe erschaffen:`,
+      `<strong style="color: var(--accent-color); font-size: 1.3em;">${selectedWeapon.name}</strong>`,
     ];
 
     if (selectedEffect) {
-        const effectDef = this.effects[selectedEffect];
-        messages.push(`<br>Mit dem Zusatzeffekt: <span style="color: #e74c3c;">${effectDef.name}</span>`);
+      const effectDef = this.effects[selectedEffect];
+      messages.push(
+        `<br>Mit dem Zusatzeffekt: <span style="color: #e74c3c;">${effectDef.name}</span>`,
+      );
     } else {
-        messages.push(`<br><span style="color: var(--placeholder-color);">Keine Zusatzeffekte aufgetreten.</span>`);
+      messages.push(
+        `<br><span style="color: var(--placeholder-color);">Keine Zusatzeffekte aufgetreten.</span>`,
+      );
     }
 
     // Zeige den Result-Screen. Wenn man "Weiter" klickt, geht's ins Hideout.
     UI.showResultScreen("Ritual erfolgreich!", messages, () => {
-        this.showScreen('hideout');
+      this.showScreen("hideout");
     });
 
     return true;

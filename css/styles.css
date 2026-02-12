@@ -2441,3 +2441,24 @@ img, svg {
     color: #ffd700; /* Gold für Gesamtschaden */
     font-weight: bold;
 }
+
+/* Spezieller Style für den Todesscreen */
+.death-screen {
+    background: rgba(20, 0, 0, 0.95) !important; /* Fast schwarzes Rot */
+    border: 5px solid #8b0000 !important;
+    box-shadow: 0 0 50px rgba(255, 0, 0, 0.5) !important;
+}
+
+.death-screen h2 {
+    color: #ff0000 !important; /* Blutrot */
+    font-size: 42px !important;
+    text-transform: uppercase;
+    letter-spacing: 5px;
+    text-shadow: 2px 2px 10px #000;
+    margin-bottom: 20px;
+}
+
+.death-screen .result-messages {
+    color: #ffcccc;
+    font-style: italic;
+}

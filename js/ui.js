@@ -90,6 +90,16 @@ const UI = {
     });
   },
 
+  // Spezieller Todesscreen
+  showDeathScreen(messages, callback) {
+    // Nutzt die universelle showResultScreen Logik mit festem Titel
+    this.showResultScreen("DU BIST GESTORBEN", messages, callback);
+    
+    // Fügt nachträglich die CSS-Klasse für das Styling hinzu
+    const screen = document.querySelector('.result-screen');
+    if (screen) screen.classList.add('death-screen');
+  },
+
   // Hideout-spezifische Event Listeners
   setupHideoutListeners() {
     document.getElementById("btn-stats").addEventListener("click", () => {
