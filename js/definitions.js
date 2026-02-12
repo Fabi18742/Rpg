@@ -24,6 +24,7 @@ const Definitions = {
       name: "Dafuq",
       type: "HILFE HIER IST EIN FEHLER",
       description: "DAFUQ.",
+      glitzerValue: 0,
     },
     heiltrank: {
       id: "heiltrank",
