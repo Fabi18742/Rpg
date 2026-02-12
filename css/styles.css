@@ -2379,3 +2379,16 @@ img, svg {
     color: var(--text-color);
     line-height: 1.5;
 }
+
+/* Gesperrte Welten */
+.world-card.locked {
+    opacity: 0.5;
+    filter: grayscale(100%);
+    border-color: #444;
+}
+
+.world-card.locked:hover {
+    transform: none;
+    box-shadow: none;
+    background: #000000;
+}

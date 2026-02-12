@@ -46,7 +46,7 @@ const Game = {
 
   // Initialisierung
   init() {
-    console.log("Game wird initialisiert... 0.2.5");
+    console.log("Game wird initialisiert... 0.2.6");
 
     // Spielstand laden falls vorhanden
     const savedState = Storage.loadGameState();
@@ -1275,15 +1275,28 @@ const Game = {
     return false;
   },
 
+  // Prüfen ob Welt freigeschaltet ist
+  isWorldUnlocked(worldId) {
+      const world = this.bossWorlds[worldId];
+      if (!world) return false;
+      
+      // Wenn kein requiredBoss definiert ist, ist die Welt immer offen (Welt 1)
+      if (!world.requiredBoss) return true;
+      
+      // Prüfen ob der benötigte Boss in der Besiegt-Liste ist
+      return this.state.defeatedBosses.includes(world.requiredBoss);
+  },
+
   // ===== CRAWL-SYSTEM (Boss-Welt-Erkundung) =====
 
   // Boss-Welt-Crawl starten
-  startCrawl(bossWorldId) {
-    const bossWorld = this.bossWorlds[bossWorldId];
-    if (!bossWorld) {
-      console.error("Boss-Welt nicht gefunden:", bossWorldId);
-      return;
+startCrawl(bossWorldId) {
+    if (!this.isWorldUnlocked(bossWorldId)) {
+        console.log("Diese Welt ist noch gesperrt!");
+        return;
     }
+
+    const bossWorld = this.bossWorlds[bossWorldId];
 
     const boss = this.bosses[bossWorld.boss];
     if (!boss) {

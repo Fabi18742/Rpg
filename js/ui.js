@@ -1235,58 +1235,62 @@ const UI = {
     // Diese Funktion wird nicht mehr benötigt
   },
 
-  // Boss-Welten Screen anzeigen
-  showBossSelection() {
-    this.elements.visualArea.classList.remove("hideout-bg");
-    // Stats Panel schließen
-    this.statsVisible = false;
-    const existingPanel =
-      this.elements.visualArea.querySelector(".stats-panel");
-    if (existingPanel) {
-      existingPanel.classList.remove("visible");
-    }
-
-    const bossWorlds = Game.bossWorlds;
-
-    this.elements.sceneContent.innerHTML = `
+// Boss-Welten Screen anzeigen
+    showBossSelection() {
+        this.elements.visualArea.classList.remove('hideout-bg');
+        // Stats Panel schließen
+        this.statsVisible = false;
+        const existingPanel = this.elements.visualArea.querySelector('.stats-panel');
+        if (existingPanel) {
+            existingPanel.classList.remove('visible');
+        }
+        
+        const bossWorlds = Game.bossWorlds;
+        
+        this.elements.sceneContent.innerHTML = `
             <div class="boss-selection">
                 <h2>Wähle eine Welt</h2>
                 <div class="world-selection">
-                    ${Object.values(bossWorlds)
-                      .map((world) => {
+                    ${Object.values(bossWorlds).map(world => {
                         const boss = Game.bosses[world.boss];
+                        const isUnlocked = Game.isWorldUnlocked(world.id);
+                        const lockClass = isUnlocked ? '' : 'locked';
+                        const desc = isUnlocked ? world.description : 'Gesperrt';
+                        
                         return `
-                            <div class="world-card boss-world-card" data-world-id="${world.id}">
+                            <div class="world-card boss-world-card ${lockClass}" data-world-id="${world.id}">
                                 <div class="world-name">${world.name}</div>
-                                <div class="world-desc">${world.description}</div>
+                                <div class="world-desc">${desc}</div>
                                 <div class="boss-info-preview">
                                     <span>Boss: ${boss.name}</span>
                                     <span class="boss-hp-preview">HP: ${boss.hp}</span>
                                 </div>
                             </div>
                         `;
-                      })
-                      .join("")}
+                    }).join('')}
                 </div>
             </div>
         `;
 
-    this.elements.buttonGrid.innerHTML = `
+        this.elements.buttonGrid.innerHTML = `
             <button class="game-button" id="btn-back">Zurück</button>
         `;
 
-    document.getElementById("btn-back").addEventListener("click", () => {
-      Game.showScreen("hideout");
-    });
+        document.getElementById('btn-back').addEventListener('click', () => {
+            Game.showScreen('hideout');
+        });
 
-    // Event Listeners für Boss-Welten
-    document.querySelectorAll(".boss-world-card").forEach((card) => {
-      card.addEventListener("click", () => {
-        const worldId = card.dataset.worldId;
-        Game.startCrawl(worldId);
-      });
-    });
-  },
+        // Event Listeners für Boss-Welten
+        document.querySelectorAll('.boss-world-card').forEach(card => {
+            card.addEventListener('click', () => {
+                // Wenn gesperrt, Klick ignorieren
+                if (card.classList.contains('locked')) return;
+                
+                const worldId = card.dataset.worldId;
+                Game.startCrawl(worldId);
+            });
+        });
+    },
 
   // Crawl Event-Auswahl anzeigen
   showCrawlEventSelection() {
