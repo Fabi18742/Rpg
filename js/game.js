@@ -46,7 +46,7 @@ const Game = {
 
   // Initialisierung
   init() {
-    console.log("Game wird initialisiert... 0.2.4");
+    console.log("Game wird initialisiert... 0.2.5");
 
     // Spielstand laden falls vorhanden
     const savedState = Storage.loadGameState();
@@ -907,7 +907,7 @@ const Game = {
     }
   },
 
-  // Kampf beenden
+// Kampf beenden
   endBattle(victory) {
     const battle = this.state.currentBattle;
     const isEnemyBattle = battle && battle.enemies && battle.enemies.length > 0;
@@ -936,53 +936,70 @@ const Game = {
       enemiesToLoot.forEach((enemy) => {
         if (enemy.drops && enemy.drops.length > 0) {
           enemy.drops.forEach((drop) => {
-            // Unterstütze altes Format (nur String) und neues Format (Object mit type)
-            if (typeof drop === "string") {
-              // Altes Format: Nur Item-ID als String
-              const item = this.items[drop];
-              if (item) {
-                this.addItemToInventory(item);
-                battle.log.push(`${item.name} von ${enemy.name} erhalten!`);
-                resultMessages.push(`Item: <strong style="color: var(--accent-color);">${item.name}</strong>`);
-              }
-            } else {
-              // Neues Format: { type: 'item'/'weapon'/'ability', id: '...' }
-              const dropType = drop.type;
-              const dropId = drop.id;
+            let dropId, dropType;
 
-              if (dropType === "item") {
+            // 1. Normalisierung: Egal ob String oder Objekt, wir extrahieren ID und Typ
+            if (typeof drop === "string") {
+              dropId = drop;
+              dropType = "item"; // Standard-Annahme bei Strings
+            } else {
+              dropId = drop.id;
+              dropType = drop.type;
+            }
+
+            // 2. SONDERREGEL: GLITZER (Währung)
+            // Abfangen, bevor wir in den Item-Pools suchen
+            if (dropId === "glitzer") {
+                // Menge bestimmen (Standard 1, oder falls im Drop-Objekt definiert)
+                const amount = (typeof drop === "object" && drop.amount) ? drop.amount : 1;
+                this.state.player.stats.glitzer += amount;
+                
+                battle.log.push(`${amount} Glitzer erhalten!`);
+                resultMessages.push(`<span style="color: #fbbf24;">Erhalten: +${amount} Glitzer</span>`);
+                return; // Wichtig: Hier abbrechen, damit nicht nach einem Item "glitzer" gesucht wird
+            }
+
+            // 3. Normale Verarbeitung der Typen
+            if (dropType === "item") {
                 const item = this.items[dropId];
                 if (item) {
                   this.addItemToInventory(item);
                   battle.log.push(`${item.name} von ${enemy.name} erhalten!`);
                   resultMessages.push(`Item: <strong style="color: var(--accent-color);">${item.name}</strong>`);
+                } else {
+                  console.warn(`Drop-Item '${dropId}' nicht in Definitions gefunden!`);
                 }
-              } else if (dropType === "weapon") {
-                // Hier greifen wir sicherheitshalber auf weaponBases zu
-                const weapon = this.weaponBases ? this.weaponBases[dropId] : this.weapons[dropId];
-                if (weapon) {
-                  // Waffe als Instanz zum Inventar hinzufügen
-                  this.state.player.weapons.push({
-                    baseId: weapon.id,
-                    effects: [],
-                  });
-                  battle.log.push(`Waffe erhalten: ${weapon.name}!`);
-                  resultMessages.push(`Waffe: <strong style="color: var(--accent-color);">${weapon.name}</strong>`);
+            } else if (dropType === "weapon") {
+                // KORREKTUR: Nur noch weaponBases nutzen
+                const weaponBase = this.weaponBases[dropId];
+                if (weaponBase) {
+                  this.state.player.weapons.push({ baseId: dropId, effects: [] });
+                  battle.log.push(`Waffe erhalten: ${weaponBase.name}!`);
+                  resultMessages.push(`Waffe: <strong style="color: var(--accent-color);">${weaponBase.name}</strong>`);
+                } else {
+                   console.warn(`Drop-Waffe '${dropId}' nicht in Definitions gefunden!`);
                 }
-              } else if (dropType === "ability") {
+            } else if (dropType === "ability") {
                 const ability = this.abilities[dropId];
-                if (ability && !this.state.player.abilities.includes(dropId)) {
-                  this.state.player.abilities.push(dropId);
-                  battle.log.push(`Fähigkeit erhalten: ${ability.name}!`);
-                  resultMessages.push(`Fähigkeit: <strong style="color: var(--accent-color);">${ability.name}</strong>`);
+                if (ability) {
+                    if (!this.state.player.abilities.includes(dropId)) {
+                        this.state.player.abilities.push(dropId);
+                        battle.log.push(`Fähigkeit erhalten: ${ability.name}!`);
+                        resultMessages.push(`Fähigkeit: <strong style="color: var(--accent-color);">${ability.name}</strong>`);
+                    } else {
+                        // Fallback: Wenn man die Fähigkeit schon hat -> 10 Glitzer Trostpreis
+                        this.state.player.stats.glitzer += 10;
+                        resultMessages.push(`<span style="color: #888;">(Fähigkeit ${ability.name} bereits bekannt -> +10 Glitzer)</span>`);
+                    }
+                } else {
+                   console.warn(`Drop-Ability '${dropId}' nicht in Definitions gefunden!`);
                 }
-              }
             }
           });
         }
       });
       
-      // Beute-Titel hinzufügen falls vorhanden, sonst Meldung für leere Beute
+      // Beute-Titel hinzufügen falls vorhanden
       if (resultMessages.length > 0) {
           resultMessages.unshift("Du hast folgende Beute erhalten:");
       } else {
@@ -1013,24 +1030,24 @@ const Game = {
 
     // Kurze Verzögerung, bevor der Resultscreen kommt (1.5 Sekunden)
     setTimeout(() => {
-      // Alle Kampffenster (Gegner, Log etc.) schließen, damit der Screen sauber ist
+      // Alle Kampffenster schließen
       UI.removeBattleWindows();
 
       const title = victory ? "Kampf gewonnen!" : "Du wurdest besiegt!";
       
-      // Resultscreen aufrufen und die Logik aus dem alten Timeout als Callback übergeben
+      // Resultscreen anzeigen
       UI.showResultScreen(title, resultMessages, () => {
         this.state.currentBattle = null;
         this.save();
 
         if (!victory || isBossBattle) {
-          // Crawl-Zustand löschen
+          // Crawl-Zustand löschen bei Niederlage oder Boss-Sieg
           if (this.state.currentCrawl) {
             this.state.currentCrawl = null;
           }
           this.showScreen("hideout");
         } else {
-          // Bei Sieg im Gegner-Kampf: Weiter im Crawl
+          // Bei Sieg im normalen Kampf: Boss-Spawn prüfen (Crawl geht weiter)
           this.checkBossSpawn();
         }
       });
