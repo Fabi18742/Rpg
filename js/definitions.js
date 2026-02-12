@@ -330,7 +330,7 @@ const Definitions = {
       damageType: "physical",
       apCost: 3,
       attacks: 6,
-      damageMultiplier: 0.5,
+      damageMultiplier: 0.55,
       hitChance: 0.9,
     },
   },

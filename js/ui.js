@@ -1245,6 +1245,24 @@ const UI = {
     // Diese Funktion wird nicht mehr benötigt
   },
 
+  updateShopItemSelection(sourceIndex, quantity, startIndex) {
+    // Alle Verkaufs-Karten suchen
+    const cards = document.querySelectorAll('.shop-item-card[data-type="sell"]');
+    
+    // Auswahl zurücksetzen
+    cards.forEach(card => card.classList.remove('selected'));
+    
+    // Bereich markieren
+    cards.forEach(card => {
+        const idx = parseInt(card.dataset.index);
+        // Da die Liste jedes Item einzeln anzeigt, markieren wir einfach 
+        // ab dem Start-Index die gewünschte Anzahl an Karten
+        if (idx >= startIndex && idx < startIndex + quantity) {
+            card.classList.add('selected');
+        }
+    });
+  },
+
 // Boss-Welten Screen anzeigen
     showBossSelection() {
         this.elements.visualArea.classList.remove('hideout-bg');
