@@ -2276,8 +2276,8 @@ const UI = {
                         // Gegner-Fenster neu erstellen
                         const battle = Game.state.currentBattle;
                         if (battle) {
-                            const isEnemyBattle = battle.enemies && battle.enemies.length > 0;
-                            this.createOrUpdateEnemyWindow(isEnemyBattle ? battle.enemies : [battle.boss], isEnemyBattle, battle);
+                                console.log("yo");
+                            this.updateBattleScreen();
                         }
                     } else if (windowId === 'battle-log-window') {
                         // Battle-Log neu erstellen
