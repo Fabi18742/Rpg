@@ -274,7 +274,7 @@ const Definitions = {
       description: "Chance auf Gift",
       glitzerValueMultiplier: 2.0,
       type: "poison",
-      value: 3,
+      value: 1,
       applyChance: 0.4,
       stacksToApply: 3,
       ignoreArmor: true,
