@@ -1243,44 +1243,6 @@ const UI = {
       });
     }
   },
-  updateShopItemSelection(clickedIndex, quantity, groupStartIndex, groupSize) {
-    const cards = document.querySelectorAll(
-      '.shop-item-card[data-type="sell"]',
-    );
-
-    // Auswahl zurücksetzen
-    cards.forEach((card) => card.classList.remove("selected"));
-
-    // Startposition berechnen
-    // Standard: Wir starten beim angeklickten Item
-    let start = clickedIndex;
-
-    // Korrektur: Wenn die Menge über das Gruppen-Ende hinausgehen würde,
-    // verschieben wir den Startpunkt nach oben
-    // (groupStartIndex + groupSize) ist der Index des ersten Items NACH der Gruppe
-    if (start + quantity > groupStartIndex + groupSize) {
-      start = groupStartIndex + groupSize - quantity;
-    }
-
-    const end = start + quantity;
-
-    // Bereich markieren
-    cards.forEach((card) => {
-      const idx = parseInt(card.dataset.index);
-      // Prüfen ob die Karte im berechneten Bereich liegt
-      if (idx >= start && idx < end) {
-        card.classList.add("selected");
-      }
-    });
-  },
-
-  updateBuyDisplay(merchantId, offerIndex, quantity) {
-    // Diese Funktion wird nicht mehr benötigt
-  },
-
-  showSellConfirmation(merchantId, inventoryIndex) {
-    // Diese Funktion wird nicht mehr benötigt
-  },
 
   // Boss-Welten Screen anzeigen
   showBossSelection() {
