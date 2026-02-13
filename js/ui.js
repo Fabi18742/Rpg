@@ -2327,6 +2327,78 @@ const UI = {
     }
   },
 
+  // In js/ui.js (neue Funktion)
+
+// Item Details Popup speziell für den Kampf
+showItemDetailsPopupBattle(itemId) {
+    const item = Game.state.player.inventory.find(i => i.id === itemId);
+    if (!item) return;
+
+    const itemDef = Game.items[item.id];
+    const isConsumable = itemDef && itemDef.type === 'consumable';
+
+    // Erstelle Overlay (HTML Struktur ist identisch zu den anderen Popups)
+    const overlayHTML = `
+        <div class="item-details-overlay" id="item-details-overlay">
+            <div class="item-details-popup">
+                <div class="popup-header">
+                    <h3>${item.name}</h3>
+                    <button class="close-popup-btn" id="close-popup-btn">×</button>
+                </div>
+                <div class="popup-content">
+                    <div class="item-icon-large"></div>
+                    <div class="item-description">${item.description}</div>
+                    <div class="item-type">Typ: ${itemDef ? itemDef.type : 'Unbekannt'}</div>
+                    <div class="item-type" style="margin-top: 5px; color: #fbbf24; font-size: 0.8em;">(Shift + Klick im Inventar zum schnellen Nutzen)</div>
+                </div>
+                <div class="popup-actions">
+                    ${isConsumable ? `<button class="popup-btn use-btn" id="use-item-btn">Verwenden</button>` : ''}
+                    <button class="popup-btn close-btn" id="close-btn">Schließen</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', overlayHTML);
+
+    // Event Listeners
+    const overlay = document.getElementById('item-details-overlay');
+    const closePopupBtn = document.getElementById('close-popup-btn');
+    const closeBtn = document.getElementById('close-btn');
+    const useBtn = document.getElementById('use-item-btn');
+
+    const closePopup = () => {
+        overlay.remove();
+    };
+
+    closePopupBtn.addEventListener('click', closePopup);
+    closeBtn.addEventListener('click', closePopup);
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closePopup();
+    });
+
+    if (useBtn) {
+        useBtn.addEventListener('click', () => {
+            // Item nutzen
+            const healed = Game.useItem(itemId);
+
+            if (healed !== false) {
+                // Log-Logik für den Kampf
+                if (Game.state.currentBattle && typeof healed === 'number' && healed > 0) {
+                     Game.state.currentBattle.log.push(`<span class="log-source player">Inventar:</span> Heiltrank genutzt! +${healed} HP`);
+                }
+
+                // Popup schließen
+                closePopup();
+
+                // WICHTIG: Kampf-UI aktualisieren statt Hideout-UI
+                this.createOrUpdateInventoryWindow(); // Inventar-Liste neu rendern (Menge -1)
+                this.updateBattleScreen(); // HP-Balken und Log aktualisieren
+            }
+        });
+    }
+},
+
   // Kampf-Inventar-Fenster erstellen/updaten
   createOrUpdateInventoryWindow() {
     let existingWindow = document.getElementById("inventory-window");
@@ -2412,22 +2484,37 @@ const UI = {
   },
 
   // Event Listeners für Inventar-Fenster
-  setupInventoryWindowListeners(windowElement) {
-    windowElement
-      .querySelectorAll(".inventory-item-battle-horizontal")
-      .forEach((itemEl) => {
-        itemEl.addEventListener("click", () => {
-          const itemId = itemEl.dataset.itemId;
-          const healed = Game.useItem(itemId);
+setupInventoryWindowListeners(windowElement) {
+    windowElement.querySelectorAll('.inventory-item-battle-horizontal').forEach(itemEl => {
+        itemEl.addEventListener('click', (e) => { // 'e' (Event) Parameter hinzufügen
+            const itemId = itemEl.dataset.itemId;
 
-          if (healed !== false) {
-            // Item verwendet, Fenster updaten
-            this.createOrUpdateInventoryWindow();
-            this.updateBattleScreen();
-          }
+            // PRÜFUNG: Ist Shift gedrückt?
+            if (e.shiftKey) {
+                // Shift+Klick -> Sofort nutzen (altes Verhalten)
+                const healed = Game.useItem(itemId);
+
+                if (healed !== false) {
+                    // Item wurde genutzt, Fenster updaten
+                    this.createOrUpdateInventoryWindow();
+                    this.updateBattleScreen();
+                    
+                    // Optional: Log Eintrag hinzufügen (da Game.useItem das nicht automatisch für den Battle-Log macht)
+                    if (Game.state.currentBattle && typeof healed === 'number' && healed > 0) {
+                         Game.state.currentBattle.log.push(`<span class="log-source player">Inventar:</span> Heiltrank (Shift) genutzt! +${healed} HP`);
+                         // Log Fenster aktualisieren
+                         if(document.getElementById('battle-log-window')) {
+                             this.createOrUpdateBattleLogWindow(Game.state.currentBattle.log);
+                         }
+                    }
+                }
+            } else {
+                // Normaler Klick -> Popup öffnen
+                this.showItemDetailsPopupBattle(itemId);
+            }
         });
-      });
-  },
+    });
+},
 
   // Ability-Fenster erstellen/updaten
   createOrUpdateAbilityWindow() {
