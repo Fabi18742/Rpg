@@ -46,7 +46,7 @@ const Game = {
 
   // Initialisierung
   init() {
-    console.log("Game wird initialisiert... 0.2.21");
+    console.log("Game wird initialisiert... 0.2.22");
 
     // Spielstand laden falls vorhanden
     const savedState = Storage.loadGameState();
@@ -552,7 +552,7 @@ const Game = {
             battle.turn = "enemy";
             this.save();
             UI.updateBattleScreen();
-            setTimeout(() => this.enemyAttack(), 1500);
+            setTimeout(() => this.enemyAttack(), 800);
             return;
           }
         }
@@ -575,7 +575,7 @@ const Game = {
       }
       this.save();
       UI.updateBattleScreen();
-      setTimeout(() => this.enemyAttack(), 1500);
+      setTimeout(() => this.enemyAttack(), 800);
     }
   },
 
@@ -604,7 +604,7 @@ const Game = {
     battle.turn = "enemy";
     this.save();
     UI.updateBattleScreen();
-    setTimeout(() => this.enemyAttack(), 1500);
+    setTimeout(() => this.enemyAttack(), 800);
   },
 
 // Gegner-Angriff
@@ -680,7 +680,7 @@ const Game = {
             battle.currentEnemyIndex++;
             this.save();
             UI.updateBattleScreen();
-            setTimeout(() => this.enemyAttack(), 1500);
+            setTimeout(() => this.enemyAttack(), 800);
             return;
           } else {
             this.endBattle(true);
@@ -792,7 +792,7 @@ const Game = {
           battle.boss = battle.enemies[battle.currentEnemyIndex];
           this.save();
           UI.updateBattleScreen();
-          setTimeout(() => this.enemyAttack(), 1500);
+          setTimeout(() => this.enemyAttack(), 800);
           return;
         } else {
           playerTurnNext = true;
