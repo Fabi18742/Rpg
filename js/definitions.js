@@ -122,6 +122,15 @@ const Definitions = {
       value: 7,
       glitzerValue: 25,
     },
+    ritual_seelenstein: {
+      id: "ritual_seelenstein",
+      name: "Pochernder Seelenstein",
+      type: "ritual",
+      description: "Ein Stein, der im Takt eines Herzens leuchtet.",
+      modifierType: "soulblock",
+      value: 5,
+      glitzerValue: 150,
+    },
     ritual_obsidian: {
       id: "ritual_obsidian",
       name: "Scharfer Obsidian",
@@ -279,6 +288,14 @@ const Definitions = {
       applyChance: 0.4,
       stacksToApply: 3,
       ignoreArmor: true,
+    },
+    soulblock: {
+      id: "soulblock",
+      name: "Seelenschild",
+      description: "Heilt dich um 50% des geblockten Schadens",
+      type: "block_heal",
+      value: 0.5,
+      glitzerValueMultiplier: 5,
     },
   },
 
@@ -499,9 +516,17 @@ const Definitions = {
       boss: "boss1",
       requiredBoss: null, // Welt 1 ist immer offen
       allowedEvents: [
-        "combat_w1_easy", "combat_w1_easy", "combat_w1_med", "combat_w1_med", "combat_w1_hard",
-        "combat_w1_uni", "combat_w1_uni", "story_w1_falle", "story_w1_beere",
-        "story_generic_loot", "story_generic_exit",
+        "combat_w1_easy",
+        "combat_w1_easy",
+        "combat_w1_med",
+        "combat_w1_med",
+        "combat_w1_hard",
+        "combat_w1_uni",
+        "combat_w1_uni",
+        "story_w1_falle",
+        "story_w1_beere",
+        "story_generic_loot",
+        "story_generic_exit",
       ],
     },
     welt2: {
@@ -511,9 +536,17 @@ const Definitions = {
       boss: "boss2",
       requiredBoss: "boss_faulwurz", // Benötigt Sieg über Boss 1
       allowedEvents: [
-        "combat_w2_easy", "combat_w2_easy", "combat_w2_med", "combat_w2_med", "combat_w2_hard",
-        "combat_w2_uni", "combat_w2_uni", "story_w2_gas", "story_w2_leiche",
-        "story_generic_loot", "story_generic_exit",
+        "combat_w2_easy",
+        "combat_w2_easy",
+        "combat_w2_med",
+        "combat_w2_med",
+        "combat_w2_hard",
+        "combat_w2_uni",
+        "combat_w2_uni",
+        "story_w2_gas",
+        "story_w2_leiche",
+        "story_generic_loot",
+        "story_generic_exit",
       ],
     },
     welt3: {
@@ -523,9 +556,18 @@ const Definitions = {
       boss: "boss3",
       requiredBoss: "boss_schlammkoenig", // Benötigt Sieg über Boss 2
       allowedEvents: [
-        "combat_w3_easy", "combat_w3_easy", "combat_w3_med", "combat_w3_med", "combat_w3_hard",
-        "combat_w3_uni", "combat_w3_uni", "story_w3_altar", "story_w3_schmiede",
-        "story_generic_loot", "story_generic_exit",
+        "combat_w3_easy",
+        "combat_w3_easy",
+        "combat_w3_med",
+        "combat_w3_med",
+        "combat_w3_hard",
+        "combat_w3_uni",
+        "combat_w3_uni",
+        "story_w3_altar",
+        "story_w3_soulstone",
+        "story_w3_schmiede",
+        "story_generic_loot",
+        "story_generic_exit",
       ],
     },
     welt4: {
@@ -535,9 +577,17 @@ const Definitions = {
       boss: "boss4",
       requiredBoss: "boss_schwarzer_ritter", // Benötigt Sieg über Boss 3
       allowedEvents: [
-        "combat_w4_easy", "combat_w4_easy", "combat_w4_med", "combat_w4_med", "combat_w4_hard",
-        "combat_w4_uni", "combat_w4_uni", "story_w4_lava", "story_w4_statue",
-        "story_generic_loot", "story_generic_exit",
+        "combat_w4_easy",
+        "combat_w4_easy",
+        "combat_w4_med",
+        "combat_w4_med",
+        "combat_w4_hard",
+        "combat_w4_uni",
+        "combat_w4_uni",
+        "story_w4_lava",
+        "story_w4_statue",
+        "story_generic_loot",
+        "story_generic_exit",
       ],
     },
     welt5: {
@@ -547,8 +597,15 @@ const Definitions = {
       boss: "boss5",
       requiredBoss: "boss_inferno", // Benötigt Sieg über Boss 4
       allowedEvents: [
-        "combat_w5_easy", "combat_w5_easy", "combat_w5_med", "combat_w5_med", "combat_w5_hard",
-        "combat_w5_uni", "combat_w5_uni", "story_w5_whisper", "story_w5_void",
+        "combat_w5_easy",
+        "combat_w5_easy",
+        "combat_w5_med",
+        "combat_w5_med",
+        "combat_w5_hard",
+        "combat_w5_uni",
+        "combat_w5_uni",
+        "story_w5_whisper",
+        "story_w5_void",
         "story_generic_loot",
       ],
     },
@@ -560,7 +617,7 @@ const Definitions = {
   // Erlaubte Effekte: 'addItem', 'addChaos'
   crawlEvents: {
     // --- GENERIC ---
-    // Ersatz für den Händler, immer verfügbar
+
     story_generic_loot: {
       id: "story_generic_loot",
       name: "Verlorener Rucksack",
@@ -745,9 +802,7 @@ const Definitions = {
           text: "Luft anhalten und rennen",
           effects: [{ type: "addChaos", amount: 1 }],
         },
-        { text: "Atmen...",
-          effects: [{ type: "addChaos", amount: 3 }]
-        },
+        { text: "Atmen...", effects: [{ type: "addChaos", amount: 3 }] },
       ],
     },
     story_w2_leiche: {
@@ -805,7 +860,7 @@ const Definitions = {
       enemies: ["ritter", "skelett", "skelett"],
     },
 
-    // Universal Combat
+    // Universal
     combat_w3_uni: {
       id: "combat_w3_uni",
       name: "Einsames Skelett",
@@ -815,6 +870,29 @@ const Definitions = {
       maxChaos: null,
       securityDecrease: 3,
       enemies: ["skelett"],
+    },
+
+    story_w3_soulstone: {
+      id: "story_w3_soulstone",
+      name: "Vergessener Schrein",
+      description: "Du entdeckst einen kleinen Altar. Darauf liegt ein seltsam pulsierender Stein.",
+      type: "multipleChoice",
+      minChaos: 15,
+      maxChaos: 20,
+      securityDecrease: 20,
+      choices: [
+        {
+          text: "Stein an dich nehmen",
+          effects: [
+            { type: "addItem", itemId: "ritual_seelenstein", amount: 1 },
+            { type: "addChaos", amount: 5 }
+          ],
+        },
+        {
+          text: "Liegen lassen",
+          effects: [],
+        },
+      ],
     },
 
     story_w3_altar: {

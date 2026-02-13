@@ -46,7 +46,7 @@ const Game = {
 
   // Initialisierung
   init() {
-    console.log("Game wird initialisiert... 0.2.20");
+    console.log("Game wird initialisiert... 0.2.21");
 
     // Spielstand laden falls vorhanden
     const savedState = Storage.loadGameState();
@@ -216,9 +216,7 @@ const Game = {
     };
   },
 
-  // Effekte auf Schaden anwenden
-  // Gibt { damage, logs } zurück
-  applyEffects(baseDamage, effectIds, attacker, target, battle) {
+  applyEffects(baseDamage, effectIds, attacker, target, battle, context = 'attack') {
     let damage = baseDamage;
     let logs = [];
 
@@ -233,19 +231,35 @@ const Game = {
       // Verschiedene Effekt-Typen
       switch (effect.type) {
         case "damage":
-          damage += effect.value;
-          logs.push(`+${effect.value} (${effect.name})`);
-          break;
-        case "poison":
-          // Poison hat eine Chance, Stacks aufzutragen
-          if (Math.random() < effect.applyChance) {
-            this.applyPoisonEffect(target, effect);
-            logs.push(`🧪 Gift aufgetragen!`);
+          // Schadens-Bonus nur beim Angreifen anwenden
+          if (context === 'attack') {
+              damage += effect.value;
+              logs.push(`+${effect.value} (${effect.name})`);
           }
           break;
-        // Weitere Effekt-Typen können hier hinzugefügt werden
-        // case 'heal': ...
-        // case 'defense': ...
+
+        case "poison":
+          // Gift nur beim Angreifen auftragen
+          if (context === 'attack') {
+              if (Math.random() < effect.applyChance) {
+                this.applyPoisonEffect(target, effect);
+                logs.push(`🧪 Gift aufgetragen!`);
+              }
+          }
+          break;
+
+        case "block_heal":
+           // Heilung nur beim Blocken (Verteidigen) anwenden
+           if (context === 'defense') {
+                // 'damage' ist hier der geblockte Schaden
+                const healAmount = Math.floor(damage * effect.value);
+                
+                if (healAmount > 0) {
+                    attacker.hp = Math.min(attacker.maxHp, attacker.hp + healAmount);
+                    logs.push(`<span style="color: #22c55e;">${effect.name}: +${healAmount} HP</span>`);
+                }
+           }
+           break;
       }
     });
 
@@ -569,69 +583,55 @@ const Game = {
   playerBlock() {
     if (!this.state.currentBattle || this.state.currentBattle.turn !== "player")
       return;
-
     const battle = this.state.currentBattle;
 
-    // Prüfe ob genug Aktionspunkte vorhanden sind
+    // Mindestens 1 AP nötig
     if (battle.playerActionPoints < 1) return;
 
-    // Block-Wert berechnen: Nur AP-Bonus (Defense wird bereits normal vom Schaden abgezogen!)
-    const availableAP = battle.playerActionPoints; // AP BEVOR wir abziehen
-    const blockBonus = availableAP * 2; // Alle verfügbaren AP geben +2 Block pro AP
+    // Prozentuale Reduktion: 20% pro AP
+    // Bei 3 AP = 60% Reduktion
+    const reductionPerAP = 0.2;
+    const reduction = Math.min(0.9, battle.playerActionPoints * reductionPerAP); // Max 90%
 
-    battle.blockBonus = blockBonus;
-    battle.log.push(`Block! (+${blockBonus} Verteidigung)`);
+    // Multiplikator für den gegnerischen Zug speichern (z.B. 0.4 bei 60% Reduktion)
+    battle.damageMultiplier = 1 - reduction;
 
-    // NACH der Berechnung: Alle AP verbrauchen (Zug ist beendet)
+    const percentDisplay = Math.round(reduction * 100);
+    battle.log.push(`Defensive Haltung! (Schaden -${percentDisplay}%)`);
+
+    // Zug beenden
     battle.playerActionPoints = 0;
     battle.turn = "enemy";
     this.save();
     UI.updateBattleScreen();
-
-    // Verzögerung für Gegner-Angriff
     setTimeout(() => this.enemyAttack(), 1500);
   },
 
-  // Gegner-Angriff
+// Gegner-Angriff
   enemyAttack() {
     if (!this.state.currentBattle) return;
 
     const battle = this.state.currentBattle;
 
-    // Turn-Prüfung: Nur angreifen wenn enemy dran ist
-    if (battle.turn !== "enemy") {
-      return;
-    }
+    // Turn-Prüfung
+    if (battle.turn !== 'enemy') return;
 
-    // Bestimme ob es ein Gegner-Kampf oder Boss-Kampf ist
+    // --- GEGNER-AUSWAHL LOGIK (Unverändert) ---
     const isEnemyBattle = battle.enemies && battle.enemies.length > 0;
 
-    // Bei Gegner-Kämpfen: Stelle sicher dass currentEnemyIndex initialisiert ist
-    if (
-      isEnemyBattle &&
-      (battle.currentEnemyIndex === undefined ||
-        battle.currentEnemyIndex === null)
-    ) {
+    if (isEnemyBattle && (battle.currentEnemyIndex === undefined || battle.currentEnemyIndex === null)) {
       battle.currentEnemyIndex = 0;
     }
 
-    // Bei Gegner-Kämpfen: Suche zirkulär nach lebendem Gegner
     if (isEnemyBattle) {
-      if (battle.enemiesAttackedThisRound === undefined) {
-        battle.enemiesAttackedThisRound = 0;
-      }
+      if (battle.enemiesAttackedThisRound === undefined) battle.enemiesAttackedThisRound = 0;
 
       let attempts = 0;
       const totalEnemies = battle.enemies.length;
 
-      // Zirkuläre Suche mit Wrap-Around
       while (attempts < totalEnemies) {
-        if (battle.currentEnemyIndex >= totalEnemies) {
-          battle.currentEnemyIndex = 0;
-        }
-        if (!battle.enemies[battle.currentEnemyIndex].defeated) {
-          break; // Gefunden
-        }
+        if (battle.currentEnemyIndex >= totalEnemies) battle.currentEnemyIndex = 0;
+        if (!battle.enemies[battle.currentEnemyIndex].defeated) break;
         battle.currentEnemyIndex++;
         attempts++;
       }
@@ -643,28 +643,21 @@ const Game = {
       battle.boss = battle.enemies[battle.currentEnemyIndex];
     }
 
-    // Boss/Gegner holen
     const boss = battle.boss;
-
-    // Boss-Waffe auflösen
     const bossWeaponInstance = boss.weapon;
     const bossWeapon = this.resolveWeapon(bossWeaponInstance);
     const attackDamage = bossWeapon ? bossWeapon.damage : 0;
     const attackName = bossWeapon ? bossWeapon.name : "Angriff";
 
-    // --- TEIL 1: GIFTSCHADEN DES GEGNERS ---
+    // --- TEIL 1: GIFTSCHADEN DES GEGNERS (Unverändert) ---
     if (boss.statusEffects && boss.statusEffects.length > 0) {
-      const poisonEffect = boss.statusEffects.find(
-        (se) => se.type === "poison",
-      );
+      const poisonEffect = boss.statusEffects.find(se => se.type === 'poison');
       if (poisonEffect && poisonEffect.stacks > 0) {
         const poisonDamage = poisonEffect.baseDamage + poisonEffect.stacks;
         boss.hp -= poisonDamage;
         if (boss.hp < 0) boss.hp = 0;
 
-        battle.log.push(
-          `<span style="color: #a855f7;">🧪 ${boss.name} erleidet ${poisonDamage} Gift-Schaden (${poisonEffect.stacks} Stacks)</span>`,
-        );
+        battle.log.push(`<span style="color: #a855f7;">🧪 ${boss.name} erleidet ${poisonDamage} Gift-Schaden (${poisonEffect.stacks} Stacks)</span>`);
 
         poisonEffect.stacks -= 1;
         if (poisonEffect.stacks <= 0) {
@@ -679,12 +672,11 @@ const Game = {
           boss.defeated = true;
           battle.log.push(`${boss.name} wurde durch Gift besiegt!`);
           if (isEnemyBattle) {
-            const allDefeated = battle.enemies.every((e) => e.defeated);
+            const allDefeated = battle.enemies.every(e => e.defeated);
             if (allDefeated) {
               this.endBattle(true);
               return;
             }
-            // Zum nächsten Gegner wechseln, da dieser hier gerade gestorben ist
             battle.currentEnemyIndex++;
             this.save();
             UI.updateBattleScreen();
@@ -698,70 +690,96 @@ const Game = {
       }
     }
 
-    // --- TEIL 2: ANGRIFF AUF DEN SPIELER ---
+    // --- TEIL 2: ANGRIFF AUF DEN SPIELER (REIHENFOLGE GEÄNDERT) ---
     const bossBaseDamage = attackDamage;
     const bossStrength = boss.stats.strength;
     const playerDefense = this.state.player.stats.defense;
-    const blockBonus = battle.blockBonus || 0;
-    let damage = bossBaseDamage + bossStrength - playerDefense - blockBonus;
 
-    let damageLog = [`${bossBaseDamage} Basis`];
-    if (bossStrength > 0) damageLog.push(`${bossStrength} Str`);
-    if (playerDefense > 0) damageLog.push(`-${playerDefense} Vert.`);
-    if (blockBonus > 0) damageLog.push(`-${blockBonus} Block`);
+    // 1. Basis-Schaden berechnen
+    let rawDamage = bossBaseDamage + bossStrength - playerDefense;
+    if (rawDamage < 0) rawDamage = 0;
 
-    // Effekte anwenden
+    let finalDamage = rawDamage;
+    let blockedAmount = 0;
+
+    // 2. Block-Multiplikator anwenden
+    if (battle.damageMultiplier !== undefined) {
+        finalDamage = Math.floor(rawDamage * battle.damageMultiplier);
+        blockedAmount = rawDamage - finalDamage;
+    }
+
+    // 3. Boss-Effekte berechnen (z.B. Testdamage des Gegners)
     if (bossWeapon && bossWeapon.effects && bossWeapon.effects.length > 0) {
       const effectResult = this.applyEffects(
-        damage,
+        finalDamage,
         bossWeapon.effects,
         boss,
         this.state.player,
-        battle,
+        battle
       );
-      damage = effectResult.damage;
-      damageLog.push(...effectResult.logs);
+      finalDamage = effectResult.damage;
+      // Logs noch nicht pushen, erst zusammen mit dem Haupt-Log
     }
 
-    if (damage < 0) damage = 0;
-    this.state.player.hp -= damage;
-    if (this.state.player.hp < 0) this.state.player.hp = 0;
+    // 4. SCHADEN ZUFÜGEN (JETZT ALS ERSTES)
+    this.state.player.hp -= finalDamage;
+    
+    // 5. SCHADEN LOGGEN
+    let damageLog = [`${bossBaseDamage} Basis`];
+    if (bossStrength > 0) damageLog.push(`${bossStrength} Str`);
+    if (playerDefense > 0) damageLog.push(`-${playerDefense} Vert.`);
+    if (blockedAmount > 0) damageLog.push(`-${blockedAmount} Geblockt`);
 
     battle.log.push(
-      `<span class="log-source enemy">${boss.name}</span>: ${attackName} <br><div class="log-hit-item"><span class="log-damage-val" style="color: #ff6b6b;">-${damage} HP</span> <span class="log-details">(${damageLog.join(" + ")})</span></div>`,
+      `<span class="log-source enemy">${boss.name}</span>: ${attackName} <br><div class="log-hit-item"><span class="log-damage-val" style="color: #ff6b6b;">-${finalDamage} HP</span> <span class="log-details">(${damageLog.join(" + ")})</span></div>`
     );
 
-    if (battle.blockBonus > 0) {
-      battle.blockBonus = 0;
+    // 6. JETZT ERST: HEILUNG DURCH BLOCK (SEELENSCHILD)
+    if (blockedAmount > 0) {
+        const equippedWeapon = this.getEquippedWeapon();
+        if (equippedWeapon && equippedWeapon.effects && equippedWeapon.effects.length > 0) {
+            const effectResult = this.applyEffects(
+                blockedAmount, 
+                equippedWeapon.effects, 
+                this.state.player, 
+                boss, 
+                battle,
+                'defense'
+            );
+            
+            // Heilung loggen (erscheint jetzt unter dem Schaden)
+            if (effectResult.logs.length > 0) {
+                battle.log.push(...effectResult.logs);
+            }
+        }
     }
 
+    // 7. HP Check & Game Over Prüfung
+    if (this.state.player.hp < 0) this.state.player.hp = 0;
+    
     if (this.state.player.hp <= 0) {
-      battle.log.push(
-        '<strong style="color: #ff4444;">Du wurdest besiegt!</strong>',
-      );
+      battle.log.push('<strong style="color: #ff4444;">Du wurdest besiegt!</strong>');
       this.endBattle(false);
       return;
     }
 
-    // --- TEIL 3: RUNDENLOGIK ---
+    // --- TEIL 3: RUNDENLOGIK (Unverändert) ---
     let playerTurnNext = false;
 
     if (isEnemyBattle) {
       battle.enemiesAttackedThisRound++;
-      const livingEnemies = battle.enemies.filter((e) => !e.defeated).length;
+      const livingEnemies = battle.enemies.filter(e => !e.defeated).length;
 
       if (battle.enemiesAttackedThisRound >= livingEnemies) {
-        playerTurnNext = true; // Runde vorbei
+        playerTurnNext = true;
       } else {
-        // Nächster Gegner im Timeout
         battle.currentEnemyIndex++;
         let attempts = 0;
         const totalEnemies = battle.enemies.length;
         let foundNext = false;
 
         while (attempts < totalEnemies) {
-          if (battle.currentEnemyIndex >= totalEnemies)
-            battle.currentEnemyIndex = 0;
+          if (battle.currentEnemyIndex >= totalEnemies) battle.currentEnemyIndex = 0;
           if (!battle.enemies[battle.currentEnemyIndex].defeated) {
             foundNext = true;
             break;
@@ -781,57 +799,42 @@ const Game = {
         }
       }
     } else {
-      playerTurnNext = true; // Einzelboss immer Spieler-Zug danach
+      playerTurnNext = true;
     }
 
-    // --- TEIL 4: GIFTSCHADEN DES SPIELERS (BEVOR ER DRAN IST) ---
+    // --- TEIL 4: RUNDENENDE ---
     if (playerTurnNext) {
-      if (
-        this.state.player.statusEffects &&
-        this.state.player.statusEffects.length > 0
-      ) {
-        const playerPoison = this.state.player.statusEffects.find(
-          (se) => se.type === "poison",
-        );
-
-        if (playerPoison && playerPoison.stacks > 0) {
-          const pDamage = playerPoison.baseDamage + playerPoison.stacks;
-          this.state.player.hp -= pDamage;
-          if (this.state.player.hp < 0) this.state.player.hp = 0;
-
-          battle.log.push(
-            `<span style="color: #a855f7;">🧪 Du erleidest ${pDamage} Gift-Schaden (${playerPoison.stacks} Stacks)</span>`,
-          );
-
-          playerPoison.stacks--;
-          if (playerPoison.stacks <= 0) {
-            this.state.player.statusEffects =
-              this.state.player.statusEffects.filter(
-                (se) => se !== playerPoison,
-              );
+      // Gift-Schaden Spieler etc... (gekürzt für Übersicht, Logik bleibt gleich)
+      if (this.state.player.statusEffects && this.state.player.statusEffects.length > 0) {
+          const playerPoison = this.state.player.statusEffects.find(se => se.type === 'poison');
+          if (playerPoison && playerPoison.stacks > 0) {
+              const pDamage = playerPoison.baseDamage + playerPoison.stacks;
+              this.state.player.hp -= pDamage;
+              if (this.state.player.hp < 0) this.state.player.hp = 0;
+              battle.log.push(`<span style="color: #a855f7;">🧪 Du erleidest ${pDamage} Gift-Schaden (${playerPoison.stacks} Stacks)</span>`);
+              playerPoison.stacks--;
+              if (playerPoison.stacks <= 0) {
+                  this.state.player.statusEffects = this.state.player.statusEffects.filter(se => se !== playerPoison);
+              }
+              if (this.state.player.hp <= 0) {
+                  battle.log.push('<strong style="color: #ff4444;">Du bist am Gift gestorben!</strong>');
+                  this.endBattle(false);
+                  return;
+              }
           }
-
-          if (this.state.player.hp <= 0) {
-            battle.log.push(
-              '<strong style="color: #ff4444;">Du bist am Gift gestorben!</strong>',
-            );
-            this.endBattle(false);
-            return;
-          }
-        }
       }
 
-      // --- FINALE ÜBERGABE AN DEN SPIELER ---
-      battle.turn = "player";
+      battle.turn = 'player';
+      
+      // HIER wird der Block-Multiplikator für die neue Runde entfernt!
+      if (battle.damageMultiplier !== undefined) {
+          delete battle.damageMultiplier;
+      }
+
       if (isEnemyBattle) {
         battle.currentEnemyIndex = 0;
         battle.enemiesAttackedThisRound = 0;
-
-        // Target Reset: Prüfen ob das alte Ziel noch lebt, sonst neues suchen
-        if (
-          !battle.enemies[battle.selectedTarget] ||
-          battle.enemies[battle.selectedTarget].defeated
-        ) {
+        if (!battle.enemies[battle.selectedTarget] || battle.enemies[battle.selectedTarget].defeated) {
           for (let i = 0; i < battle.enemies.length; i++) {
             if (!battle.enemies[i].defeated) {
               battle.selectedTarget = i;
