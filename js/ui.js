@@ -690,21 +690,19 @@ const UI = {
     if (inventory.length === 0) {
       inventoryHTML = '<div class="no-items">Dein Inventar ist leer</div>';
     } else {
-      // Jedes Item einzeln anzeigen (auch wenn quantity > 1)
-      const expandedInventory = [];
-      inventory.forEach((item) => {
-        const quantity = item.quantity || 1;
-        for (let i = 0; i < quantity; i++) {
-          expandedInventory.push(item);
-        }
-      });
-
-      inventoryHTML = expandedInventory
+      inventoryHTML = inventory
         .map((item) => {
+          const qtyBadge =
+            item.quantity > 1
+              ? `<span style="margin-left: auto; color: #fbbf24; font-weight: bold;">x${item.quantity}</span>`
+              : "";
+
           return `
                     <div class="inventory-item-horizontal" data-item-id="${item.id}">
                         <div class="item-icon-placeholder"></div>
-                        <div class="item-name">${item.name}</div>
+                        <div class="item-name" style="flex: 1; display: flex;">
+                            ${item.name}${qtyBadge}
+                        </div>
                     </div>
                 `;
         })
@@ -752,31 +750,25 @@ const UI = {
     }
 
     const inventory = Game.state.player.inventory;
-
     let inventoryHTML = "";
-    if (inventory.length === 0) {
-      inventoryHTML = '<div class="no-items">Dein Inventar ist leer</div>';
-    } else {
-      // Jedes Item einzeln anzeigen (auch wenn quantity > 1)
-      const expandedInventory = [];
-      inventory.forEach((item) => {
-        const quantity = item.quantity || 1;
-        for (let i = 0; i < quantity; i++) {
-          expandedInventory.push(item);
-        }
-      });
 
-      inventoryHTML = expandedInventory
-        .map((item) => {
-          return `
-                    <div class="inventory-item-horizontal" data-item-id="${item.id}">
-                        <div class="item-icon-placeholder"></div>
-                        <div class="item-name">${item.name}</div>
-                    </div>
-                `;
-        })
-        .join("");
-    }
+    inventoryHTML = inventory
+      .map((item) => {
+        const qtyBadge =
+          item.quantity > 1
+            ? `<span style="margin-left: auto; color: #fbbf24; font-weight: bold;">x${item.quantity}</span>`
+            : "";
+
+        return `
+            <div class="inventory-item-horizontal" data-item-id="${item.id}">
+                <div class="item-icon-placeholder"></div>
+                <div class="item-name" style="flex: 1; display: flex;">
+                    ${item.name}${qtyBadge}
+                </div>
+            </div>
+        `;
+      })
+      .join("");
 
     this.elements.sceneContent.innerHTML = `
             <div class="inventory-screen">
@@ -898,16 +890,13 @@ const UI = {
       const sellValue = itemDef.glitzerValue || 0;
       if (sellValue <= 0) return;
 
-      const quantity = item.quantity || 1;
-      for (let i = 0; i < quantity; i++) {
-        sellableList.push({
-          type: "item",
-          sourceIndex: inventoryIndex, // Index im inventory Array
-          def: itemDef,
-          data: item,
-          displayIndex: sellableList.length,
-        });
-      }
+      sellableList.push({
+        type: "item",
+        sourceIndex: inventoryIndex, // Index im inventory Array
+        def: itemDef,
+        data: item, // Hier steckt item.quantity drin, das wir später brauchen
+        displayIndex: sellableList.length,
+      });
     });
 
     // State für ausgewähltes Item
@@ -936,7 +925,7 @@ const UI = {
           selectedType === "sell" && selectedIndex === entry.displayIndex;
         const sellValue = entry.def.glitzerValue || 0;
 
-        // Effekt-Badges für Waffen
+        // 1. Effekt-Badges für Waffen (bleibt wie vorher)
         let effectsHTML = "";
         if (
           entry.type === "weapon" &&
@@ -952,12 +941,20 @@ const UI = {
           });
           effectsHTML += "</div>";
         }
+        let qtyBadge = "";
+        if (entry.type === "item" && entry.data.quantity > 1) {
+          // Einfach nur Text mit kleinem Abstand
+          qtyBadge = `<span style="margin-right: auto; margin-left: 10px; color: #fbbf24;">x${entry.data.quantity}</span>`;
+        }
 
+        // 3. HTML zusammenbauen
         sellListHTML += `
                     <div class="shop-item-card ${isSelected ? "selected" : ""}" data-type="sell" data-index="${entry.displayIndex}">
                         <div class="item-icon-placeholder"></div>
                         <div class="shop-item-info">
-                            <div class="item-name ${entry.type === "weapon" && entry.data.effects.length > 0 ? "weapon-with-effects" : ""}">${entry.def.name}</div>
+                            <div class="item-name ${entry.type === "weapon" && entry.data.effects.length > 0 ? "weapon-with-effects" : ""}" style="flex: 1; display: flex;">
+                                ${entry.def.name}${qtyBadge}
+                            </div>
                             ${effectsHTML}
                             <div class="item-value">${sellValue} G</div>
                         </div>
@@ -1150,55 +1147,27 @@ const UI = {
       const isWeapon = entry.type === "weapon";
       const sellValue = entry.def.glitzerValue || 0;
 
-      // === FIX: GRUPPEN-INFOS & MAXQUANTITY HIER BERECHNEN ===
-      // Damit sie im Event-Listener verfügbar sind
-      let groupStartIndex = index;
-      while (
-        groupStartIndex > 0 &&
-        sellableList[groupStartIndex - 1].sourceIndex === entry.sourceIndex
-      ) {
-        groupStartIndex--;
-      }
-
-      let groupEndIndex = index;
-      while (
-        groupEndIndex < sellableList.length - 1 &&
-        sellableList[groupEndIndex + 1].sourceIndex === entry.sourceIndex
-      ) {
-        groupEndIndex++;
-      }
-
-      const groupSize = groupEndIndex - groupStartIndex + 1;
-      const maxQuantity = isWeapon ? 1 : groupSize;
-      // ========================================================
-
-      // Visuelle Auswahl-Updates
-      const updateSelectionHighlight = (qty) => {
-        if (!isWeapon) {
-          this.updateShopItemSelection(index, qty, groupStartIndex, groupSize);
-        }
-      };
+      // NEU: Da Items jetzt gestapelt sind, ist die Berechnung super simpel:
+      // Maximale Menge ist einfach die Menge des Items im Inventar.
+      const maxQuantity = isWeapon ? 1 : entry.data.quantity || 1;
 
       minusBtn.addEventListener("click", (e) => {
         const step = e.shiftKey ? 10 : 1;
 
         if (quantity > 1) {
-          quantity = Math.max(1, quantity - step); // Nicht unter 1 fallen
+          quantity = Math.max(1, quantity - step);
           quantityDisplay.textContent = quantity;
           priceDisplay.textContent = `${sellValue * quantity} G`;
-          updateSelectionHighlight(quantity);
         }
       });
 
       plusBtn.addEventListener("click", (e) => {
-        // 'e' als Parameter hinzufügen
         const step = e.shiftKey ? 10 : 1;
 
         if (quantity < maxQuantity) {
-          quantity = Math.min(maxQuantity, quantity + step); // Nicht über Max gehen
+          quantity = Math.min(maxQuantity, quantity + step);
           quantityDisplay.textContent = quantity;
           priceDisplay.textContent = `${sellValue * quantity} G`;
-          updateSelectionHighlight(quantity);
         }
       });
 
@@ -1208,15 +1177,16 @@ const UI = {
           // Waffe verkaufen (immer Menge 1)
           success = Game.sellWeapon(entry.sourceIndex);
         } else {
-          // Item verkaufen
+          // Item verkaufen mit ausgewählter Menge
           success = Game.sellItem(entry.sourceIndex, quantity);
         }
 
         if (success) {
-          // Liste neu laden, Auswahl versuchen beizubehalten (oder Index verringern)
+          // Liste neu laden. Wir behalten den Index bei.
+          // Falls das Item komplett weg ist, kümmert sich showMerchantOffers darum.
           this.showMerchantOffers(merchantId, {
             type: "sell",
-            index: Math.max(0, index - (isWeapon ? 1 : quantity)),
+            index: index,
           });
         }
       });
@@ -1237,29 +1207,32 @@ const UI = {
         }
       };
 
-minusBtn.addEventListener('click', (e) => {
-    const step = e.shiftKey ? 10 : 1;
-    
-    if (quantity > 1) {
-        quantity = Math.max(1, quantity - step);
-        quantityDisplay.textContent = quantity;
-        updateBuyButton();
-    }
-});
+      minusBtn.addEventListener("click", (e) => {
+        const step = e.shiftKey ? 10 : 1;
 
-plusBtn.addEventListener('click', (e) => {
-    const step = e.shiftKey ? 10 : 1;
+        if (quantity > 1) {
+          quantity = Math.max(1, quantity - step);
+          quantityDisplay.textContent = quantity;
+          updateBuyButton();
+        }
+      });
 
-    const maxAffordable = Math.floor(glitzerCount / offer.price); 
-    const hardLimit = 9999;
-    const limit = Math.max(1, Math.min(hardLimit, maxAffordable > 0 ? maxAffordable : hardLimit));
+      plusBtn.addEventListener("click", (e) => {
+        const step = e.shiftKey ? 10 : 1;
 
-    if (quantity < limit) {
-        quantity = Math.min(limit, quantity + step);
-        quantityDisplay.textContent = quantity;
-        updateBuyButton();
-    }
-});
+        const maxAffordable = Math.floor(glitzerCount / offer.price);
+        const hardLimit = 9999;
+        const limit = Math.max(
+          1,
+          Math.min(hardLimit, maxAffordable > 0 ? maxAffordable : hardLimit),
+        );
+
+        if (quantity < limit) {
+          quantity = Math.min(limit, quantity + step);
+          quantityDisplay.textContent = quantity;
+          updateBuyButton();
+        }
+      });
 
       actionBtn.addEventListener("click", () => {
         if (actionBtn.disabled) return;
@@ -1952,68 +1925,71 @@ plusBtn.addEventListener('click', (e) => {
     });
   },
 
-  // Modal für Item-Auswahl öffnen
+// Modal für Item-Auswahl öffnen
   openRitualItemModal(slotIndex) {
     const ritual = Game.state.currentRitual;
     const inventory = Game.state.player.inventory;
 
-    // Nur Ritual-Items anzeigen
-    const ritualItems = inventory.filter((item) => {
-      const itemDef = Game.items[item.id];
-      return itemDef && itemDef.type === "ritual";
-    });
-
-    // Expandiere Items: Jedes Item einzeln anzeigen (keine Stacks)
-    const expandedItems = [];
-    ritualItems.forEach((item) => {
-      const quantity = item.quantity || 1;
-      for (let i = 0; i < quantity; i++) {
-        expandedItems.push({ ...item, displayQuantity: 1 });
-      }
-    });
-
-    // Zähle wie oft jedes Item bereits ausgewählt wurde
+    // 1. Zähle, welche Items bereits in ANDEREN Slots liegen
     const selectedItemCounts = {};
-    ritual.selectedItems.forEach((itemId) => {
-      if (itemId !== null) {
+    ritual.selectedItems.forEach((itemId, idx) => {
+      // Ignoriere den aktuellen Slot (falls wir ihn ändern wollen)
+      if (itemId !== null && idx !== slotIndex) {
         selectedItemCounts[itemId] = (selectedItemCounts[itemId] || 0) + 1;
       }
     });
 
-    // Filtere Items: zeige nur verfügbare (nicht bereits ausgewählte)
-    const availableItems = [];
+    // 2. Erstelle Liste der verfügbaren Ritual-Items (mit korrekter Restmenge)
+    const availableItems = inventory
+      .filter(item => {
+        const itemDef = Game.items[item.id];
+        return itemDef && itemDef.type === "ritual";
+      })
+      .map(item => {
+        // Berechne verfügbare Menge: Gesamt - BereitsVerwendet
+        const usedCount = selectedItemCounts[item.id] || 0;
+        const availableCount = (item.quantity || 1) - usedCount;
+        
+        // Gib das Item-Objekt zurück, aber mit der temporären "availableCount" Eigenschaft
+        return { ...item, availableCount: availableCount };
+      })
+      .filter(item => item.availableCount > 0); // Nur anzeigen, wenn noch was da ist
 
-    ritualItems.forEach((item) => {
-      const itemId = item.id;
-      const totalQuantity = item.quantity || 1;
-      const usedCount = selectedItemCounts[itemId] || 0;
-      const availableCount = totalQuantity - usedCount;
+    // 3. HTML Generierung (Exakt wie im normalen Inventar)
+    let itemsHTML = "";
+    if (availableItems.length === 0) {
+      itemsHTML = '<div class="no-items">Keine Ritual-Items verfügbar</div>';
+    } else {
+      itemsHTML = availableItems.map(item => {
+        // Style: Gelb, Fett, Rechtsbündig, Zentriert (wie Shop/Inventar)
+        const qtyBadge = (item.availableCount > 1) 
+            ? `<span style="margin-left: auto; color: #fbbf24; font-weight: bold; white-space: nowrap; flex-shrink: 0;">x${item.availableCount}</span>` 
+            : '';
 
-      // Füge jedes verfügbare Item einzeln hinzu
-      for (let i = 0; i < availableCount; i++) {
-        availableItems.push(item);
-      }
-    });
+        return `
+            <div class="inventory-item-horizontal ritual-selection-item" data-item-id="${item.id}">
+                <div class="item-icon-placeholder"></div>
+                <div class="item-name" style="flex: 1; display: flex; align-items: center;">
+                    ${item.name}${qtyBadge}
+                </div>
+            </div>
+        `;
+      }).join("");
+    }
 
-    // Modal HTML
+    // Modal HTML - nutzt jetzt "inventory-grid-container" statt der alten Liste
+    // Breite angepasst auf das Grid
     const modalHTML = `
             <div class="ritual-modal-overlay" id="ritual-modal">
-                <div class="ritual-modal-content">
+                <div class="ritual-modal-content" style="width: 550px; max-width: 95%;">
                     <h3>Wähle ein Ritual-Item</h3>
-                    <div class="ritual-modal-item-list">
-                        ${availableItems.length === 0 ? '<p class="no-items">Keine Ritual-Items verfügbar</p>' : ""}
-                        ${availableItems
-                          .map((item) => {
-                            const itemDef = Game.items[item.id];
-
-                            return `
-                                <div class="ritual-modal-item" data-item-id="${item.id}">
-                                    <div class="item-icon-placeholder"></div>
-                                    <div class="item-name">${itemDef.name}</div>
-                                </div>
-                            `;
-                          })
-                          .join("")}
+                    
+                    <div class="inventory-grid-container" style="max-height: 400px; grid-template-columns: repeat(1, 1fr);">
+                        ${itemsHTML}
+                    </div>
+                    
+                    <div class="popup-actions" style="margin-top: 20px;">
+                        <button class="popup-btn close-btn" id="close-ritual-btn">Abbrechen</button>
                     </div>
                 </div>
             </div>
@@ -2024,7 +2000,7 @@ plusBtn.addEventListener('click', (e) => {
     const modal = document.getElementById("ritual-modal");
 
     // Item auswählen
-    modal.querySelectorAll(".ritual-modal-item").forEach((itemEl) => {
+    modal.querySelectorAll(".ritual-selection-item").forEach((itemEl) => {
       itemEl.addEventListener("click", () => {
         const itemId = itemEl.dataset.itemId;
         ritual.selectedItems[slotIndex] = itemId;
@@ -2032,6 +2008,11 @@ plusBtn.addEventListener('click', (e) => {
         modal.remove();
         this.showRitualSelection();
       });
+    });
+
+    // Schließen Button
+    document.getElementById("close-ritual-btn").addEventListener("click", () => {
+        modal.remove();
     });
 
     // Overlay click zum Schließen
@@ -2350,13 +2331,20 @@ plusBtn.addEventListener('click', (e) => {
             <div class="window-title">Inventar</div>
             <div class="inventory-battle-grid">
                 ${
-                  expandedItems.length > 0
-                    ? expandedItems
+                  usableItems.length > 0
+                    ? usableItems
                         .map((item) => {
+                          const qtyBadge =
+                            item.quantity > 1
+                              ? `<span style="margin-left: auto; color: #fbbf24; font-weight: bold; white-space: nowrap; flex-shrink: 0;">x${item.quantity}</span>`
+                              : "";
+
                           return `
                         <div class="inventory-item-battle-horizontal" data-item-id="${item.id}">
                             <div class="item-icon-placeholder"></div>
-                            <div class="item-name">${item.name}</div>
+                            <div class="item-name" style="flex: 1; display: flex; align-items: center;">
+                                ${item.name}${qtyBadge}
+                            </div>
                         </div>
                     `;
                         })
@@ -2422,7 +2410,6 @@ plusBtn.addEventListener('click', (e) => {
       });
   },
 
-  // Ability-Fenster erstellen/updaten
   // Ability-Fenster erstellen/updaten
   createOrUpdateAbilityWindow() {
     const battle = Game.state.currentBattle;
