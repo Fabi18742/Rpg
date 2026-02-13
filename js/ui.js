@@ -338,16 +338,18 @@ const UI = {
     let weaponTooltipHTML = "";
 
     if (equippedWeapon) {
-      // Effekt-Badges für Slot
+      // Effekt-Badges für Slot generieren
       if (hasWeaponEffects) {
-        weaponEffectsHTML = '<div class="slot-effects">';
+        weaponEffectsHTML =
+          '<span class="slot-effects" style="margin-left: 8px;">';
         equippedWeaponInstance.effects.forEach((effectId) => {
           const effect = Game.effects[effectId];
           if (effect) {
-            weaponEffectsHTML += `<span class="effect-badge">${effect.name}</span>`;
+            // ÄNDERUNG: Style für Farbe (Rot/Pink) wie im Modal hinzugefügt
+            weaponEffectsHTML += `<span class="effect-badge" style="color: #ff9a8a; border: 1px solid #e74c3c;">${effect.name}</span>`;
           }
         });
-        weaponEffectsHTML += "</div>";
+        weaponEffectsHTML += "</span>";
       }
 
       // Tooltip mit ausführlichen Infos
@@ -381,7 +383,7 @@ const UI = {
                       equippedWeapon
                         ? `
                         <div class="item-name">${equippedWeapon.name}</div>
-                        <div class="item-stats">Schaden: ${equippedWeapon.damage}${hasWeaponEffects ? " | Effekte" : ""}</div>
+                        <div class="item-stats">Schaden: ${equippedWeapon.damage}${weaponEffectsHTML}</div>         
                     `
                         : '<div class="item-name slot-label">Waffe</div>'
                     }
