@@ -24,6 +24,7 @@ const Definitions = {
       name: "Dafuq",
       type: "HILFE HIER IST EIN FEHLER",
       description: "DAFUQ.",
+      glitzerValue: 1,
     },
     heiltrank: {
       id: "heiltrank",
@@ -47,7 +48,7 @@ const Definitions = {
       type: "consumable",
       description: "Erhöht Maximale HP um 50",
       maxHpIncrease: 50,
-      glitzerValue: 1,
+      glitzerValue: 25,
     },
 
     // ===== RITUAL-ITEMS (CRAFTING MATS) =====
