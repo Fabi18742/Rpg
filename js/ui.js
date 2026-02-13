@@ -1296,15 +1296,65 @@ const UI = {
       Game.showScreen("hideout");
     });
 
-    // Event Listeners für Boss-Welten
+// Event Listeners für Boss-Welten
     document.querySelectorAll(".boss-world-card").forEach((card) => {
       card.addEventListener("click", () => {
-        // Wenn gesperrt, Klick ignorieren
         if (card.classList.contains("locked")) return;
 
         const worldId = card.dataset.worldId;
-        Game.startCrawl(worldId);
+
+        this.showCrawlConfirmation(worldId);
       });
+    });
+  },
+  
+  // Boss-Crawl Bestätigungs-Popup
+  showCrawlConfirmation(worldId) {
+    const world = Game.bossWorlds[worldId];
+    if (!world) return;
+
+    // Overlay HTML (Wiederverwendung der existierenden Popup-Klassen)
+    const overlayHTML = `
+            <div class="item-details-overlay" id="crawl-confirmation-overlay">
+                <div class="item-details-popup">
+                    <div class="popup-header">
+                        <h3>${world.name} betreten?</h3>
+                    </div>
+                    <div class="popup-content">
+                        <div class="item-description" style="text-align: center; margin-bottom: 20px;">
+                            Möchtest du diese Welt wirklich betreten?<br>
+                        </div>
+                    </div>
+                    <div class="popup-actions" style="justify-content: center; gap: 20px;">
+                        <button class="popup-btn use-btn" id="confirm-crawl-btn">Betreten</button>
+                        <button class="popup-btn close-btn" id="cancel-crawl-btn">Abbrechen</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+    document.body.insertAdjacentHTML("beforeend", overlayHTML);
+
+    const overlay = document.getElementById("crawl-confirmation-overlay");
+    const confirmBtn = document.getElementById("confirm-crawl-btn");
+    const cancelBtn = document.getElementById("cancel-crawl-btn");
+
+    const closePopup = () => {
+      overlay.remove();
+    };
+
+    // Event Listeners
+    confirmBtn.addEventListener("click", () => {
+      closePopup();
+      // Hier startet der eigentliche Crawl erst nach Bestätigung
+      Game.startCrawl(worldId);
+    });
+
+    cancelBtn.addEventListener("click", closePopup);
+    
+    // Klick auf Hintergrund schließt auch
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) closePopup();
     });
   },
 
