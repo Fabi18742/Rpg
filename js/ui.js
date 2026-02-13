@@ -1887,7 +1887,7 @@ const UI = {
     });
   },
 
-// Modal für Item-Auswahl öffnen
+  // Modal für Item-Auswahl öffnen
   openRitualItemModal(slotIndex) {
     const ritual = Game.state.currentRitual;
     const inventory = Game.state.player.inventory;
@@ -1903,32 +1903,34 @@ const UI = {
 
     // 2. Erstelle Liste der verfügbaren Ritual-Items (mit korrekter Restmenge)
     const availableItems = inventory
-      .filter(item => {
+      .filter((item) => {
         const itemDef = Game.items[item.id];
         return itemDef && itemDef.type === "ritual";
       })
-      .map(item => {
+      .map((item) => {
         // Berechne verfügbare Menge: Gesamt - BereitsVerwendet
         const usedCount = selectedItemCounts[item.id] || 0;
         const availableCount = (item.quantity || 1) - usedCount;
-        
+
         // Gib das Item-Objekt zurück, aber mit der temporären "availableCount" Eigenschaft
         return { ...item, availableCount: availableCount };
       })
-      .filter(item => item.availableCount > 0); // Nur anzeigen, wenn noch was da ist
+      .filter((item) => item.availableCount > 0); // Nur anzeigen, wenn noch was da ist
 
     // 3. HTML Generierung (Exakt wie im normalen Inventar)
     let itemsHTML = "";
     if (availableItems.length === 0) {
       itemsHTML = '<div class="no-items">Keine Ritual-Items verfügbar</div>';
     } else {
-      itemsHTML = availableItems.map(item => {
-        // Style: Gelb, Fett, Rechtsbündig, Zentriert (wie Shop/Inventar)
-        const qtyBadge = (item.availableCount > 1) 
-            ? `<span style="margin-left: auto; color: #fbbf24; font-weight: bold; white-space: nowrap; flex-shrink: 0;">x${item.availableCount}</span>` 
-            : '';
+      itemsHTML = availableItems
+        .map((item) => {
+          // Style: Gelb, Fett, Rechtsbündig, Zentriert (wie Shop/Inventar)
+          const qtyBadge =
+            item.availableCount > 1
+              ? `<span style="margin-left: auto; color: #fbbf24; font-weight: bold; white-space: nowrap; flex-shrink: 0;">x${item.availableCount}</span>`
+              : "";
 
-        return `
+          return `
             <div class="inventory-item-horizontal ritual-selection-item" data-item-id="${item.id}">
                 <div class="item-icon-placeholder"></div>
                 <div class="item-name" style="flex: 1; display: flex; align-items: center;">
@@ -1936,7 +1938,8 @@ const UI = {
                 </div>
             </div>
         `;
-      }).join("");
+        })
+        .join("");
     }
 
     // Modal HTML - nutzt jetzt "inventory-grid-container" statt der alten Liste
@@ -1973,9 +1976,11 @@ const UI = {
     });
 
     // Schließen Button
-    document.getElementById("close-ritual-btn").addEventListener("click", () => {
+    document
+      .getElementById("close-ritual-btn")
+      .addEventListener("click", () => {
         modal.remove();
-    });
+      });
 
     // Overlay click zum Schließen
     modal.addEventListener("click", (e) => {
@@ -2375,7 +2380,7 @@ const UI = {
   // Ability-Fenster erstellen/updaten
   createOrUpdateAbilityWindow() {
     const battle = Game.state.currentBattle;
-    // ÄNDERUNG: Wir brechen hier NICHT mehr ab, wenn der Gegner am Zug ist
+    // Wir brechen nicht ab, damit wir das Fenster ggf. disablen können
     if (!battle) return;
 
     // Prüfe ob Fenster sichtbar sein soll
@@ -2383,36 +2388,33 @@ const UI = {
       localStorage.getItem("windowVisibility") || "{}",
     );
     const existingWindow = document.getElementById("ability-window");
-    // Beim ersten Aufruf (kein Eintrag in localStorage) soll das Fenster erstellt werden
     const shouldBeVisible = windowVisibility["ability-window"] !== false;
     if (!existingWindow && !shouldBeVisible) {
-      return; // Nicht erstellen wenn explizit ausgeblendet
+      return;
     }
 
     const player = Game.state.player;
 
-    // ÄNDERUNG: Prüfen, wer am Zug ist
+    // Wenn Boss HP 0 (und keine anderen Gegner da sind) oder Spieler HP 0 -> Kampf ist vorbei
+    const isBattleOver = battle.boss.hp <= 0 || player.hp <= 0;
     const isPlayerTurn = battle.turn === "player";
+    // Interaktion nur erlaubt, wenn Spieler dran ist UND Kampf NICHT vorbei ist
+    const canInteract = isPlayerTurn && !isBattleOver;
 
     // Fähigkeiten mit korrektem Slot-Index verarbeiten
     const abilityButtons = player.equippedAbilities
       .map((abilityIndex, slotIndex) => {
-        // Slot ist leer
-        if (abilityIndex === null || abilityIndex === undefined) {
-          return null;
-        }
+        if (abilityIndex === null || abilityIndex === undefined) return null;
 
         const abilityId = player.abilities[abilityIndex];
         const ability = Game.abilities[abilityId];
+        if (!ability) return null;
 
-        // Fähigkeit existiert nicht
-        if (!ability) {
-          return null;
-        }
-
-        // ÄNDERUNG: Button ist disabled, wenn AP fehlen ODER wenn nicht Player-Turn ist
+        // Button ist disabled, wenn:
+        // 1. Nicht Spieler-Zug oder Kampf vorbei
+        // 2. Nicht genug AP
         const canUse =
-          isPlayerTurn && battle.playerActionPoints >= ability.apCost;
+          canInteract && battle.playerActionPoints >= ability.apCost;
         const disabledClass = canUse ? "" : "disabled";
 
         const hitInfo =
@@ -2421,19 +2423,18 @@ const UI = {
             : "";
 
         return `
-                    <div class="ability-button-card ${disabledClass}" data-ability-index="${abilityIndex}" data-slot-index="${slotIndex}">
-                        <div class="ability-icon-placeholder"></div>
-                        <div class="ability-button-name">${ability.name}</div>
-                        <div class="ability-button-stats">${ability.attacks}x ${Math.floor(ability.damageMultiplier * 100)}%${hitInfo} | ${ability.apCost} AP</div>
-                    </div>
-                `;
+            <div class="ability-button-card ${disabledClass}" data-ability-index="${abilityIndex}" data-slot-index="${slotIndex}">
+                <div class="ability-icon-placeholder"></div>
+                <div class="ability-button-name">${ability.name}</div>
+                <div class="ability-button-stats">${ability.attacks}x ${Math.floor(ability.damageMultiplier * 100)}%${hitInfo} | ${ability.apCost} AP</div>
+            </div>
+        `;
       })
       .filter((html) => html !== null)
       .join("");
 
     // Block-Button
-    // ÄNDERUNG: Blocken auch nur im Player-Turn möglich
-    const canBlock = isPlayerTurn && battle.playerActionPoints >= 1;
+    const canBlock = canInteract && battle.playerActionPoints >= 1;
     const blockButtonClass = canBlock ? "" : "disabled";
     const blockValue = battle.playerActionPoints * 2;
 
@@ -2457,6 +2458,8 @@ const UI = {
                 <div class="window-title">Fähigkeiten</div>
                 ${content}
             `;
+      // Event-Listener neu setzen ist hier eigentlich nicht nötig, wenn sie am Window hängen,
+      // aber zur Sicherheit lassen wir es so wie im Original-Flow
       this.setupAbilityWindowListeners(existingWindow);
     } else {
       const windowHTML = `
