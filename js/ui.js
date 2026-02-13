@@ -1088,7 +1088,7 @@ const UI = {
                 </div>
             `;
 
-    // --- KAUFEN (HTML GENERIERUNG) ---
+      // --- KAUFEN (HTML GENERIERUNG) ---
     } else if (type === "buy") {
       const offer = merchant.offers[index];
       if (!offer) {
@@ -1149,19 +1149,25 @@ const UI = {
       const entry = sellableList[index];
       const isWeapon = entry.type === "weapon";
       const sellValue = entry.def.glitzerValue || 0;
-      
+
       // === FIX: GRUPPEN-INFOS & MAXQUANTITY HIER BERECHNEN ===
       // Damit sie im Event-Listener verfügbar sind
       let groupStartIndex = index;
-      while(groupStartIndex > 0 && sellableList[groupStartIndex-1].sourceIndex === entry.sourceIndex) {
-          groupStartIndex--;
+      while (
+        groupStartIndex > 0 &&
+        sellableList[groupStartIndex - 1].sourceIndex === entry.sourceIndex
+      ) {
+        groupStartIndex--;
       }
-      
+
       let groupEndIndex = index;
-      while(groupEndIndex < sellableList.length - 1 && sellableList[groupEndIndex+1].sourceIndex === entry.sourceIndex) {
-          groupEndIndex++;
+      while (
+        groupEndIndex < sellableList.length - 1 &&
+        sellableList[groupEndIndex + 1].sourceIndex === entry.sourceIndex
+      ) {
+        groupEndIndex++;
       }
-      
+
       const groupSize = groupEndIndex - groupStartIndex + 1;
       const maxQuantity = isWeapon ? 1 : groupSize;
       // ========================================================
@@ -1173,19 +1179,23 @@ const UI = {
         }
       };
 
-      minusBtn.addEventListener("click", () => {
+      minusBtn.addEventListener("click", (e) => {
+        const step = e.shiftKey ? 10 : 1;
+
         if (quantity > 1) {
-          quantity--;
+          quantity = Math.max(1, quantity - step); // Nicht unter 1 fallen
           quantityDisplay.textContent = quantity;
           priceDisplay.textContent = `${sellValue * quantity} G`;
           updateSelectionHighlight(quantity);
         }
       });
 
-      plusBtn.addEventListener("click", () => {
-        // Jetzt ist maxQuantity hier bekannt!
+      plusBtn.addEventListener("click", (e) => {
+        // 'e' als Parameter hinzufügen
+        const step = e.shiftKey ? 10 : 1;
+
         if (quantity < maxQuantity) {
-          quantity++;
+          quantity = Math.min(maxQuantity, quantity + step); // Nicht über Max gehen
           quantityDisplay.textContent = quantity;
           priceDisplay.textContent = `${sellValue * quantity} G`;
           updateSelectionHighlight(quantity);
@@ -1211,7 +1221,7 @@ const UI = {
         }
       });
 
-    // --- KAUFEN LOGIK ---
+      // --- KAUFEN LOGIK ---
     } else if (type === "buy") {
       const offer = merchant.offers[index];
       const updateBuyButton = () => {
@@ -1227,21 +1237,29 @@ const UI = {
         }
       };
 
-      minusBtn.addEventListener("click", () => {
-        if (quantity > 1) {
-          quantity--;
-          quantityDisplay.textContent = quantity;
-          updateBuyButton();
-        }
-      });
+minusBtn.addEventListener('click', (e) => {
+    const step = e.shiftKey ? 10 : 1;
+    
+    if (quantity > 1) {
+        quantity = Math.max(1, quantity - step);
+        quantityDisplay.textContent = quantity;
+        updateBuyButton();
+    }
+});
 
-      plusBtn.addEventListener("click", () => {
-        if (quantity < 99) {
-          quantity++;
-          quantityDisplay.textContent = quantity;
-          updateBuyButton();
-        }
-      });
+plusBtn.addEventListener('click', (e) => {
+    const step = e.shiftKey ? 10 : 1;
+
+    const maxAffordable = Math.floor(glitzerCount / offer.price); 
+    const hardLimit = 9999;
+    const limit = Math.max(1, Math.min(hardLimit, maxAffordable > 0 ? maxAffordable : hardLimit));
+
+    if (quantity < limit) {
+        quantity = Math.min(limit, quantity + step);
+        quantityDisplay.textContent = quantity;
+        updateBuyButton();
+    }
+});
 
       actionBtn.addEventListener("click", () => {
         if (actionBtn.disabled) return;
