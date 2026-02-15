@@ -877,7 +877,7 @@ const Definitions = {
       name: "Vergessener Schrein",
       description: "Du entdeckst einen kleinen Altar. Darauf liegt ein seltsam pulsierender Stein.",
       type: "multipleChoice",
-      minChaos: 15,
+      minChaos: 10,
       maxChaos: 20,
       securityDecrease: 20,
       choices: [
