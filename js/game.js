@@ -58,7 +58,7 @@ const Game = {
 
   // Initialisierung
   init() {
-    console.log("Game wird initialisiert... 0.2.26");
+    console.log("Game wird initialisiert... 0.2.27");
 
     // Spielstand laden falls vorhanden
     const savedState = Storage.loadGameState();
@@ -1427,6 +1427,9 @@ if (totalXpGained > 0) {
 
   // Item nutzen (z.B. Heiltrank)
   useItem(itemId) {
+
+    if (this.state.player.hp <= 0) return false;
+
     const itemInInventory = this.state.player.inventory.find(
       (i) => i.id === itemId,
     );

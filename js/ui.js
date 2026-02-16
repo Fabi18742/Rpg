@@ -2873,6 +2873,8 @@ this.elements.buttonGrid.innerHTML = `
           // 'e' (Event) Parameter hinzufügen
           const itemId = itemEl.dataset.itemId;
 
+          if (Game.state.player.hp <= 0) return;
+
           // PRÜFUNG: Ist Shift gedrückt?
           if (e.shiftKey) {
             // Shift+Klick -> Sofort nutzen (altes Verhalten)
