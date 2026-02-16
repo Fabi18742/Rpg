@@ -294,7 +294,7 @@ const Definitions = {
       name: "Seelenschild",
       description: "Heilt dich um 50% des geblockten Schadens",
       type: "block_heal",
-      value: 0.5,
+      value: 1,
       glitzerValueMultiplier: 5,
     },
   },
