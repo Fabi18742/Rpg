@@ -393,7 +393,7 @@ const Definitions = {
       stats: { strength: 0, defense: 0, magic: 0, speed: 2 },
       weapon: { baseId: "monster_teeth", effects: [] },
       drops: ["ritual_knochen"],
-      xpValue: 10,
+      xpValue: 5,
     },
     wolf: {
       id: "wolf",
@@ -403,7 +403,7 @@ const Definitions = {
       stats: { strength: 2, defense: 0, magic: 0, speed: 5 },
       weapon: { baseId: "monster_claws", effects: [] },
       drops: ["ritual_knochen", "ritual_harz"],
-      xpValue: 15,
+      xpValue: 7,
     },
     // Welt 2
     schleim: {
@@ -414,7 +414,7 @@ const Definitions = {
       stats: { strength: 0, defense: 2, magic: 0, speed: 1 },
       weapon: { baseId: "monster_slime", effects: ["poison"] },
       drops: ["ritual_sumpfkraut", "heiltrank"],
-      xpValue: 22,
+      xpValue: 11,
     },
     sumpfhexe: {
       id: "sumpfhexe",
@@ -424,7 +424,7 @@ const Definitions = {
       stats: { strength: 0, defense: 0, magic: 5, speed: 3 },
       weapon: { baseId: "monster_claws", effects: ["poison"] },
       drops: ["ritual_eisen", "ritual_sumpfkraut"],
-      xpValue: 28,
+      xpValue: 14,
     },
     // Welt 3
     skelett: {
@@ -435,7 +435,7 @@ const Definitions = {
       stats: { strength: 5, defense: 5, magic: 0, speed: 2 },
       weapon: { baseId: "shortsword", effects: [] },
       drops: ["ritual_knochen", "ritual_stahl"],
-      xpValue: 38,
+      xpValue: 20,
     },
     ritter: {
       id: "ritter",
@@ -445,7 +445,7 @@ const Definitions = {
       stats: { strength: 8, defense: 10, magic: 0, speed: 1 },
       weapon: { baseId: "knightsword", effects: [] },
       drops: ["maxHpTrank", "ritual_geiststaub"],
-      xpValue: 48,
+      xpValue: 35,
     },
     // Welt 4
     feuergeist: {
@@ -456,7 +456,7 @@ const Definitions = {
       stats: { strength: 0, defense: 5, magic: 10, speed: 6 },
       weapon: { baseId: "monster_fire", effects: ["sharpness"] },
       drops: ["ritual_magma"],
-      xpValue: 65,
+      xpValue: 45,
     },
     golem: {
       id: "golem",
@@ -466,7 +466,7 @@ const Definitions = {
       stats: { strength: 15, defense: 20, magic: 0, speed: 0 },
       weapon: { baseId: "warhammer", effects: [] },
       drops: ["ritual_obsidian", "ritual_magma"],
-      xpValue: 85,
+      xpValue: 60,
     },
     // Welt 5
     schatten: {
@@ -477,7 +477,7 @@ const Definitions = {
       stats: { strength: 20, defense: 10, magic: 20, speed: 10 },
       weapon: { baseId: "monster_void", effects: [] },
       drops: ["ritual_void"],
-      xpValue: 120,
+      xpValue: 90,
     },
     voidwalker: {
       id: "voidwalker",
@@ -487,7 +487,7 @@ const Definitions = {
       stats: { strength: 15, defense: 15, magic: 20, speed: 8 },
       weapon: { baseId: "voidblade", effects: ["poison"] },
       drops: ["ritual_sternensplitter"],
-      xpValue: 160,
+      xpValue: 120,
     },
   },
 
