@@ -272,7 +272,6 @@ const Definitions = {
     },
   },
 
-
   // ====ArmorBases====
   armorBases: {
     cloth_vest: {
@@ -394,7 +393,7 @@ const Definitions = {
       stats: { strength: 0, defense: 0, magic: 0, speed: 2 },
       weapon: { baseId: "monster_teeth", effects: [] },
       drops: ["ritual_knochen"],
-      xpValue: 0,
+      xpValue: 10,
     },
     wolf: {
       id: "wolf",
@@ -404,6 +403,7 @@ const Definitions = {
       stats: { strength: 2, defense: 0, magic: 0, speed: 5 },
       weapon: { baseId: "monster_claws", effects: [] },
       drops: ["ritual_knochen", "ritual_harz"],
+      xpValue: 15,
     },
     // Welt 2
     schleim: {
@@ -414,6 +414,7 @@ const Definitions = {
       stats: { strength: 0, defense: 2, magic: 0, speed: 1 },
       weapon: { baseId: "monster_slime", effects: ["poison"] },
       drops: ["ritual_sumpfkraut", "heiltrank"],
+      xpValue: 22,
     },
     sumpfhexe: {
       id: "sumpfhexe",
@@ -423,6 +424,7 @@ const Definitions = {
       stats: { strength: 0, defense: 0, magic: 5, speed: 3 },
       weapon: { baseId: "monster_claws", effects: ["poison"] },
       drops: ["ritual_eisen", "ritual_sumpfkraut"],
+      xpValue: 28,
     },
     // Welt 3
     skelett: {
@@ -433,6 +435,7 @@ const Definitions = {
       stats: { strength: 5, defense: 5, magic: 0, speed: 2 },
       weapon: { baseId: "shortsword", effects: [] },
       drops: ["ritual_knochen", "ritual_stahl"],
+      xpValue: 38,
     },
     ritter: {
       id: "ritter",
@@ -442,6 +445,7 @@ const Definitions = {
       stats: { strength: 8, defense: 10, magic: 0, speed: 1 },
       weapon: { baseId: "knightsword", effects: [] },
       drops: ["maxHpTrank", "ritual_geiststaub"],
+      xpValue: 48,
     },
     // Welt 4
     feuergeist: {
@@ -452,6 +456,7 @@ const Definitions = {
       stats: { strength: 0, defense: 5, magic: 10, speed: 6 },
       weapon: { baseId: "monster_fire", effects: ["testdamage"] },
       drops: ["ritual_magma"],
+      xpValue: 65,
     },
     golem: {
       id: "golem",
@@ -461,6 +466,7 @@ const Definitions = {
       stats: { strength: 15, defense: 20, magic: 0, speed: 0 },
       weapon: { baseId: "warhammer", effects: [] },
       drops: ["ritual_obsidian", "ritual_magma"],
+      xpValue: 85,
     },
     // Welt 5
     schatten: {
@@ -471,6 +477,7 @@ const Definitions = {
       stats: { strength: 20, defense: 10, magic: 20, speed: 10 },
       weapon: { baseId: "monster_void", effects: [] },
       drops: ["ritual_void"],
+      xpValue: 120,
     },
     voidwalker: {
       id: "voidwalker",
@@ -480,6 +487,7 @@ const Definitions = {
       stats: { strength: 15, defense: 15, magic: 20, speed: 8 },
       weapon: { baseId: "voidblade", effects: ["poison"] },
       drops: ["ritual_sternensplitter"],
+      xpValue: 160,
     },
   },
 
@@ -494,6 +502,7 @@ const Definitions = {
       stats: { strength: 5, defense: 2 },
       weapon: { baseId: "monster_claws", effects: [] },
       drops: [{ type: "ability", id: "doppelhit" }, "ritual_harz"],
+      xpValue: 70,
     },
     boss2: {
       id: "boss_schlammkoenig",
@@ -504,6 +513,7 @@ const Definitions = {
       stats: { strength: 8, defense: 5 },
       weapon: { baseId: "monster_slime", effects: ["poison"] },
       drops: [{ type: "ability", id: "wuchtschlag" }, "ritual_eisen"],
+      xpValue: 110,
     },
     boss3: {
       id: "boss_schwarzer_ritter",
@@ -514,6 +524,7 @@ const Definitions = {
       stats: { strength: 15, defense: 10 },
       weapon: { baseId: "knightsword", effects: ["testdamage"] },
       drops: [{ type: "ability", id: "riskanterSchlag" }, "ritual_geiststaub"],
+      xpValue: 180,
     },
     boss4: {
       id: "boss_inferno",
@@ -524,6 +535,7 @@ const Definitions = {
       stats: { strength: 25, defense: 15 },
       weapon: { baseId: "monster_fire", effects: ["testdamage", "testdamage"] },
       drops: [{ type: "ability", id: "rageAttack" }, "ritual_obsidian"],
+      xpValue: 300,
     },
     boss5: {
       id: "boss_endboss",
@@ -534,6 +546,7 @@ const Definitions = {
       stats: { strength: 40, defense: 25 },
       weapon: { baseId: "monster_void", effects: ["testdamage"] },
       drops: ["dafuq"], //dafuq fehler
+      xpValue: 1000,
     },
   },
 

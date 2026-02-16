@@ -58,7 +58,7 @@ const Game = {
 
   // Initialisierung
   init() {
-    console.log("Game wird initialisiert... 0.2.23");
+    console.log("Game wird initialisiert... 0.2.24");
 
     // Spielstand laden falls vorhanden
     const savedState = Storage.loadGameState();
@@ -490,24 +490,25 @@ const Game = {
   },
 
   // Level Up durchführen
-  levelUp() {
+levelUp() {
     const player = this.state.player;
 
-    player.xp -= player.maxXp; // Überschuss behalten
-    // player.maxXp bleibt fest auf 100 wie gewünscht
+    // 1. Überschüssige XP für das nächste Level mitnehmen
+    player.xp -= player.maxXp; 
 
+    // 2. Level und Tokens erhöhen
     player.level++;
-    player.levelTokens++; // Ein Token pro Level
+    player.levelTokens++; 
 
-    // Optional: Volle Heilung bei Level Up (netter Bonus)
+    // 3. DIE XP-KURVE: Erhöhe die benötigten XP für das NÄCHSTE Level
+    // Beispiel: Level 1 -> 100 XP, Level 2 -> 120 XP, Level 3 -> 140 XP...
+    player.maxXp += 20; 
+
+    // 4. Bonus: Volle Heilung
     player.hp = player.maxHp;
 
-    console.log(
-      `LEVEL UP! Level ${player.level}. Tokens verfügbar: ${player.levelTokens}`,
-    );
-    // Hier könnte man später einen Sound oder Effekt abspielen
+    console.log(`LEVEL UP! Level ${player.level}. Nächstes Level benötigt: ${player.maxXp} XP`);
   },
-  // in game.js
 
   investToken(statType) {
     const player = this.state.player;
