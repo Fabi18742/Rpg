@@ -58,7 +58,7 @@ const Game = {
 
   // Initialisierung
   init() {
-    console.log("Game wird initialisiert... 0.2.24");
+    console.log("Game wird initialisiert... 0.2.25");
 
     // Spielstand laden falls vorhanden
     const savedState = Storage.loadGameState();
