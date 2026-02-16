@@ -127,11 +127,11 @@ const UI = {
     });
   },
 
-// Stats Panel rendern (HTML erstellen)
+  // Stats Panel rendern (HTML erstellen)
   renderStatsPanel() {
     const player = Game.state.player;
     const visible = this.statsVisible ? "visible" : "";
-    
+
     // NEU: Dynamische Werte holen
     const maxHp = Game.getPlayerMaxHp();
     const defense = Game.getPlayerDefense();
@@ -166,16 +166,22 @@ const UI = {
         `;
   },
 
-  // Vorhandenes Stats-Fenster aktualisieren (Live-Update)
   updateStatsWindow() {
     const statsWindow = document.getElementById("stats-panel-window");
     if (!statsWindow) return;
 
     const player = Game.state.player;
-    
-    // NEU: Dynamische Werte holen
+
+    // Dynamische Werte holen
     const maxHp = Game.getPlayerMaxHp();
     const defense = Game.getPlayerDefense();
+    const attack = Game.getPlayerAttackValue();
+
+    // Basis-Werte für Detail-Anzeige
+    const baseStr = player.stats.strength;
+    const baseDef = player.stats.defense;
+    const weapon = Game.getEquippedWeapon();
+    const weaponName = weapon ? "Waffe" : "Keine Waffe";
 
     const statsGrid = statsWindow.querySelector(".stats-grid");
     if (statsGrid) {
@@ -188,14 +194,21 @@ const UI = {
                     <span class="stat-label">HP:</span>
                     <span class="stat-value">${player.hp}/${maxHp}</span>
                 </div>
-                <div class="stat-item">
-                    <span class="stat-label">Stärke:</span>
-                    <span class="stat-value">${player.stats.strength}</span>
+                
+                <div class="stat-item" style="flex-direction: column; align-items: flex-start; gap: 2px;">
+                    <div style="display: flex; justify-content: space-between; width: 100%;">
+                        <span class="stat-label">Angriff:</span>
+                        <span class="stat-value">${attack}</span>
+                    </div>
                 </div>
-                <div class="stat-item">
-                    <span class="stat-label">Verteidigung:</span>
-                    <span class="stat-value">${defense}</span>
+
+                <div class="stat-item" style="flex-direction: column; align-items: flex-start; gap: 2px;">
+                    <div style="display: flex; justify-content: space-between; width: 100%;">
+                        <span class="stat-label">Verteidigung:</span>
+                        <span class="stat-value">${defense}</span>
+                    </div>
                 </div>
+
                 <div class="stat-item">
                     <span class="stat-label">Glitzer:</span>
                     <span class="stat-value">${player.stats.glitzer}</span>
@@ -283,23 +296,22 @@ const UI = {
     }
   },
 
-// Stats Screen anzeigen (Hideout)
-showStatsScreen() {
-  this.elements.visualArea.classList.remove("hideout-bg");
-  const player = Game.state.player;
+  // Stats Screen anzeigen (Hideout)
+  showStatsScreen() {
+    this.elements.visualArea.classList.remove("hideout-bg");
+    const player = Game.state.player;
 
-  // Dynamische Werte abrufen (Basis + Boni)
-  const effectiveMaxHp = Game.getPlayerMaxHp();
-  const effectiveDefense = Game.getPlayerDefense();
-  const effectiveAttack = Game.getPlayerAttackValue();
+    // Dynamische Werte abrufen (Basis + Boni)
+    const effectiveMaxHp = Game.getPlayerMaxHp();
+    const effectiveDefense = Game.getPlayerDefense();
+    const effectiveAttack = Game.getPlayerAttackValue();
+    // XP Prozent berechnen
+    const xpPercent = Math.min(100, (player.xp / player.maxXp) * 100);
 
-  // XP Prozent berechnen
-  const xpPercent = Math.min(100, (player.xp / player.maxXp) * 100);
+    // (Die Berechnung der bonusDmg etc. Strings brauchen wir hier jetzt nicht mehr für die Anzeige,
+    // aber wir lassen die Logik im Hintergrund, falls wir sie später doch wieder brauchen)
 
-  // (Die Berechnung der bonusDmg etc. Strings brauchen wir hier jetzt nicht mehr für die Anzeige,
-  // aber wir lassen die Logik im Hintergrund, falls wir sie später doch wieder brauchen)
-
-  this.elements.sceneContent.innerHTML = `
+    this.elements.sceneContent.innerHTML = `
       <div class="stats-screen">
           <h2>Charakterwerte</h2>
           
@@ -349,29 +361,27 @@ showStatsScreen() {
       </div>
   `;
 
-  // Button Grid mit "Badass Rank" Button
-  const tokenText =
-    player.levelTokens > 0
-      ? `Level Up (${player.levelTokens})`
-      : "Level Up";
+    // Button Grid mit "Badass Rank" Button
+    const tokenText =
+      player.levelTokens > 0 ? `Level Up (${player.levelTokens})` : "Level Up";
 
-  this.elements.buttonGrid.innerHTML = `
+    this.elements.buttonGrid.innerHTML = `
       <button class="game-button" id="btn-back">Zurück</button>
       <button class="game-button" id="btn-open-levelup">${tokenText}</button>
   `;
-  
-  this.elements.buttonGrid.className = "button-grid shop-grid";
 
-  document.getElementById("btn-back").addEventListener("click", () => {
-    this.showHideout();
-  });
+    this.elements.buttonGrid.className = "button-grid shop-grid";
 
-  document
-    .getElementById("btn-open-levelup")
-    .addEventListener("click", () => {
-      this.showLevelUpScreen();
+    document.getElementById("btn-back").addEventListener("click", () => {
+      this.showHideout();
     });
-},
+
+    document
+      .getElementById("btn-open-levelup")
+      .addEventListener("click", () => {
+        this.showLevelUpScreen();
+      });
+  },
 
   // In js/ui.js - Neue Funktion
 
@@ -528,6 +538,69 @@ showStatsScreen() {
             </div>
         `;
 
+    // ===== RÜSTUNGS-SLOT =====
+    const equippedArmorIndex = player.equippedArmor;
+    const equippedArmorInstance =
+      player.armors && typeof equippedArmorIndex === "number"
+        ? player.armors[equippedArmorIndex]
+        : null;
+    const equippedArmor = Game.resolveArmor(equippedArmorInstance);
+
+    let armorTooltipHTML = "";
+    let armorEffectsHTML = "";
+
+    if (equippedArmor) {
+        // Prüfen auf Effekte (für zukünftige Features)
+        const hasArmorEffects = equippedArmorInstance.effects && equippedArmorInstance.effects.length > 0;
+        let tooltipArmorEffectsHTML = "";
+
+        if (hasArmorEffects) {
+            armorEffectsHTML = '<span class="slot-effects" style="margin-left: 8px;">';
+            tooltipArmorEffectsHTML = '<div class="tooltip-effects">';
+            
+            equippedArmorInstance.effects.forEach((effectId) => {
+                const effect = Game.effects[effectId];
+                if (effect) {
+                    // Badge im Slot
+                    armorEffectsHTML += `<span class="effect-badge" style="color: #ff9a8a; border: 1px solid #e74c3c;">${effect.name}</span>`;
+                    // Zeile im Tooltip
+                    tooltipArmorEffectsHTML += `<div class="tooltip-effect"><strong>${effect.name}:</strong> ${effect.description}</div>`;
+                }
+            });
+            armorEffectsHTML += "</span>";
+            tooltipArmorEffectsHTML += "</div>";
+        }
+
+        // Der eigentliche Tooltip HTML-Code
+        armorTooltipHTML = `
+            <div class="equipment-tooltip">
+                <div class="tooltip-title">${equippedArmor.name}</div>
+                <div class="tooltip-desc">${equippedArmor.description}</div>
+                <div class="tooltip-stat">Schutz: ${equippedArmor.value}</div>
+                ${tooltipArmorEffectsHTML}
+            </div>
+        `;
+    }
+
+let armorSlotHTML = `
+        <div class="equipment-slot armor-slot ${equippedArmor ? "filled" : "empty"}" id="armor-slot">
+            <div class="item-icon-placeholder"></div>
+            <div class="item-info">
+                ${
+                  equippedArmor
+                    ? `
+                    <div class="item-name">${equippedArmor.name}</div>
+                    <div class="item-stats">Schutz: ${equippedArmor.value}${armorEffectsHTML}</div>         
+                `
+                    : '<div class="item-name slot-label">Rüstung</div>'
+                }
+            </div>
+            
+            ${equippedArmor ? armorTooltipHTML : ""}
+            
+        </div>
+    `;
+
     // ===== FÄHIGKEITEN-SLOTS =====
     let abilitySlotsHTML = "";
     for (let i = 0; i < 4; i++) {
@@ -585,8 +658,9 @@ showStatsScreen() {
                 <h2>Ausrüstung</h2>
                 <div class="equipment-slots-wrapper">
                     <div class="weapon-section">
-                        <h3>Waffe</h3>
+                        <h3>Kampfausrüstung</h3>
                         ${weaponSlotHTML}
+                        <div style="height: 15px;"></div> ${armorSlotHTML}
                     </div>
                     <div class="abilities-section">
                         <h3>Fähigkeiten</h3>
@@ -605,6 +679,10 @@ showStatsScreen() {
     // Event Listeners
     document.getElementById("btn-back").addEventListener("click", () => {
       Game.showScreen("hideout");
+    });
+
+    document.getElementById("armor-slot").addEventListener("click", () => {
+      this.openArmorModal();
     });
 
     // Waffen-Slot Click = Modal öffnen
@@ -709,6 +787,84 @@ showStatsScreen() {
       if (e.target === modal) {
         modal.remove();
       }
+    });
+  },
+
+  // Modal für Rüstungs-Auswahl
+  openArmorModal() {
+    const player = Game.state.player;
+    // Sicherstellen, dass das Array existiert
+    const armors = player.armors || [];
+    const equippedIndex = player.equippedArmor;
+
+    // Liste erstellen
+    const allArmors = armors
+      .map((inst, index) => ({
+        instance: inst,
+        armor: Game.resolveArmor(inst),
+        index: index,
+      }))
+      .filter((d) => d.armor !== null);
+
+    let listHTML = "";
+    if (allArmors.length === 0) {
+      listHTML = '<div class="no-items">Keine Rüstungen verfügbar</div>';
+    } else {
+      listHTML = allArmors
+        .map((data) => {
+          const isEquipped = data.index === equippedIndex;
+          return `
+            <div class="equipment-modal-item ${isEquipped ? "equipped" : ""}" data-armor-index="${data.index}">
+                <div class="item-icon-placeholder"></div>
+                <div class="item-details">
+                    <div class="item-name">${data.armor.name}</div>
+                    <div class="item-stats-row">
+                        <span class="item-stats">Schutz: ${data.armor.value}</span>
+                        ${isEquipped ? '<span class="equipped-label">Ausgerüstet</span>' : ""}
+                    </div>
+                </div>
+            </div>
+          `;
+        })
+        .join("");
+    }
+
+    // Modal HTML
+    const modalHTML = `
+            <div class="equipment-modal-overlay" id="equipment-modal">
+                <div class="equipment-modal-content">
+                    <h3>Rüstung wählen</h3>
+                    <div class="equipment-modal-list">
+                        ${listHTML}
+                    </div>
+                    <div class="popup-actions" style="margin-top: 20px;">
+                        <button class="popup-btn close-btn" id="close-modal-btn">Schließen</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    document.body.insertAdjacentHTML("beforeend", modalHTML);
+
+    const modal = document.getElementById("equipment-modal");
+
+    // Click Listener für Items
+    modal
+      .querySelectorAll(".equipment-modal-item:not(.equipped)")
+      .forEach((item) => {
+        item.addEventListener("click", () => {
+          const index = parseInt(item.dataset.armorIndex);
+          Game.equipArmor(index);
+          modal.remove();
+          this.showWeaponManagement();
+        });
+      });
+
+    // Schließen
+    document
+      .getElementById("close-modal-btn")
+      .addEventListener("click", () => modal.remove());
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) modal.remove();
     });
   },
 
@@ -1020,6 +1176,27 @@ showStatsScreen() {
       }
     });
 
+    // 1.5. Rüstungen hinzufügen (nur nicht ausgerüstete)
+    if (player.armors) {
+      player.armors.forEach((armorInstance, index) => {
+        // Überspringe ausgerüstete Rüstung
+        if (player.equippedArmor === index) return;
+
+        const armor = Game.resolveArmor(armorInstance);
+        const sellValue = armor.glitzerValue || 0;
+
+        if (sellValue > 0) {
+          sellableList.push({
+            type: "armor",
+            sourceIndex: index, // Index im armors Array
+            def: armor, // Aufgelöste Rüstung
+            data: armorInstance,
+            displayIndex: sellableList.length,
+          });
+        }
+      });
+    }
+
     // 2. Items hinzufügen
     player.inventory.forEach((item, inventoryIndex) => {
       const itemDef = Game.items[item.id];
@@ -1105,7 +1282,11 @@ showStatsScreen() {
     // --- RENDERING RECHTE SEITE (KAUFEN) ---
     let buyOffersHTML = '<div class="shop-item-list">';
     merchant.offers.forEach((offer, index) => {
-      const item = Game.items[offer.itemId];
+      let item =
+        Game.items[offer.itemId] ||
+        Game.weaponBases[offer.itemId] ||
+        Definitions.armorBases[offer.itemId];
+      if (!item) return;
       const isSelected = selectedType === "buy" && selectedIndex === index;
 
       buyOffersHTML += `
@@ -1208,13 +1389,11 @@ showStatsScreen() {
                         <div class="shop-action-info">
                             <div class="shop-action-name ${isWeapon && entry.data.effects.length > 0 ? "weapon-with-effects" : ""}">${name}</div>
                             <div class="shop-action-description">${description}</div>
-                            ${isWeapon ? '<div class="shop-action-description" style="color: #666; font-size: 0.8em; margin-top: 5px;">(Waffen werden einzeln verkauft)</div>' : ""}
                         </div>
                     </div>
                     <div class="shop-action-controls">
                         <div class="shop-action-price" id="shop-total-price">${sellValue} G</div>
-                        <div class="shop-quantity-controls" style="${isWeapon ? "visibility: hidden;" : ""}">
-                            <button class="quantity-btn" id="shop-minus">-</button>
+                        <div class="shop-quantity-controls" style="${isWeapon || entry.type === "armor" ? "visibility: hidden;" : ""}">                            <button class="quantity-btn" id="shop-minus">-</button>
                             <span class="quantity-display" id="shop-quantity">1</span>
                             <button class="quantity-btn" id="shop-plus">+</button>
                         </div>
@@ -1234,7 +1413,10 @@ showStatsScreen() {
         return;
       }
 
-      const item = Game.items[offer.itemId];
+      let item =
+        Game.items[offer.itemId] ||
+        Game.weaponBases[offer.itemId] ||
+        Definitions.armorBases[offer.itemId];
       const canAfford = glitzerCount >= offer.price;
 
       itemHTML = `
@@ -1285,9 +1467,8 @@ showStatsScreen() {
       const isWeapon = entry.type === "weapon";
       const sellValue = entry.def.glitzerValue || 0;
 
-      // NEU: Da Items jetzt gestapelt sind, ist die Berechnung super simpel:
-      // Maximale Menge ist einfach die Menge des Items im Inventar.
-      const maxQuantity = isWeapon ? 1 : entry.data.quantity || 1;
+      const maxQuantity =
+        isWeapon || entry.type === "armor" ? 1 : entry.data.quantity || 1;
 
       minusBtn.addEventListener("click", (e) => {
         const step = e.shiftKey ? 10 : 1;
@@ -1311,17 +1492,20 @@ showStatsScreen() {
 
       actionBtn.addEventListener("click", () => {
         let success = false;
-        if (isWeapon) {
-          // Waffe verkaufen (immer Menge 1)
+
+        // UNTERSCHEIDUNG: Waffe vs. Rüstung vs. Item
+        if (entry.type === "weapon") {
           success = Game.sellWeapon(entry.sourceIndex);
+        } else if (entry.type === "armor") {
+          // Hier wird explizit die Rüstungs-Verkaufsfunktion aufgerufen
+          success = Game.sellArmor(entry.sourceIndex);
         } else {
-          // Item verkaufen mit ausgewählter Menge
+          // Alles andere ist ein normales Item (Tränke, Mats etc.)
           success = Game.sellItem(entry.sourceIndex, quantity);
         }
 
         if (success) {
           // Liste neu laden. Wir behalten den Index bei.
-          // Falls das Item komplett weg ist, kümmert sich showMerchantOffers darum.
           this.showMerchantOffers(merchantId, {
             type: "sell",
             index: index,
@@ -1811,9 +1995,10 @@ showStatsScreen() {
   showSellInventory(merchantId) {
     const merchant = Game.merchants[merchantId];
     const weapons = Game.state.player.weapons;
+    const armors = Game.state.player.armors || []; // NEU: Rüstungen holen
     const items = Game.state.player.inventory;
 
-    // Nur Items mit glitzerValue > 0 anzeigen
+    // 1. Verkaufbare Waffen filtern
     const sellableWeapons = weapons
       .map((weaponInstance, index) => {
         const weapon = Game.resolveWeapon(weaponInstance);
@@ -1829,20 +2014,42 @@ showStatsScreen() {
         (w) => !w.isEquipped && w.weapon && (w.weapon.glitzerValue || 0) > 0,
       );
 
+    // 2. NEU: Verkaufbare Rüstungen filtern
+    const sellableArmors = armors
+      .map((armorInstance, index) => {
+        const armor = Game.resolveArmor(armorInstance);
+        return {
+          type: "armor",
+          index: index,
+          armorInstance: armorInstance,
+          armor: armor,
+          isEquipped: Game.state.player.equippedArmor === index,
+        };
+      })
+      .filter(
+        (a) => !a.isEquipped && a.armor && (a.armor.glitzerValue || 0) > 0,
+      );
+
+    // 3. Verkaufbare Items filtern
     const sellableItems = items.filter((item) => {
       const itemDef = Game.items[item.id];
       return itemDef && (itemDef.glitzerValue || 0) > 0;
     });
+
+    const nothingToSell =
+      sellableWeapons.length === 0 &&
+      sellableArmors.length === 0 &&
+      sellableItems.length === 0;
 
     this.elements.sceneContent.innerHTML = `
             <div class="inventory-container">
                 <h2>${merchant.name} - Verkaufen</h2>
                 <div class="glitzer-display">Glitzer: ${Game.state.player.stats.glitzer}</div>
                 <div class="items-list">
-                    ${sellableWeapons.length === 0 && sellableItems.length === 0 ? '<p class="no-items">Keine verkaufbaren Items</p>' : ""}
+                    ${nothingToSell ? '<p class="no-items">Keine verkaufbaren Items</p>' : ""}
+                    
                     ${sellableWeapons
                       .map((data) => {
-                        // Effekt-Anzeige
                         let effectsHTML = "";
                         if (
                           data.weaponInstance.effects &&
@@ -1851,13 +2058,11 @@ showStatsScreen() {
                           effectsHTML = '<div class="weapon-effects-compact">';
                           data.weaponInstance.effects.forEach((effectId) => {
                             const effect = Game.effects[effectId];
-                            if (effect) {
+                            if (effect)
                               effectsHTML += `<span class="effect-badge">${effect.name}</span>`;
-                            }
                           });
                           effectsHTML += "</div>";
                         }
-
                         return `
                             <div class="sellable-item-card" data-type="weapon" data-index="${data.index}">
                                 <div class="item-header">
@@ -1871,6 +2076,23 @@ showStatsScreen() {
                         `;
                       })
                       .join("")}
+
+                    ${sellableArmors
+                      .map((data) => {
+                        return `
+                            <div class="sellable-item-card" data-type="armor" data-index="${data.index}">
+                                <div class="item-header">
+                                    <span class="item-name">${data.armor.name}</span>
+                                    <span class="item-price">+${data.armor.glitzerValue || 0} Glitzer</span>
+                                </div>
+                                <div class="item-description">${data.armor.description}</div>
+                                <div class="item-description" style="color: #aaa; font-size: 0.8em;">Schutz: ${data.armor.value}</div>
+                                <button class="sell-btn">Verkaufen</button>
+                            </div>
+                        `;
+                      })
+                      .join("")}
+
                     ${sellableItems
                       .map((item) => {
                         const itemDef = Game.items[item.id];
@@ -1902,24 +2124,22 @@ showStatsScreen() {
         this.showMerchantOffers(merchantId);
       });
 
-    // Verkaufen-Buttons
+    // Event Listener für alle Verkaufs-Buttons
     document.querySelectorAll(".sellable-item-card").forEach((card) => {
       const sellBtn = card.querySelector(".sell-btn");
       sellBtn.addEventListener("click", () => {
         const type = card.dataset.type;
 
         if (type === "weapon") {
-          const weaponIndex = parseInt(card.dataset.index);
-          const success = Game.sellWeapon(weaponIndex);
-          if (success) {
-            this.showSellInventory(merchantId);
-          }
+          const index = parseInt(card.dataset.index);
+          if (Game.sellWeapon(index)) this.showSellInventory(merchantId);
+        } else if (type === "armor") {
+          // NEU: Rüstung verkaufen
+          const index = parseInt(card.dataset.index);
+          if (Game.sellArmor(index)) this.showSellInventory(merchantId);
         } else if (type === "item") {
           const itemId = card.dataset.itemId;
-          const success = Game.sellItem(itemId);
-          if (success) {
-            this.showSellInventory(merchantId);
-          }
+          if (Game.sellItem(itemId)) this.showSellInventory(merchantId);
         }
       });
     });
@@ -2792,16 +3012,16 @@ showStatsScreen() {
     });
   },
 
-// Control-Fenster erstellen/updaten
+  // Control-Fenster erstellen/updaten
   createOrUpdateControlWindow() {
     const battle = Game.state.currentBattle;
     if (!battle) return;
 
     const player = Game.state.player;
-    
+
     // ÄNDERUNG: Dynamische MaxHP holen (Basis + Bonus)
     const currentMaxHp = Game.getPlayerMaxHp();
-    
+
     // ÄNDERUNG: Prozentberechnung mit dem dynamischen Wert
     const hpPercent = Math.min(100, (player.hp / currentMaxHp) * 100);
 

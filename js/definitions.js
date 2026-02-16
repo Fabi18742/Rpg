@@ -2,7 +2,7 @@ const Definitions = {
   // ===== SPIELER-STANDARD-WERTE =====
   player: {
     level: 1,
-    xp:0,
+    xp: 0,
     maxXp: 100,
     levelTokens: 0,
     hp: 100,
@@ -16,12 +16,13 @@ const Definitions = {
       glitzer: 0,
     },
     bonusStats: {
-        damage: 0.0,
-        resistance: 0.0,
-        health: 0.0
+      damage: 0.0,
+      resistance: 0.0,
+      health: 0.0,
     },
     startWeapon: "dagger",
     startAbilities: ["stich"],
+    startArmor: "cloth_vest",
   },
 
   // ===== ITEMS =====
@@ -273,6 +274,32 @@ const Definitions = {
       description: "",
       baseGlitzerValue: 0,
       ritualValue: 0,
+    },
+  },
+
+
+  // ====ArmorBases====
+  armorBases: {
+    cloth_vest: {
+      id: "cloth_vest",
+      name: "Stoffwams",
+      value: 1,
+      description: "Kratzt ein bisschen, aber schützt.",
+      glitzerValue: 5,
+    },
+    leather_armor: {
+      id: "leather_armor",
+      name: "Lederrüstung",
+      value: 3,
+      description: "Solides Leder.",
+      glitzerValue: 15,
+    },
+    void_armor: {
+      id: "void_armor",
+      name: "Voidrüstung",
+      value: 50,
+      description: "Otto nimm die Nase aus der Console",
+      glitzerValue: 500,
     },
   },
 
@@ -884,7 +911,8 @@ const Definitions = {
     story_w3_soulstone: {
       id: "story_w3_soulstone",
       name: "Vergessener Schrein",
-      description: "Du entdeckst einen kleinen Altar. Darauf liegt ein seltsam pulsierender Stein.",
+      description:
+        "Du entdeckst einen kleinen Altar. Darauf liegt ein seltsam pulsierender Stein.",
       type: "multipleChoice",
       minChaos: 10,
       maxChaos: 20,
@@ -894,7 +922,7 @@ const Definitions = {
           text: "Stein an dich nehmen",
           effects: [
             { type: "addItem", itemId: "ritual_seelenstein", amount: 1 },
-            { type: "addChaos", amount: 5 }
+            { type: "addChaos", amount: 5 },
           ],
         },
         {
@@ -1125,6 +1153,7 @@ const Definitions = {
         { itemId: "ritual_knochen", price: 5, currency: "glitzer" },
         { itemId: "ritual_eisen", price: 15, currency: "glitzer" },
         { itemId: "ritual_magma", price: 50, currency: "glitzer" },
+        { itemId: "leather_armor", price: 50, currency: "glitzer" },
         { itemId: "maxHpTrank", price: 100, currency: "glitzer" },
       ],
     },

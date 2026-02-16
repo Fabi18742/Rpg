@@ -28,9 +28,9 @@ const Game = {
         glitzer: Definitions.player.stats.glitzer,
       },
       bonusStats: {
-          damage: 0.0,
-          resistance: 0.0,
-          health: 0.0
+        damage: 0.0,
+        resistance: 0.0,
+        health: 0.0,
       },
       levelTokens: 0,
       xp: 0,
@@ -44,6 +44,8 @@ const Game = {
       abilities: [],
       // 4 ausgerüstete Fähigkeiten (Array-Indizes in abilities oder null)
       equippedAbilities: [0, null, null, null],
+      armors: [],
+      equippedArmor: null,
       inventory: [],
     },
 
@@ -65,23 +67,45 @@ const Game = {
 
       // --- MIGRATION START: Fehlende Werte nachrüsten ---
       if (!this.state.player.bonusStats) {
-          console.log("Migriere Savegame: Füge BonusStats hinzu...");
-          this.state.player.bonusStats = {
-              damage: 0.0,
-              resistance: 0.0,
-              health: 0.0
-          };
+        console.log("Migriere Savegame: Füge BonusStats hinzu...");
+        this.state.player.bonusStats = {
+          damage: 0.0,
+          resistance: 0.0,
+          health: 0.0,
+        };
       }
 
-      if (this.state.player.stats.defense === 0 && Definitions.player.stats.defense > 0) {
-          console.log("Migriere Savegame: Passe Defense auf neuen Standard an (" + Definitions.player.stats.defense + ")");
-          this.state.player.stats.defense = Definitions.player.stats.defense;
+      if (
+        this.state.player.stats.defense === 0 &&
+        Definitions.player.stats.defense > 0
+      ) {
+        console.log(
+          "Migriere Savegame: Passe Defense auf neuen Standard an (" +
+            Definitions.player.stats.defense +
+            ")",
+        );
+        this.state.player.stats.defense = Definitions.player.stats.defense;
       }
 
       // Auch XP und Tokens sicherstellen, falls sie fehlen
-      if (typeof this.state.player.xp === 'undefined') this.state.player.xp = 0;
-      if (typeof this.state.player.maxXp === 'undefined') this.state.player.maxXp = 100;
-      if (typeof this.state.player.levelTokens === 'undefined') this.state.player.levelTokens = 0;
+      if (typeof this.state.player.xp === "undefined") this.state.player.xp = 0;
+      if (typeof this.state.player.maxXp === "undefined")
+        this.state.player.maxXp = 100;
+      if (typeof this.state.player.levelTokens === "undefined")
+        this.state.player.levelTokens = 0;
+
+      if (!this.state.player.armors || this.state.player.armors.length === 0) {
+          console.log("Migriere Savegame: Füge Start-Rüstung hinzu...");
+          
+          // Sicherstellen, dass das Array existiert
+          this.state.player.armors = [];
+          
+          // Start-Rüstung aus Definitions holen
+          if (Definitions.player.startArmor) {
+              this.addArmor({ baseId: Definitions.player.startArmor });
+              this.equipArmor(0);
+          }
+      }
       // --- MIGRATION ENDE ---
 
       console.log("Spielstand geladen");
@@ -93,6 +117,11 @@ const Game = {
         this.addWeapon({ baseId: startWeaponBaseId, effects: [] });
         // Automatisch ausrüsten
         this.equipWeapon(0);
+      }
+      const startArmorId = Definitions.player.startArmor;
+      if (startArmorId) {
+          this.addArmor({ baseId: startArmorId, effects: [] });
+          this.equipArmor(0);
       }
 
       // Start-Abilities aus Definitions hinzufügen
@@ -248,7 +277,77 @@ const Game = {
     };
   },
 
-  applyEffects(baseDamage, effectIds, attacker, target, battle, context = 'attack') {
+  // Rüstung hinzufügen
+  addArmor(armorInstance) {
+    if (!armorInstance.baseId) return false;
+    // Wir nutzen hier Definitions.armorBases
+    const armorBase = Definitions.armorBases[armorInstance.baseId];
+    if (!armorBase) {
+      console.error("Rüstung nicht gefunden:", armorInstance.baseId);
+      return false;
+    }
+
+    const instance = {
+      baseId: armorInstance.baseId,
+      effects: armorInstance.effects || [],
+    };
+
+    // Initialisiere Array falls nötig (für alte Savegames)
+    if (!this.state.player.armors) this.state.player.armors = [];
+
+    this.state.player.armors.push(instance);
+    this.save();
+    console.log(`[RÜSTUNG] ${armorBase.name} erhalten`);
+    return true;
+  },
+
+  // Rüstung auflösen
+  resolveArmor(armorInstance) {
+    if (!armorInstance) return null;
+    const base = Definitions.armorBases[armorInstance.baseId];
+    if (!base) return null;
+
+    return {
+      ...base,
+      effects: armorInstance.effects,
+    };
+  },
+
+  // Rüstung ausrüsten
+  equipArmor(index) {
+    if (!this.state.player.armors) return false;
+    if (index < 0 || index >= this.state.player.armors.length) return false;
+    this.state.player.equippedArmor = index;
+    this.save();
+    return true;
+  },
+
+  // Rüstung ausziehen
+  unequipArmor() {
+    this.state.player.equippedArmor = null;
+    this.save();
+    return true;
+  },
+
+  // Aktuelle Rüstung holen
+  getEquippedArmor() {
+    if (!this.state.player.armors) return null;
+    const index = this.state.player.equippedArmor;
+    if (typeof index === "number") {
+      const instance = this.state.player.armors[index];
+      return this.resolveArmor(instance);
+    }
+    return null;
+  },
+
+  applyEffects(
+    baseDamage,
+    effectIds,
+    attacker,
+    target,
+    battle,
+    context = "attack",
+  ) {
     let damage = baseDamage;
     let logs = [];
 
@@ -264,34 +363,36 @@ const Game = {
       switch (effect.type) {
         case "damage":
           // Schadens-Bonus nur beim Angreifen anwenden
-          if (context === 'attack') {
-              damage += effect.value;
-              logs.push(`+${effect.value} (${effect.name})`);
+          if (context === "attack") {
+            damage += effect.value;
+            logs.push(`+${effect.value} (${effect.name})`);
           }
           break;
 
         case "poison":
           // Gift nur beim Angreifen auftragen
-          if (context === 'attack') {
-              if (Math.random() < effect.applyChance) {
-                this.applyPoisonEffect(target, effect);
-                logs.push(`🧪 Gift aufgetragen!`);
-              }
+          if (context === "attack") {
+            if (Math.random() < effect.applyChance) {
+              this.applyPoisonEffect(target, effect);
+              logs.push(`🧪 Gift aufgetragen!`);
+            }
           }
           break;
 
         case "block_heal":
-           // Heilung nur beim Blocken (Verteidigen) anwenden
-           if (context === 'defense') {
-                // 'damage' ist hier der geblockte Schaden
-                const healAmount = Math.floor(damage * effect.value);
-                
-                if (healAmount > 0) {
-                    attacker.hp = Math.min(attacker.maxHp, attacker.hp + healAmount);
-                    logs.push(`<span style="color: #22c55e;">${effect.name}: +${healAmount} HP</span>`);
-                }
-           }
-           break;
+          // Heilung nur beim Blocken (Verteidigen) anwenden
+          if (context === "defense") {
+            // 'damage' ist hier der geblockte Schaden
+            const healAmount = Math.floor(damage * effect.value);
+
+            if (healAmount > 0) {
+              attacker.hp = Math.min(attacker.maxHp, attacker.hp + healAmount);
+              logs.push(
+                `<span style="color: #22c55e;">${effect.name}: +${healAmount} HP</span>`,
+              );
+            }
+          }
+          break;
       }
     });
 
@@ -394,106 +495,111 @@ const Game = {
       .filter((a) => a !== null);
   },
 
-    // XP hinzufügen
-    gainXp(amount) {
-        this.state.player.xp += amount;
-        console.log(`Erhalten: ${amount} XP. Aktuell: ${this.state.player.xp}/${this.state.player.maxXp}`);
+  // XP hinzufügen
+  gainXp(amount) {
+    this.state.player.xp += amount;
+    console.log(
+      `Erhalten: ${amount} XP. Aktuell: ${this.state.player.xp}/${this.state.player.maxXp}`,
+    );
 
-        // Level Up Check (While-Loop, falls man sehr viel XP auf einmal bekommt)
-        while (this.state.player.xp >= this.state.player.maxXp) {
-            this.levelUp();
-        }
-        this.save();
-    },
-
-    // Level Up durchführen
-    levelUp() {
-        const player = this.state.player;
-        
-        player.xp -= player.maxXp; // Überschuss behalten
-        // player.maxXp bleibt fest auf 100 wie gewünscht
-        
-        player.level++;
-        player.levelTokens++; // Ein Token pro Level
-        
-        // Optional: Volle Heilung bei Level Up (netter Bonus)
-        player.hp = player.maxHp; 
-        
-        console.log(`LEVEL UP! Level ${player.level}. Tokens verfügbar: ${player.levelTokens}`);
-        // Hier könnte man später einen Sound oder Effekt abspielen
-    },
-
-investToken(statType) {
-      const player = this.state.player;
-      
-      if (player.levelTokens <= 0) return false;
-
-      switch (statType) {
-          case 'damage':
-              player.bonusStats.damage += 0.01; // +1% Schaden
-              break;
-          case 'resistance':
-              player.bonusStats.resistance += 0.01; // +1% Verteidigung
-              break;
-          case 'health':
-              player.bonusStats.health += 0.01; // +1% MaxHP
-              break;
-      }
-
-      player.levelTokens--;
-      this.save();
-      return true;
+    // Level Up Check (While-Loop, falls man sehr viel XP auf einmal bekommt)
+    while (this.state.player.xp >= this.state.player.maxXp) {
+      this.levelUp();
+    }
+    this.save();
   },
 
-    // Hilfsfunktion: Max HP neu berechnen (Basis + Bonus)
-    recalculateMaxHp() {
-        const player = this.state.player;
-        const baseHp = Definitions.player.maxHp;
-        
-        // Einfache Variante für jetzt: Wir heilen den Spieler um den gewonnenen Betrag
-        const oldMax = player.maxHp;
-        const bonusMultiplier = 1 + player.bonusStats.health;
-        
-        // Entscheiden wir uns für "Addieren":
-        const hpGain = Math.floor(player.maxHp * 0.01); // 1% dazu
-        player.maxHp += hpGain;
-        player.hp += hpGain;
-    },
+  // Level Up durchführen
+  levelUp() {
+    const player = this.state.player;
 
-    // 1. Dynamische Max-HP berechnen (Basis + Bonus)
+    player.xp -= player.maxXp; // Überschuss behalten
+    // player.maxXp bleibt fest auf 100 wie gewünscht
+
+    player.level++;
+    player.levelTokens++; // Ein Token pro Level
+
+    // Optional: Volle Heilung bei Level Up (netter Bonus)
+    player.hp = player.maxHp;
+
+    console.log(
+      `LEVEL UP! Level ${player.level}. Tokens verfügbar: ${player.levelTokens}`,
+    );
+    // Hier könnte man später einen Sound oder Effekt abspielen
+  },
+
+  investToken(statType) {
+    const player = this.state.player;
+
+    if (player.levelTokens <= 0) return false;
+
+    switch (statType) {
+      case "damage":
+        player.bonusStats.damage += 0.01; // +1% Schaden
+        break;
+      case "resistance":
+        player.bonusStats.resistance += 0.01; // +1% Verteidigung
+        break;
+      case "health":
+        player.bonusStats.health += 0.01; // +1% MaxHP
+        break;
+    }
+
+    player.levelTokens--;
+    this.save();
+    return true;
+  },
+
+  // Hilfsfunktion: Max HP neu berechnen (Basis + Bonus)
+  recalculateMaxHp() {
+    const player = this.state.player;
+    const baseHp = Definitions.player.maxHp;
+
+    // Einfache Variante für jetzt: Wir heilen den Spieler um den gewonnenen Betrag
+    const oldMax = player.maxHp;
+    const bonusMultiplier = 1 + player.bonusStats.health;
+
+    // Entscheiden wir uns für "Addieren":
+    const hpGain = Math.floor(player.maxHp * 0.01); // 1% dazu
+    player.maxHp += hpGain;
+    player.hp += hpGain;
+  },
+
+  // 1. Dynamische Max-HP berechnen (Basis + Bonus)
   getPlayerMaxHp() {
-      const baseHp = this.state.player.maxHp;
-      const bonusPercent = this.state.player.bonusStats.health || 0;
-      return Math.floor(baseHp * (1 + bonusPercent));
+    const baseHp = this.state.player.maxHp;
+    const bonusPercent = this.state.player.bonusStats.health || 0;
+    return Math.floor(baseHp * (1 + bonusPercent));
   },
 
   // 2. Dynamische Verteidigung berechnen (Basis + Rüstung + Bonus)
   getPlayerDefense() {
-      let totalDefense = this.state.player.stats.defense; 
-      
-      // Platzhalter für spätere Rüstungs-Items:
-      /* if (this.state.player.equippedArmor) {
-           totalDefense += this.state.player.equippedArmor.value;
-      } */
+    let totalDefense = this.state.player.stats.defense;
 
-      const bonusPercent = this.state.player.bonusStats.resistance || 0;
-      return Math.floor(totalDefense * (1 + bonusPercent));
+    // Rüstung addieren
+    const armor = this.getEquippedArmor();
+    if (armor) {
+      totalDefense += armor.value;
+    }
+
+    const bonusPercent = this.state.player.bonusStats.resistance || 0;
+    return Math.floor(totalDefense * (1 + bonusPercent));
   },
 
   // 3. Dynamischen Angriffswert berechnen (Waffe + Stärke) * Bonus
   getPlayerAttackValue() {
-      // 1. Waffe holen
-      const equippedWeapon = this.getEquippedWeapon();
-      const weaponDamage = equippedWeapon ? equippedWeapon.damage : 0;
-      
-      // 2. Stärke holen
-      const strength = this.state.player.stats.strength;
-      
-      // 3. Bonus holen
-      const bonusPercent = this.state.player.bonusStats.damage || 0;
-      
-      // Formel: (Waffe + Stärke) * (1 + Bonus%)
-      return Math.floor((weaponDamage + strength) * (1 + bonusPercent));
+    // 1. Waffe holen
+    const equippedWeapon = this.getEquippedWeapon();
+    const weaponDamage = equippedWeapon ? equippedWeapon.damage : 0;
+
+    // 2. Stärke holen
+    const strength = this.state.player.stats.strength;
+
+    // 3. Bonus holen
+    const bonusPercent = this.state.player.bonusStats.damage || 0;
+
+    // Formel: (Waffe + Stärke) * (1 + Bonus%)
+    return Math.floor((weaponDamage + strength) * (1 + bonusPercent));
   },
 
   // Kampf starten
@@ -556,34 +662,32 @@ investToken(statType) {
     let totalDamage = 0;
     let attackLogs = [];
 
-for (let i = 0; i < ability.attacks; i++) {
+    for (let i = 0; i < ability.attacks; i++) {
       // Trefferchance prüfen
       const hitChance = ability.hitChance || 1.0;
       const hitRoll = Math.random();
 
       if (hitRoll > hitChance) {
+        // Verfehlt! -> Mit CSS Klasse für Rot
         attackLogs.push(`<span class="log-miss">Verfehlt!</span>`);
         continue;
       }
 
-      // --- NEUE BERECHNUNG (Schritt 2) ---
-      
-      // 1. Basis-Schaden: Waffe + Stärke (Symmetrisch zur Anzeige)
-      const rawBase = weapon.damage + this.state.player.stats.strength;
-      
-      // 2. Multiplikator der Fähigkeit anwenden
-      let baseDamage = rawBase * ability.damageMultiplier;
+      // 1. Hole den Wert, den der Spieler auch im Menü sieht (inkl. Stärke & Rank)
+      // WICHTIG: Stelle sicher, dass du die Funktion getPlayerAttackValue() im Game-Objekt hast!
+      const effectiveAttack = this.getPlayerAttackValue();
 
-      // 3. Badass-Rank-Bonus auf den Gesamtwert anwenden
-      const damageBonus = this.state.player.bonusStats.damage || 0;
-      if (damageBonus > 0) {
-          baseDamage = baseDamage * (1 + damageBonus);
+      // 2. Multiplikator der Fähigkeit anwenden
+      let baseDamage = effectiveAttack * ability.damageMultiplier;
+
+      // 3. Log vorbereiten: Zeige "6 Angr x 1.5 Mult"
+      let damageLog = [`${effectiveAttack} Angr`];
+
+      if (ability.damageMultiplier !== 1) {
+        damageLog.push(`x${ability.damageMultiplier} Multi`);
       }
 
-      // Damage-Teile für Log sammeln
-      let damageLog = [`${Math.floor(baseDamage)} Basis`];
-
-      // Effekte anwenden (bleibt gleich)
+      // Effekte anwenden
       if (weapon.effects && weapon.effects.length > 0) {
         const effectResult = this.applyEffects(
           baseDamage,
@@ -600,12 +704,17 @@ for (let i = 0; i < ability.attacks; i++) {
 
       let damage = Math.floor(baseDamage);
 
+      // --- ALTE STÄRKE-BERECHNUNG WURDE HIER GELÖSCHT ---
+      // (Da effectiveAttack die Stärke jetzt schon enthält)
+
       // Verteidigung abziehen
       const bossDefense = boss.stats.defense;
       if (bossDefense > 0) {
         damage -= bossDefense;
         damageLog.push(`-${bossDefense} Vert.`);
       }
+
+      // --- NEUE BERECHNUNG ENDE ---
 
       if (damage < 0) damage = 0;
       damage = Math.floor(damage);
@@ -618,7 +727,6 @@ for (let i = 0; i < ability.attacks; i++) {
       );
     }
 
-    // === NEUES LOG FORMAT ===
     let logEntry = `<span class="log-source player">${ability.name}</span>`;
 
     if (ability.attacks > 1) {
@@ -741,30 +849,36 @@ for (let i = 0; i < ability.attacks; i++) {
     setTimeout(() => this.enemyAttack(), 800);
   },
 
-// Gegner-Angriff
+  // Gegner-Angriff
   enemyAttack() {
     if (!this.state.currentBattle) return;
 
     const battle = this.state.currentBattle;
 
     // Turn-Prüfung
-    if (battle.turn !== 'enemy') return;
+    if (battle.turn !== "enemy") return;
 
     // --- GEGNER-AUSWAHL LOGIK (Unverändert) ---
     const isEnemyBattle = battle.enemies && battle.enemies.length > 0;
 
-    if (isEnemyBattle && (battle.currentEnemyIndex === undefined || battle.currentEnemyIndex === null)) {
+    if (
+      isEnemyBattle &&
+      (battle.currentEnemyIndex === undefined ||
+        battle.currentEnemyIndex === null)
+    ) {
       battle.currentEnemyIndex = 0;
     }
 
     if (isEnemyBattle) {
-      if (battle.enemiesAttackedThisRound === undefined) battle.enemiesAttackedThisRound = 0;
+      if (battle.enemiesAttackedThisRound === undefined)
+        battle.enemiesAttackedThisRound = 0;
 
       let attempts = 0;
       const totalEnemies = battle.enemies.length;
 
       while (attempts < totalEnemies) {
-        if (battle.currentEnemyIndex >= totalEnemies) battle.currentEnemyIndex = 0;
+        if (battle.currentEnemyIndex >= totalEnemies)
+          battle.currentEnemyIndex = 0;
         if (!battle.enemies[battle.currentEnemyIndex].defeated) break;
         battle.currentEnemyIndex++;
         attempts++;
@@ -785,13 +899,17 @@ for (let i = 0; i < ability.attacks; i++) {
 
     // --- TEIL 1: GIFTSCHADEN DES GEGNERS (Unverändert) ---
     if (boss.statusEffects && boss.statusEffects.length > 0) {
-      const poisonEffect = boss.statusEffects.find(se => se.type === 'poison');
+      const poisonEffect = boss.statusEffects.find(
+        (se) => se.type === "poison",
+      );
       if (poisonEffect && poisonEffect.stacks > 0) {
         const poisonDamage = poisonEffect.baseDamage + poisonEffect.stacks;
         boss.hp -= poisonDamage;
         if (boss.hp < 0) boss.hp = 0;
 
-        battle.log.push(`<span style="color: #a855f7;">🧪 ${boss.name} erleidet ${poisonDamage} Gift-Schaden (${poisonEffect.stacks} Stacks)</span>`);
+        battle.log.push(
+          `<span style="color: #a855f7;">🧪 ${boss.name} erleidet ${poisonDamage} Gift-Schaden (${poisonEffect.stacks} Stacks)</span>`,
+        );
 
         poisonEffect.stacks -= 1;
         if (poisonEffect.stacks <= 0) {
@@ -806,7 +924,7 @@ for (let i = 0; i < ability.attacks; i++) {
           boss.defeated = true;
           battle.log.push(`${boss.name} wurde durch Gift besiegt!`);
           if (isEnemyBattle) {
-            const allDefeated = battle.enemies.every(e => e.defeated);
+            const allDefeated = battle.enemies.every((e) => e.defeated);
             if (allDefeated) {
               this.endBattle(true);
               return;
@@ -827,7 +945,7 @@ for (let i = 0; i < ability.attacks; i++) {
     // --- TEIL 2: ANGRIFF AUF DEN SPIELER ---
     const bossBaseDamage = attackDamage;
     const bossStrength = boss.stats.strength;
-    const playerDefense = this.getPlayerDefense(); 
+    const playerDefense = this.getPlayerDefense();
 
     // 1. Basis-Schaden berechnen
     let rawDamage = bossBaseDamage + bossStrength - playerDefense;
@@ -839,8 +957,8 @@ for (let i = 0; i < ability.attacks; i++) {
 
     // 2. Block-Multiplikator anwenden
     if (battle.damageMultiplier !== undefined) {
-        finalDamage = Math.floor(rawDamage * battle.damageMultiplier);
-        blockedAmount = rawDamage - finalDamage;
+      finalDamage = Math.floor(rawDamage * battle.damageMultiplier);
+      blockedAmount = rawDamage - finalDamage;
     }
 
     // 3. Boss-Effekte berechnen (z.B. Testdamage des Gegners)
@@ -850,7 +968,7 @@ for (let i = 0; i < ability.attacks; i++) {
         bossWeapon.effects,
         boss,
         this.state.player,
-        battle
+        battle,
       );
       finalDamage = effectResult.damage;
       // Logs noch nicht pushen, erst zusammen mit dem Haupt-Log
@@ -858,7 +976,7 @@ for (let i = 0; i < ability.attacks; i++) {
 
     // 4. SCHADEN ZUFÜGEN (JETZT ALS ERSTES)
     this.state.player.hp -= finalDamage;
-    
+
     // 5. SCHADEN LOGGEN
     let damageLog = [`${bossBaseDamage} Basis`];
     if (bossStrength > 0) damageLog.push(`${bossStrength} Str`);
@@ -866,34 +984,40 @@ for (let i = 0; i < ability.attacks; i++) {
     if (blockedAmount > 0) damageLog.push(`-${blockedAmount} Geblockt`);
 
     battle.log.push(
-      `<span class="log-source enemy">${boss.name}</span>: ${attackName} <br><div class="log-hit-item"><span class="log-damage-val" style="color: #ff6b6b;">-${finalDamage} HP</span> <span class="log-details">(${damageLog.join(" + ")})</span></div>`
+      `<span class="log-source enemy">${boss.name}</span>: ${attackName} <br><div class="log-hit-item"><span class="log-damage-val" style="color: #ff6b6b;">-${finalDamage} HP</span> <span class="log-details">(${damageLog.join(" + ")})</span></div>`,
     );
 
     // 6. JETZT ERST: HEILUNG DURCH BLOCK (SEELENSCHILD)
     if (blockedAmount > 0) {
-        const equippedWeapon = this.getEquippedWeapon();
-        if (equippedWeapon && equippedWeapon.effects && equippedWeapon.effects.length > 0) {
-            const effectResult = this.applyEffects(
-                blockedAmount, 
-                equippedWeapon.effects, 
-                this.state.player, 
-                boss, 
-                battle,
-                'defense'
-            );
-            
-            // Heilung loggen (erscheint jetzt unter dem Schaden)
-            if (effectResult.logs.length > 0) {
-                battle.log.push(...effectResult.logs);
-            }
+      const equippedWeapon = this.getEquippedWeapon();
+      if (
+        equippedWeapon &&
+        equippedWeapon.effects &&
+        equippedWeapon.effects.length > 0
+      ) {
+        const effectResult = this.applyEffects(
+          blockedAmount,
+          equippedWeapon.effects,
+          this.state.player,
+          boss,
+          battle,
+          "defense",
+        );
+
+        // Heilung loggen (erscheint jetzt unter dem Schaden)
+        if (effectResult.logs.length > 0) {
+          battle.log.push(...effectResult.logs);
         }
+      }
     }
 
     // 7. HP Check & Game Over Prüfung
     if (this.state.player.hp < 0) this.state.player.hp = 0;
-    
+
     if (this.state.player.hp <= 0) {
-      battle.log.push('<strong style="color: #ff4444;">Du wurdest besiegt!</strong>');
+      battle.log.push(
+        '<strong style="color: #ff4444;">Du wurdest besiegt!</strong>',
+      );
       this.endBattle(false);
       return;
     }
@@ -903,7 +1027,7 @@ for (let i = 0; i < ability.attacks; i++) {
 
     if (isEnemyBattle) {
       battle.enemiesAttackedThisRound++;
-      const livingEnemies = battle.enemies.filter(e => !e.defeated).length;
+      const livingEnemies = battle.enemies.filter((e) => !e.defeated).length;
 
       if (battle.enemiesAttackedThisRound >= livingEnemies) {
         playerTurnNext = true;
@@ -914,7 +1038,8 @@ for (let i = 0; i < ability.attacks; i++) {
         let foundNext = false;
 
         while (attempts < totalEnemies) {
-          if (battle.currentEnemyIndex >= totalEnemies) battle.currentEnemyIndex = 0;
+          if (battle.currentEnemyIndex >= totalEnemies)
+            battle.currentEnemyIndex = 0;
           if (!battle.enemies[battle.currentEnemyIndex].defeated) {
             foundNext = true;
             break;
@@ -940,36 +1065,51 @@ for (let i = 0; i < ability.attacks; i++) {
     // --- TEIL 4: RUNDENENDE ---
     if (playerTurnNext) {
       // Gift-Schaden Spieler etc... (gekürzt für Übersicht, Logik bleibt gleich)
-      if (this.state.player.statusEffects && this.state.player.statusEffects.length > 0) {
-          const playerPoison = this.state.player.statusEffects.find(se => se.type === 'poison');
-          if (playerPoison && playerPoison.stacks > 0) {
-              const pDamage = playerPoison.baseDamage + playerPoison.stacks;
-              this.state.player.hp -= pDamage;
-              if (this.state.player.hp < 0) this.state.player.hp = 0;
-              battle.log.push(`<span style="color: #a855f7;">🧪 Du erleidest ${pDamage} Gift-Schaden (${playerPoison.stacks} Stacks)</span>`);
-              playerPoison.stacks--;
-              if (playerPoison.stacks <= 0) {
-                  this.state.player.statusEffects = this.state.player.statusEffects.filter(se => se !== playerPoison);
-              }
-              if (this.state.player.hp <= 0) {
-                  battle.log.push('<strong style="color: #ff4444;">Du bist am Gift gestorben!</strong>');
-                  this.endBattle(false);
-                  return;
-              }
+      if (
+        this.state.player.statusEffects &&
+        this.state.player.statusEffects.length > 0
+      ) {
+        const playerPoison = this.state.player.statusEffects.find(
+          (se) => se.type === "poison",
+        );
+        if (playerPoison && playerPoison.stacks > 0) {
+          const pDamage = playerPoison.baseDamage + playerPoison.stacks;
+          this.state.player.hp -= pDamage;
+          if (this.state.player.hp < 0) this.state.player.hp = 0;
+          battle.log.push(
+            `<span style="color: #a855f7;">🧪 Du erleidest ${pDamage} Gift-Schaden (${playerPoison.stacks} Stacks)</span>`,
+          );
+          playerPoison.stacks--;
+          if (playerPoison.stacks <= 0) {
+            this.state.player.statusEffects =
+              this.state.player.statusEffects.filter(
+                (se) => se !== playerPoison,
+              );
           }
+          if (this.state.player.hp <= 0) {
+            battle.log.push(
+              '<strong style="color: #ff4444;">Du bist am Gift gestorben!</strong>',
+            );
+            this.endBattle(false);
+            return;
+          }
+        }
       }
 
-      battle.turn = 'player';
-      
+      battle.turn = "player";
+
       // HIER wird der Block-Multiplikator für die neue Runde entfernt!
       if (battle.damageMultiplier !== undefined) {
-          delete battle.damageMultiplier;
+        delete battle.damageMultiplier;
       }
 
       if (isEnemyBattle) {
         battle.currentEnemyIndex = 0;
         battle.enemiesAttackedThisRound = 0;
-        if (!battle.enemies[battle.selectedTarget] || battle.enemies[battle.selectedTarget].defeated) {
+        if (
+          !battle.enemies[battle.selectedTarget] ||
+          battle.enemies[battle.selectedTarget].defeated
+        ) {
           for (let i = 0; i < battle.enemies.length; i++) {
             if (!battle.enemies[i].defeated) {
               battle.selectedTarget = i;
@@ -1014,7 +1154,7 @@ for (let i = 0; i < ability.attacks; i++) {
             let dropType = typeof drop === "string" ? "item" : drop.type;
 
             if (enemy.xpValue) {
-                totalXpGained += enemy.xpValue;
+              totalXpGained += enemy.xpValue;
             }
 
             if (dropId === "glitzer") {
@@ -1064,15 +1204,19 @@ for (let i = 0; i < ability.attacks; i++) {
       });
 
       // XP gutschreiben
-        if (totalXpGained > 0) {
-            this.gainXp(totalXpGained);
-            resultMessages.push(`<span style="color: #a855f7; font-weight:bold;">+${totalXpGained} XP</span>`);
-            
-            // Info falls Level Up (checken wir einfach über Tokens)
-            if (this.state.player.levelTokens > 0) {
-                resultMessages.push(`<strong style="color: #fbbf24;">LEVEL UP! Token verfügbar!</strong>`);
-            }
+      if (totalXpGained > 0) {
+        this.gainXp(totalXpGained);
+        resultMessages.push(
+          `<span style="color: #a855f7; font-weight:bold;">+${totalXpGained} XP</span>`,
+        );
+
+        // Info falls Level Up (checken wir einfach über Tokens)
+        if (this.state.player.levelTokens > 0) {
+          resultMessages.push(
+            `<strong style="color: #fbbf24;">LEVEL UP! Token verfügbar!</strong>`,
+          );
         }
+      }
 
       if (resultMessages.length > 0) {
         resultMessages.unshift("Du hast folgende Beute erhalten:");
@@ -1194,13 +1338,33 @@ for (let i = 0; i < ability.attacks; i++) {
 
   // ===== SHOP-SYSTEM =====
 
-  // Item kaufen
+// Item kaufen (Updated für Rüstungen & Waffen)
   buyItem(merchantId, offerIndex, quantity = 1) {
     const merchant = this.merchants[merchantId];
     if (!merchant || !merchant.offers[offerIndex]) return false;
 
     const offer = merchant.offers[offerIndex];
-    const item = this.items[offer.itemId];
+    const itemId = offer.itemId;
+    
+    // Prüfen: Was ist es? (Item, Waffe oder Rüstung?)
+    let type = "item";
+    let def = this.items[itemId];
+
+    if (!def) {
+        def = this.weaponBases[itemId];
+        if (def) type = "weapon";
+    }
+    if (!def) {
+        // Zugriff auf Definitions global, da Game.armorBases evtl. nicht gemappt ist
+        def = Definitions.armorBases[itemId]; 
+        if (def) type = "armor";
+    }
+
+    if (!def) {
+        console.error("Kauf fehlgeschlagen: ID nicht gefunden:", itemId);
+        return false;
+    }
+
     const totalCost = offer.price * quantity;
 
     // Glitzer prüfen
@@ -1216,10 +1380,16 @@ for (let i = 0; i < ability.attacks; i++) {
 
     // Items hinzufügen
     for (let i = 0; i < quantity; i++) {
-      this.addItemToInventory(item);
+        if (type === "item") {
+             this.addItemToInventory(def);
+        } else if (type === "weapon") {
+             this.addWeapon({ baseId: itemId, effects: [] });
+        } else if (type === "armor") {
+             this.addArmor({ baseId: itemId, effects: [] });
+        }
     }
 
-    console.log(`${quantity}x ${item.name} für ${totalCost} Glitzer gekauft`);
+    console.log(`${quantity}x ${def.name} für ${totalCost} Glitzer gekauft`);
     return true;
   },
 
@@ -1263,6 +1433,48 @@ for (let i = 0; i < ability.attacks; i++) {
 
     this.save();
     console.log(`${weapon.name} für ${glitzerValue} Glitzer verkauft`);
+    return true;
+  },
+
+  // Rüstung verkaufen
+  sellArmor(armorIndex) {
+    if (!this.state.player.armors || armorIndex < 0 || armorIndex >= this.state.player.armors.length) {
+      console.log("Ungültiger Rüstungs-Index");
+      return false;
+    }
+
+    const armorInstance = this.state.player.armors[armorIndex];
+    const armor = this.resolveArmor(armorInstance);
+    if (!armor) {
+      return false;
+    }
+
+    const glitzerValue = armor.glitzerValue || 0;
+
+    // Prüfe ob Rüstung ausgerüstet ist
+    if (this.state.player.equippedArmor === armorIndex) {
+      console.log("Rüstung ist ausgerüstet und kann nicht verkauft werden!");
+      return false;
+    }
+
+    // Rüstung aus Array entfernen
+    this.state.player.armors.splice(armorIndex, 1);
+
+    // equippedArmor Index anpassen (wenn der verkaufte Index kleiner war als der ausgerüstete)
+    if (
+      typeof this.state.player.equippedArmor === "number" &&
+      this.state.player.equippedArmor > armorIndex
+    ) {
+      this.state.player.equippedArmor -= 1;
+    }
+
+    // Glitzer hinzufügen
+    if (glitzerValue > 0) {
+      this.state.player.stats.glitzer += glitzerValue;
+    }
+
+    this.save();
+    console.log(`${armor.name} für ${glitzerValue} Glitzer verkauft`);
     return true;
   },
 
@@ -1317,18 +1529,18 @@ for (let i = 0; i < ability.attacks; i++) {
     const item = this.items[itemId];
 
     // Heiltrank
-if (item.type === "consumable" && item.healAmount) {
+    if (item.type === "consumable" && item.healAmount) {
       const healAmount = item.healAmount;
       const oldHp = this.state.player.hp;
-      
+
       // ÄNDERUNG: Wir holen uns das DYNAMISCHE Limit (Basis + Bonus)
-      const currentMaxHp = this.getPlayerMaxHp(); 
+      const currentMaxHp = this.getPlayerMaxHp();
 
       this.state.player.hp = Math.min(
         currentMaxHp, // Hier stand vorher this.state.player.maxHp
         this.state.player.hp + healAmount,
       );
-      
+
       const actualHeal = this.state.player.hp - oldHp;
 
       // Item aus Inventar entfernen
