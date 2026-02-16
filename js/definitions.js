@@ -952,7 +952,7 @@ const Definitions = {
         {
           text: "Blut opfern",
           effects: [
-            { type: "addChaos", amount: 4 },
+            { type: "removeHpPercent", amount: 0.10 },
             { type: "addItem", itemId: "ritual_stahl", amount: 2 },
           ],
         },

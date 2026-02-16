@@ -58,7 +58,7 @@ const Game = {
 
   // Initialisierung
   init() {
-    console.log("Game wird initialisiert... 0.2.27");
+    console.log("Game wird initialisiert... 0.2.28");
 
     // Spielstand laden falls vorhanden
     const savedState = Storage.loadGameState();
@@ -490,24 +490,26 @@ const Game = {
   },
 
   // Level Up durchführen
-levelUp() {
+  levelUp() {
     const player = this.state.player;
 
     // 1. Überschüssige XP für das nächste Level mitnehmen
-    player.xp -= player.maxXp; 
+    player.xp -= player.maxXp;
 
     // 2. Level und Tokens erhöhen
     player.level++;
-    player.levelTokens++; 
+    player.levelTokens++;
 
     // 3. DIE XP-KURVE: Erhöhe die benötigten XP für das NÄCHSTE Level
     // Beispiel: Level 1 -> 100 XP, Level 2 -> 120 XP, Level 3 -> 140 XP...
-    player.maxXp += 20; 
+    player.maxXp += 20;
 
     // 4. Bonus: Volle Heilung
     player.hp = player.maxHp;
 
-    console.log(`LEVEL UP! Level ${player.level}. Nächstes Level benötigt: ${player.maxXp} XP`);
+    console.log(
+      `LEVEL UP! Level ${player.level}. Nächstes Level benötigt: ${player.maxXp} XP`,
+    );
   },
 
   investToken(statType) {
@@ -588,7 +590,7 @@ levelUp() {
     UI.showBattleScreen();
   },
 
-playerAttack(abilityIndex) {
+  playerAttack(abilityIndex) {
     if (!this.state.currentBattle || this.state.currentBattle.turn !== "player")
       return;
 
@@ -607,7 +609,7 @@ playerAttack(abilityIndex) {
     if (battle.playerActionPoints < ability.apCost) return;
 
     battle.playerActionPoints -= ability.apCost;
-    
+
     // Aktuelles Ziel bestimmen
     const isEnemyBattle = battle.enemies && battle.enemies.length > 0;
     const boss = isEnemyBattle
@@ -684,13 +686,15 @@ playerAttack(abilityIndex) {
       boss.defeated = true; // Wichtig für den Sieg-Check
 
       if (isEnemyBattle) {
-        const allDefeated = battle.enemies.every((e) => e.defeated || e.hp <= 0);
+        const allDefeated = battle.enemies.every(
+          (e) => e.defeated || e.hp <= 0,
+        );
         if (allDefeated) {
           this.endBattle(true);
           return;
         } else {
           battle.log.push(`<strong>${boss.name} wurde besiegt!</strong>`);
-          
+
           // Automatischer Zielwechsel zum nächsten lebenden Gegner
           for (let i = 0; i < battle.enemies.length; i++) {
             if (!battle.enemies[i].defeated && battle.enemies[i].hp > 0) {
@@ -1102,7 +1106,7 @@ playerAttack(abilityIndex) {
       });
 
       // XP gutschreiben
-if (totalXpGained > 0) {
+      if (totalXpGained > 0) {
         // 1. Altes Level zwischenspeichern
         const levelBefore = this.state.player.level;
 
@@ -1427,7 +1431,6 @@ if (totalXpGained > 0) {
 
   // Item nutzen (z.B. Heiltrank)
   useItem(itemId) {
-
     if (this.state.player.hp <= 0) return false;
 
     const itemInInventory = this.state.player.inventory.find(
@@ -1798,6 +1801,17 @@ if (totalXpGained > 0) {
           this.state.player.hp + (effect.amount || 0),
         );
         message = `<span style="color: #22c55e;">HP: +${effect.amount || 0}</span>`;
+        break;
+      case "removeHpPercent":
+        const displayPercent = Math.round((effect.amount || 0) * 100);
+
+        const damageAmount = Math.floor(
+          this.state.player.maxHp * (effect.amount || 0),
+        );
+
+        this.state.player.hp = Math.max(0, this.state.player.hp - damageAmount);
+
+        message = `<span style="color: #e74c3c;">Der Altar fordert dein Blut: -${damageAmount} HP (${displayPercent}%)</span>`;
         break;
       case "removeHp":
         this.state.player.hp = Math.max(
