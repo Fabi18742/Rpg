@@ -2530,10 +2530,6 @@ img, svg {
     padding: 15px;
 }
 
-.badass-row:hover {
-    border-color: #fbbf24;
-}
-
 .badass-info {
     text-align: left;
     flex: 1;
@@ -2564,19 +2560,140 @@ img, svg {
     cursor: pointer;
 }
 
-.badass-btn:hover:not(:disabled) {
-    background: #fbbf24;
-    color: #000;
-}
-
 .badass-btn:disabled {
     opacity: 0.3;
     border-color: var(--border-color);
     color: var(--text-color);
 }
 
-/* Neuer Button im Stats Screen */
+/* Der Button nimmt jetzt das Standard-Grau von .game-button an */
 #btn-open-levelup {
-    border-color: #fbbf24;
-    color: #fbbf24;
+    border-color: var(--border-color) !important;
+    color: var(--text-color) !important;
+}
+
+/* Nur die Zahl/Klammer wird gelb */
+.token-alert {
+    color: #fbbf24; 
+    font-weight: bold;
+    margin-left: 5px;
+    transition: color 0.2s;
+}
+
+
+/* =========================================
+   TOOLTIP FINAL FIX
+   ========================================= */
+
+/* Die Zeile als Anker */
+.stat-row {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid #333;
+    z-index: 1; /* Basis-Level */
+}
+
+/* WICHTIG: Beim Hovern die ganze Zeile nach vorne holen! 
+   Das verhindert, dass der Tooltip von der nächsten Zeile überdeckt wird. */
+.stat-row.has-tooltip:hover {
+    z-index: 1000;
+}
+
+/* Der Tooltip-Container */
+.stat-tooltip {
+    /* Unsichtbar als Standard */
+    visibility: hidden;
+    opacity: 0;
+    
+    /* Positionierung */
+    position: absolute;
+    bottom: 100%;    /* Genau über der Zeile */
+    right: 0;        /* Rechtsbündig */
+    z-index: 99999;  /* Über allem */
+    
+    /* WICHTIG: Flex-Layout erzwingt, dass der Hintergrund alles umschließt */
+    display: flex;
+    flex-direction: column;
+    gap: 5px; /* Kleiner Abstand zwischen den Zeilen im Tooltip */
+    
+    /* Größen */
+    width: 280px;
+    height: auto;        /* Höhe passt sich automatisch an */
+    min-height: fit-content; /* Moderne Browser-Hilfe */
+    
+    /* Aussehen */
+    background-color: #0f0f0f; /* Tiefschwarz */
+    border: 1px solid #555;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.95);
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 10px; /* Abstand zur Zeile */
+
+    /* Text */
+    color: #666;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    text-align: left;
+    white-space: normal; /* Zeilenumbruch erlauben */
+    
+    /* Animation */
+    transform: translateY(10px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    pointer-events: none; /* Maus ignoriert das Popup */
+}
+
+/* Hover-Effekt: Anzeigen */
+.stat-row.has-tooltip:hover .stat-tooltip {
+    visibility: visible;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* --- Inhalt des Tooltips --- */
+
+/* Titel */
+.tooltip-title {
+    color: #666;
+    font-weight: bold;
+    border-bottom: 1px solid #444;
+    padding-bottom: 6px;
+    margin-bottom: 4px;
+    font-size: 1rem;
+}
+
+/* Beschreibung */
+.tooltip-desc {
+    color: #aaa;
+    font-style: italic;
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+}
+
+/* Die einzelnen Werte-Zeilen */
+.tooltip-effect {
+    display: flex;
+    justify-content: space-between;
+    width: 100%; /* Volle Breite nutzen */
+}
+
+/* Die Summen-Zeile ganz unten */
+.tooltip-sum-line {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #666; /* Hellerer Strich */
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    font-weight: bold;
+    color: #666;
+    background-color: transparent; /* Sicherstellen, dass hier keine Farbe stört */
+}
+
+/* Hebt nur die Token-Anzahl im Button hervor */
+.token-alert {
+    color: #fbbf24; /* Das Gold/Gelb deiner UI */
+    font-weight: bold;
+    margin-left: 4px;
 }

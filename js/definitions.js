@@ -15,11 +15,6 @@ const Definitions = {
       defense: 1,
       glitzer: 0,
     },
-    bonusStats: {
-      damage: 0.0,
-      resistance: 0.0,
-      health: 0.0,
-    },
     startWeapon: "dagger",
     startAbilities: ["stich"],
     startArmor: "cloth_vest",
@@ -56,7 +51,7 @@ const Definitions = {
       name: "Lebenselixier",
       type: "consumable",
       description: "Erhöht Maximale HP um 50",
-      maxHpIncrease: 50,
+      maxHpIncrease: 25,
       glitzerValue: 25,
     },
 

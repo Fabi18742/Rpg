@@ -296,21 +296,29 @@ const UI = {
     }
   },
 
-  // Stats Screen anzeigen (Hideout)
+  // Stats Screen anzeigen (Hideout) - HP jetzt ohne Tooltip
   showStatsScreen() {
     this.elements.visualArea.classList.remove("hideout-bg");
     const player = Game.state.player;
 
-    // Dynamische Werte abrufen (Basis + Boni)
+    // --- BERECHNUNGEN ---
     const effectiveMaxHp = Game.getPlayerMaxHp();
-    const effectiveDefense = Game.getPlayerDefense();
+
+    const weapon = Game.getEquippedWeapon();
+    const weaponName = weapon ? weapon.name : "Keine Waffe";
+    const weaponDmg = weapon ? weapon.damage : 0;
+    const strength = player.stats.strength;
     const effectiveAttack = Game.getPlayerAttackValue();
-    // XP Prozent berechnen
+
+    const armor = Game.getEquippedArmor();
+    const armorName = armor ? armor.name : "Keine Rüstung";
+    const armorVal = armor ? armor.value : 0;
+    const defenseBase = player.stats.defense;
+    const effectiveDefense = Game.getPlayerDefense();
+
     const xpPercent = Math.min(100, (player.xp / player.maxXp) * 100);
 
-    // (Die Berechnung der bonusDmg etc. Strings brauchen wir hier jetzt nicht mehr für die Anzeige,
-    // aber wir lassen die Logik im Hintergrund, falls wir sie später doch wieder brauchen)
-
+    // --- HTML GENERIERUNG ---
     this.elements.sceneContent.innerHTML = `
       <div class="stats-screen">
           <h2>Charakterwerte</h2>
@@ -335,21 +343,47 @@ const UI = {
                   <span class="stat-label">HP:</span>
                   <div style="text-align: right;">
                       <span class="stat-value">${player.hp}/${effectiveMaxHp}</span>
-                      </div>
+                  </div>
               </div>
 
-              <div class="stat-row">
+              <div class="stat-row has-tooltip">
                   <span class="stat-label">Angriff:</span>
                   <div style="text-align: right;">
                       <span class="stat-value">${effectiveAttack}</span>
                   </div>
+                  <div class="equipment-tooltip stat-tooltip">
+                      <div class="tooltip-title">Angriffskraft</div>
+                      <div class="tooltip-desc">Gesamter physischer Schaden.</div>
+                      <div class="tooltip-effect">
+                          <span>Stärke (Basis):</span> <span>${strength}</span>
+                      </div>
+                      <div class="tooltip-effect">
+                          <span>Waffe (${weaponName}):</span> <span>+${weaponDmg}</span>
+                      </div>
+                      <div class="tooltip-sum-line">
+                          <span>Gesamt:</span> <span>${effectiveAttack}</span>
+                      </div>
+                  </div>
               </div>
 
-              <div class="stat-row">
+              <div class="stat-row has-tooltip">
                   <span class="stat-label">Verteidigung:</span>
                   <div style="text-align: right;">
                       <span class="stat-value">${effectiveDefense}</span>
+                  </div>
+                  <div class="equipment-tooltip stat-tooltip">
+                      <div class="tooltip-title">Verteidigung</div>
+                      <div class="tooltip-desc">Reduziert erlittenen Schaden.</div>
+                      <div class="tooltip-effect">
+                          <span>Verteidigung (Basis):</span> <span>${defenseBase}</span>
                       </div>
+                      <div class="tooltip-effect">
+                          <span>Rüstung (${armorName}):</span> <span>+${armorVal}</span>
+                      </div>
+                      <div class="tooltip-sum-line">
+                          <span>Gesamt:</span> <span>${effectiveDefense}</span>
+                      </div>
+                  </div>
               </div>
 
               <div class="stat-row">
@@ -357,44 +391,32 @@ const UI = {
                   <span class="stat-value">${player.stats.glitzer}</span>
               </div>
           </div>
-          
       </div>
   `;
 
-    // Button Grid mit "Badass Rank" Button
-    const tokenText =
-      player.levelTokens > 0 ? `Level Up (${player.levelTokens})` : "Level Up";
 
-    this.elements.buttonGrid.innerHTML = `
-      <button class="game-button" id="btn-back">Zurück</button>
-      <button class="game-button" id="btn-open-levelup">${tokenText}</button>
-  `;
+    // Logik für den Button-Text: Nur die Zahl in Klammern wird farbig
+let tokenText = "Level Up";
+if (player.levelTokens > 0) {
+    // Die Zahl wird in das Span mit der Klasse .token-alert gepackt
+    tokenText = `Level Up <span class="token-alert">(${player.levelTokens})</span>`;
+}
 
-    this.elements.buttonGrid.className = "button-grid shop-grid";
+this.elements.buttonGrid.innerHTML = `
+  <button class="game-button" id="btn-back">Zurück</button>
+  <button class="game-button" id="btn-open-levelup">${tokenText}</button>
+`;
+    // Beide Buttons nutzen jetzt die gleiche Klasse und sehen identisch aus
+    this.elements.buttonGrid.className = "button-grid shop-grid"; 
 
-    document.getElementById("btn-back").addEventListener("click", () => {
-      this.showHideout();
-    });
-
-    document
-      .getElementById("btn-open-levelup")
-      .addEventListener("click", () => {
-        this.showLevelUpScreen();
-      });
+    document.getElementById("btn-back").addEventListener("click", () => this.showHideout());
+    document.getElementById("btn-open-levelup").addEventListener("click", () => this.showLevelUpScreen());
   },
-
-  // In js/ui.js - Neue Funktion
 
   showLevelUpScreen() {
     this.elements.visualArea.classList.remove("hideout-bg");
     const player = Game.state.player;
     const tokens = player.levelTokens;
-
-    // Aktuelle Werte formatieren (z.B. 0.05 wird zu "5.0%")
-    const dmgVal = (player.bonusStats.damage * 100).toFixed(1);
-    const resVal = (player.bonusStats.resistance * 100).toFixed(1);
-    const hpVal = (player.bonusStats.health * 100).toFixed(1);
-
     const canInvest = tokens > 0;
 
     this.elements.sceneContent.innerHTML = `
@@ -402,61 +424,55 @@ const UI = {
             <div class="token-display">
                 Verfügbare Tokens: ${tokens}
             </div>
-
             <div class="badass-stats-list">
                 <div class="badass-row">
                     <div class="badass-info">
+                        <div class="badass-name">Vitalität</div>
+                        <div class="badass-val">Max HP: ${player.maxHp}</div>
+                    </div>
+                    <button class="badass-btn" data-stat="health" ${!canInvest ? "disabled" : ""}>
+                        +5
+                    </button>
+                </div>
+
+                <div class="badass-row">
+                    <div class="badass-info">
                         <div class="badass-name">Kriegskunst</div>
-                        <div class="badass-desc">Erhöht deinen Waffenschaden</div>
-                        <div class="badass-val">Aktuell: +${dmgVal}%</div>
+                        <div class="badass-val">Stärke: ${player.stats.strength}</div>
                     </div>
                     <button class="badass-btn" data-stat="damage" ${!canInvest ? "disabled" : ""}>
-                        +1% Schaden
+                        +1
                     </button>
                 </div>
 
                 <div class="badass-row">
                     <div class="badass-info">
                         <div class="badass-name">Eisenhaut</div>
-                        <div class="badass-desc">Reduziert eingehenden Schaden</div>
-                        <div class="badass-val">Aktuell: +${resVal}%</div>
+                        <div class="badass-val">Verteidigung: ${player.stats.defense}</div>
                     </div>
                     <button class="badass-btn" data-stat="resistance" ${!canInvest ? "disabled" : ""}>
-                        +0.5% Resistenz
+                        +1
                     </button>
                 </div>
 
-                <div class="badass-row">
-                    <div class="badass-info">
-                        <div class="badass-name">Vitalität</div>
-                        <div class="badass-desc">Erhöht deine maximalen HP</div>
-                        <div class="badass-val">Aktuell: +${hpVal}%</div>
-                    </div>
-                    <button class="badass-btn" data-stat="health" ${!canInvest ? "disabled" : ""}>
-                        +1% Max HP
-                    </button>
-                </div>
+
             </div>
         </div>
     `;
 
     this.elements.buttonGrid.innerHTML = `
-        <button class="game-button" id="btn-back-stats">Zurück</button>
+        <button class="game-button" id="btn-back-stats">ZURÜCK</button>
     `;
     this.elements.buttonGrid.className = "button-grid single-button";
 
     document.getElementById("btn-back-stats").addEventListener("click", () => {
-      this.showStatsScreen(); // Zurück zum Stats Screen
+      this.showStatsScreen();
     });
 
-    // Event Listeners für Investieren
     document.querySelectorAll(".badass-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
         const statType = btn.dataset.stat;
-        const success = Game.investToken(statType); // Ruft Logik aus Teil 1 auf
-
-        if (success) {
-          // Screen neu laden, um Werte zu aktualisieren
+        if (Game.investToken(statType)) {
           this.showLevelUpScreen();
         }
       });
@@ -550,29 +566,32 @@ const UI = {
     let armorEffectsHTML = "";
 
     if (equippedArmor) {
-        // Prüfen auf Effekte (für zukünftige Features)
-        const hasArmorEffects = equippedArmorInstance.effects && equippedArmorInstance.effects.length > 0;
-        let tooltipArmorEffectsHTML = "";
+      // Prüfen auf Effekte (für zukünftige Features)
+      const hasArmorEffects =
+        equippedArmorInstance.effects &&
+        equippedArmorInstance.effects.length > 0;
+      let tooltipArmorEffectsHTML = "";
 
-        if (hasArmorEffects) {
-            armorEffectsHTML = '<span class="slot-effects" style="margin-left: 8px;">';
-            tooltipArmorEffectsHTML = '<div class="tooltip-effects">';
-            
-            equippedArmorInstance.effects.forEach((effectId) => {
-                const effect = Game.effects[effectId];
-                if (effect) {
-                    // Badge im Slot
-                    armorEffectsHTML += `<span class="effect-badge" style="color: #ff9a8a; border: 1px solid #e74c3c;">${effect.name}</span>`;
-                    // Zeile im Tooltip
-                    tooltipArmorEffectsHTML += `<div class="tooltip-effect"><strong>${effect.name}:</strong> ${effect.description}</div>`;
-                }
-            });
-            armorEffectsHTML += "</span>";
-            tooltipArmorEffectsHTML += "</div>";
-        }
+      if (hasArmorEffects) {
+        armorEffectsHTML =
+          '<span class="slot-effects" style="margin-left: 8px;">';
+        tooltipArmorEffectsHTML = '<div class="tooltip-effects">';
 
-        // Der eigentliche Tooltip HTML-Code
-        armorTooltipHTML = `
+        equippedArmorInstance.effects.forEach((effectId) => {
+          const effect = Game.effects[effectId];
+          if (effect) {
+            // Badge im Slot
+            armorEffectsHTML += `<span class="effect-badge" style="color: #ff9a8a; border: 1px solid #e74c3c;">${effect.name}</span>`;
+            // Zeile im Tooltip
+            tooltipArmorEffectsHTML += `<div class="tooltip-effect"><strong>${effect.name}:</strong> ${effect.description}</div>`;
+          }
+        });
+        armorEffectsHTML += "</span>";
+        tooltipArmorEffectsHTML += "</div>";
+      }
+
+      // Der eigentliche Tooltip HTML-Code
+      armorTooltipHTML = `
             <div class="equipment-tooltip">
                 <div class="tooltip-title">${equippedArmor.name}</div>
                 <div class="tooltip-desc">${equippedArmor.description}</div>
@@ -582,7 +601,7 @@ const UI = {
         `;
     }
 
-let armorSlotHTML = `
+    let armorSlotHTML = `
         <div class="equipment-slot armor-slot ${equippedArmor ? "filled" : "empty"}" id="armor-slot">
             <div class="item-icon-placeholder"></div>
             <div class="item-info">
