@@ -302,7 +302,7 @@ const Definitions = {
       name: "Seelenschild",
       description: "Heilt dich um 50% des geblockten Schadens",
       type: "block_heal",
-      value: 0.5,
+      value: 1,
       glitzerValueMultiplier: 5,
     },
   },
@@ -886,7 +886,7 @@ const Definitions = {
       name: "Vergessener Schrein",
       description: "Du entdeckst einen kleinen Altar. Darauf liegt ein seltsam pulsierender Stein.",
       type: "multipleChoice",
-      minChaos: 15,
+      minChaos: 10,
       maxChaos: 20,
       securityDecrease: 20,
       choices: [
