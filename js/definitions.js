@@ -2,15 +2,23 @@ const Definitions = {
   // ===== SPIELER-STANDARD-WERTE =====
   player: {
     level: 1,
+    xp:0,
+    maxXp: 100,
+    levelTokens: 0,
     hp: 100,
     maxHp: 100,
     gold: 0,
     actionPoints: 3,
     maxActionPoints: 3,
     stats: {
-      strength: 5,
-      defense: 0,
+      strength: 1,
+      defense: 1,
       glitzer: 0,
+    },
+    bonusStats: {
+        damage: 0.0,
+        resistance: 0.0,
+        health: 0.0
     },
     startWeapon: "dagger",
     startAbilities: ["stich"],
@@ -364,6 +372,7 @@ const Definitions = {
       stats: { strength: 0, defense: 0, magic: 0, speed: 2 },
       weapon: { baseId: "monster_teeth", effects: [] },
       drops: ["ritual_knochen"],
+      xpValue: 15,
     },
     wolf: {
       id: "wolf",

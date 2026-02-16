@@ -127,10 +127,15 @@ const UI = {
     });
   },
 
-  // Stats Panel rendern
+// Stats Panel rendern (HTML erstellen)
   renderStatsPanel() {
     const player = Game.state.player;
     const visible = this.statsVisible ? "visible" : "";
+    
+    // NEU: Dynamische Werte holen
+    const maxHp = Game.getPlayerMaxHp();
+    const defense = Game.getPlayerDefense();
+    const attack = Game.getPlayerAttackValue();
 
     return `
             <div class="stats-panel ${visible}" id="stats-panel">
@@ -142,15 +147,15 @@ const UI = {
                     </div>
                     <div class="stat-item">
                         <span class="stat-label">HP:</span>
-                        <span class="stat-value">${player.hp}/${player.maxHp}</span>
+                        <span class="stat-value">${player.hp}/${maxHp}</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-label">Stärke:</span>
-                        <span class="stat-value">${player.stats.strength}</span>
+                        <span class="stat-label">Angriff:</span>
+                        <span class="stat-value">${attack}</span>
                     </div>
                     <div class="stat-item">
                         <span class="stat-label">Verteidigung:</span>
-                        <span class="stat-value">${player.stats.defense}</span>
+                        <span class="stat-value">${defense}</span>
                     </div>
                     <div class="stat-item">
                         <span class="stat-label">Glitzer:</span>
@@ -161,14 +166,17 @@ const UI = {
         `;
   },
 
-  // Vorhandenes Stats-Fenster aktualisieren
+  // Vorhandenes Stats-Fenster aktualisieren (Live-Update)
   updateStatsWindow() {
     const statsWindow = document.getElementById("stats-panel-window");
-    if (!statsWindow) return; // Fenster ist nicht offen, nichts zu tun
+    if (!statsWindow) return;
 
     const player = Game.state.player;
+    
+    // NEU: Dynamische Werte holen
+    const maxHp = Game.getPlayerMaxHp();
+    const defense = Game.getPlayerDefense();
 
-    // Wir suchen direkt den Grid-Container im Fenster
     const statsGrid = statsWindow.querySelector(".stats-grid");
     if (statsGrid) {
       statsGrid.innerHTML = `
@@ -178,7 +186,7 @@ const UI = {
                 </div>
                 <div class="stat-item">
                     <span class="stat-label">HP:</span>
-                    <span class="stat-value">${player.hp}/${player.maxHp}</span>
+                    <span class="stat-value">${player.hp}/${maxHp}</span>
                 </div>
                 <div class="stat-item">
                     <span class="stat-label">Stärke:</span>
@@ -186,7 +194,7 @@ const UI = {
                 </div>
                 <div class="stat-item">
                     <span class="stat-label">Verteidigung:</span>
-                    <span class="stat-value">${player.stats.defense}</span>
+                    <span class="stat-value">${defense}</span>
                 </div>
                 <div class="stat-item">
                     <span class="stat-label">Glitzer:</span>
@@ -275,45 +283,173 @@ const UI = {
     }
   },
 
-  // Stats Screen anzeigen (Hideout)
-  showStatsScreen() {
+// Stats Screen anzeigen (Hideout)
+showStatsScreen() {
+  this.elements.visualArea.classList.remove("hideout-bg");
+  const player = Game.state.player;
+
+  // Dynamische Werte abrufen (Basis + Boni)
+  const effectiveMaxHp = Game.getPlayerMaxHp();
+  const effectiveDefense = Game.getPlayerDefense();
+  const effectiveAttack = Game.getPlayerAttackValue();
+
+  // XP Prozent berechnen
+  const xpPercent = Math.min(100, (player.xp / player.maxXp) * 100);
+
+  // (Die Berechnung der bonusDmg etc. Strings brauchen wir hier jetzt nicht mehr für die Anzeige,
+  // aber wir lassen die Logik im Hintergrund, falls wir sie später doch wieder brauchen)
+
+  this.elements.sceneContent.innerHTML = `
+      <div class="stats-screen">
+          <h2>Charakterwerte</h2>
+          
+          <div class="xp-container">
+              <div class="xp-label">
+                  <span>Erfahrung</span>
+                  <span>${player.xp} / ${player.maxXp} XP</span>
+              </div>
+              <div class="xp-bar-bg">
+                  <div class="xp-bar-fill" style="width: ${xpPercent}%"></div>
+              </div>
+          </div>
+
+          <div class="stats-display">
+              <div class="stat-row">
+                  <span class="stat-label">Level:</span>
+                  <span class="stat-value">${player.level}</span>
+              </div>
+
+              <div class="stat-row">
+                  <span class="stat-label">HP:</span>
+                  <div style="text-align: right;">
+                      <span class="stat-value">${player.hp}/${effectiveMaxHp}</span>
+                      </div>
+              </div>
+
+              <div class="stat-row">
+                  <span class="stat-label">Angriff:</span>
+                  <div style="text-align: right;">
+                      <span class="stat-value">${effectiveAttack}</span>
+                  </div>
+              </div>
+
+              <div class="stat-row">
+                  <span class="stat-label">Verteidigung:</span>
+                  <div style="text-align: right;">
+                      <span class="stat-value">${effectiveDefense}</span>
+                      </div>
+              </div>
+
+              <div class="stat-row">
+                  <span class="stat-label">Glitzer:</span>
+                  <span class="stat-value">${player.stats.glitzer}</span>
+              </div>
+          </div>
+          
+      </div>
+  `;
+
+  // Button Grid mit "Badass Rank" Button
+  const tokenText =
+    player.levelTokens > 0
+      ? `Level Up (${player.levelTokens})`
+      : "Level Up";
+
+  this.elements.buttonGrid.innerHTML = `
+      <button class="game-button" id="btn-back">Zurück</button>
+      <button class="game-button" id="btn-open-levelup">${tokenText}</button>
+  `;
+  
+  this.elements.buttonGrid.className = "button-grid shop-grid";
+
+  document.getElementById("btn-back").addEventListener("click", () => {
+    this.showHideout();
+  });
+
+  document
+    .getElementById("btn-open-levelup")
+    .addEventListener("click", () => {
+      this.showLevelUpScreen();
+    });
+},
+
+  // In js/ui.js - Neue Funktion
+
+  showLevelUpScreen() {
     this.elements.visualArea.classList.remove("hideout-bg");
     const player = Game.state.player;
+    const tokens = player.levelTokens;
+
+    // Aktuelle Werte formatieren (z.B. 0.05 wird zu "5.0%")
+    const dmgVal = (player.bonusStats.damage * 100).toFixed(1);
+    const resVal = (player.bonusStats.resistance * 100).toFixed(1);
+    const hpVal = (player.bonusStats.health * 100).toFixed(1);
+
+    const canInvest = tokens > 0;
 
     this.elements.sceneContent.innerHTML = `
-            <div class="stats-screen">
-                <h2>Charakterwerte</h2>
-                <div class="stats-display">
-                    <div class="stat-row">
-                        <span class="stat-label">Level:</span>
-                        <span class="stat-value">${player.level}</span>
+        <div class="badass-screen">
+            <div class="token-display">
+                Verfügbare Tokens: ${tokens}
+            </div>
+
+            <div class="badass-stats-list">
+                <div class="badass-row">
+                    <div class="badass-info">
+                        <div class="badass-name">Kriegskunst</div>
+                        <div class="badass-desc">Erhöht deinen Waffenschaden</div>
+                        <div class="badass-val">Aktuell: +${dmgVal}%</div>
                     </div>
-                    <div class="stat-row">
-                        <span class="stat-label">HP:</span>
-                        <span class="stat-value">${player.hp}/${player.maxHp}</span>
+                    <button class="badass-btn" data-stat="damage" ${!canInvest ? "disabled" : ""}>
+                        +1% Schaden
+                    </button>
+                </div>
+
+                <div class="badass-row">
+                    <div class="badass-info">
+                        <div class="badass-name">Eisenhaut</div>
+                        <div class="badass-desc">Reduziert eingehenden Schaden</div>
+                        <div class="badass-val">Aktuell: +${resVal}%</div>
                     </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Stärke:</span>
-                        <span class="stat-value">${player.stats.strength}</span>
+                    <button class="badass-btn" data-stat="resistance" ${!canInvest ? "disabled" : ""}>
+                        +0.5% Resistenz
+                    </button>
+                </div>
+
+                <div class="badass-row">
+                    <div class="badass-info">
+                        <div class="badass-name">Vitalität</div>
+                        <div class="badass-desc">Erhöht deine maximalen HP</div>
+                        <div class="badass-val">Aktuell: +${hpVal}%</div>
                     </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Verteidigung:</span>
-                        <span class="stat-value">${player.stats.defense}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Glitzer:</span>
-                        <span class="stat-value">${player.stats.glitzer}</span>
-                    </div>
+                    <button class="badass-btn" data-stat="health" ${!canInvest ? "disabled" : ""}>
+                        +1% Max HP
+                    </button>
                 </div>
             </div>
-        `;
+        </div>
+    `;
 
     this.elements.buttonGrid.innerHTML = `
-            <button class="game-button" id="btn-back">Zurück</button>
-        `;
+        <button class="game-button" id="btn-back-stats">Zurück</button>
+    `;
+    this.elements.buttonGrid.className = "button-grid single-button";
 
-    document.getElementById("btn-back").addEventListener("click", () => {
-      this.showHideout();
+    document.getElementById("btn-back-stats").addEventListener("click", () => {
+      this.showStatsScreen(); // Zurück zum Stats Screen
+    });
+
+    // Event Listeners für Investieren
+    document.querySelectorAll(".badass-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const statType = btn.dataset.stat;
+        const success = Game.investToken(statType); // Ruft Logik aus Teil 1 auf
+
+        if (success) {
+          // Screen neu laden, um Werte zu aktualisieren
+          this.showLevelUpScreen();
+        }
+      });
     });
   },
 
@@ -1296,7 +1432,7 @@ const UI = {
       Game.showScreen("hideout");
     });
 
-// Event Listeners für Boss-Welten
+    // Event Listeners für Boss-Welten
     document.querySelectorAll(".boss-world-card").forEach((card) => {
       card.addEventListener("click", () => {
         if (card.classList.contains("locked")) return;
@@ -1307,7 +1443,7 @@ const UI = {
       });
     });
   },
-  
+
   // Boss-Crawl Bestätigungs-Popup
   showCrawlConfirmation(worldId) {
     const world = Game.bossWorlds[worldId];
@@ -1351,7 +1487,7 @@ const UI = {
     });
 
     cancelBtn.addEventListener("click", closePopup);
-    
+
     // Klick auf Hintergrund schließt auch
     overlay.addEventListener("click", (e) => {
       if (e.target === overlay) closePopup();
@@ -2329,13 +2465,13 @@ const UI = {
 
   // In js/ui.js (neue Funktion)
 
-// Item Details Popup speziell für den Kampf
-showItemDetailsPopupBattle(itemId) {
-    const item = Game.state.player.inventory.find(i => i.id === itemId);
+  // Item Details Popup speziell für den Kampf
+  showItemDetailsPopupBattle(itemId) {
+    const item = Game.state.player.inventory.find((i) => i.id === itemId);
     if (!item) return;
 
     const itemDef = Game.items[item.id];
-    const isConsumable = itemDef && itemDef.type === 'consumable';
+    const isConsumable = itemDef && itemDef.type === "consumable";
 
     // Erstelle Overlay (HTML Struktur ist identisch zu den anderen Popups)
     const overlayHTML = `
@@ -2348,56 +2484,62 @@ showItemDetailsPopupBattle(itemId) {
                 <div class="popup-content">
                     <div class="item-icon-large"></div>
                     <div class="item-description">${item.description}</div>
-                    <div class="item-type">Typ: ${itemDef ? itemDef.type : 'Unbekannt'}</div>
+                    <div class="item-type">Typ: ${itemDef ? itemDef.type : "Unbekannt"}</div>
                     <div class="item-type" style="margin-top: 5px; color: #fbbf24; font-size: 0.8em;">(Shift + Klick im Inventar zum schnellen Nutzen)</div>
                 </div>
                 <div class="popup-actions">
-                    ${isConsumable ? `<button class="popup-btn use-btn" id="use-item-btn">Verwenden</button>` : ''}
+                    ${isConsumable ? `<button class="popup-btn use-btn" id="use-item-btn">Verwenden</button>` : ""}
                     <button class="popup-btn close-btn" id="close-btn">Schließen</button>
                 </div>
             </div>
         </div>
     `;
 
-    document.body.insertAdjacentHTML('beforeend', overlayHTML);
+    document.body.insertAdjacentHTML("beforeend", overlayHTML);
 
     // Event Listeners
-    const overlay = document.getElementById('item-details-overlay');
-    const closePopupBtn = document.getElementById('close-popup-btn');
-    const closeBtn = document.getElementById('close-btn');
-    const useBtn = document.getElementById('use-item-btn');
+    const overlay = document.getElementById("item-details-overlay");
+    const closePopupBtn = document.getElementById("close-popup-btn");
+    const closeBtn = document.getElementById("close-btn");
+    const useBtn = document.getElementById("use-item-btn");
 
     const closePopup = () => {
-        overlay.remove();
+      overlay.remove();
     };
 
-    closePopupBtn.addEventListener('click', closePopup);
-    closeBtn.addEventListener('click', closePopup);
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) closePopup();
+    closePopupBtn.addEventListener("click", closePopup);
+    closeBtn.addEventListener("click", closePopup);
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) closePopup();
     });
 
     if (useBtn) {
-        useBtn.addEventListener('click', () => {
-            // Item nutzen
-            const healed = Game.useItem(itemId);
+      useBtn.addEventListener("click", () => {
+        // Item nutzen
+        const healed = Game.useItem(itemId);
 
-            if (healed !== false) {
-                // Log-Logik für den Kampf
-                if (Game.state.currentBattle && typeof healed === 'number' && healed > 0) {
-                     Game.state.currentBattle.log.push(`<span class="log-source player">Inventar:</span> Heiltrank genutzt! +${healed} HP`);
-                }
+        if (healed !== false) {
+          // Log-Logik für den Kampf
+          if (
+            Game.state.currentBattle &&
+            typeof healed === "number" &&
+            healed > 0
+          ) {
+            Game.state.currentBattle.log.push(
+              `<span class="log-source player">Inventar:</span> Heiltrank genutzt! +${healed} HP`,
+            );
+          }
 
-                // Popup schließen
-                closePopup();
+          // Popup schließen
+          closePopup();
 
-                // WICHTIG: Kampf-UI aktualisieren statt Hideout-UI
-                this.createOrUpdateInventoryWindow(); // Inventar-Liste neu rendern (Menge -1)
-                this.updateBattleScreen(); // HP-Balken und Log aktualisieren
-            }
-        });
+          // WICHTIG: Kampf-UI aktualisieren statt Hideout-UI
+          this.createOrUpdateInventoryWindow(); // Inventar-Liste neu rendern (Menge -1)
+          this.updateBattleScreen(); // HP-Balken und Log aktualisieren
+        }
+      });
     }
-},
+  },
 
   // Kampf-Inventar-Fenster erstellen/updaten
   createOrUpdateInventoryWindow() {
@@ -2484,37 +2626,48 @@ showItemDetailsPopupBattle(itemId) {
   },
 
   // Event Listeners für Inventar-Fenster
-setupInventoryWindowListeners(windowElement) {
-    windowElement.querySelectorAll('.inventory-item-battle-horizontal').forEach(itemEl => {
-        itemEl.addEventListener('click', (e) => { // 'e' (Event) Parameter hinzufügen
-            const itemId = itemEl.dataset.itemId;
+  setupInventoryWindowListeners(windowElement) {
+    windowElement
+      .querySelectorAll(".inventory-item-battle-horizontal")
+      .forEach((itemEl) => {
+        itemEl.addEventListener("click", (e) => {
+          // 'e' (Event) Parameter hinzufügen
+          const itemId = itemEl.dataset.itemId;
 
-            // PRÜFUNG: Ist Shift gedrückt?
-            if (e.shiftKey) {
-                // Shift+Klick -> Sofort nutzen (altes Verhalten)
-                const healed = Game.useItem(itemId);
+          // PRÜFUNG: Ist Shift gedrückt?
+          if (e.shiftKey) {
+            // Shift+Klick -> Sofort nutzen (altes Verhalten)
+            const healed = Game.useItem(itemId);
 
-                if (healed !== false) {
-                    // Item wurde genutzt, Fenster updaten
-                    this.createOrUpdateInventoryWindow();
-                    this.updateBattleScreen();
-                    
-                    // Optional: Log Eintrag hinzufügen (da Game.useItem das nicht automatisch für den Battle-Log macht)
-                    if (Game.state.currentBattle && typeof healed === 'number' && healed > 0) {
-                         Game.state.currentBattle.log.push(`<span class="log-source player">Inventar:</span> Heiltrank (Shift) genutzt! +${healed} HP`);
-                         // Log Fenster aktualisieren
-                         if(document.getElementById('battle-log-window')) {
-                             this.createOrUpdateBattleLogWindow(Game.state.currentBattle.log);
-                         }
-                    }
+            if (healed !== false) {
+              // Item wurde genutzt, Fenster updaten
+              this.createOrUpdateInventoryWindow();
+              this.updateBattleScreen();
+
+              // Optional: Log Eintrag hinzufügen (da Game.useItem das nicht automatisch für den Battle-Log macht)
+              if (
+                Game.state.currentBattle &&
+                typeof healed === "number" &&
+                healed > 0
+              ) {
+                Game.state.currentBattle.log.push(
+                  `<span class="log-source player">Inventar:</span> Heiltrank (Shift) genutzt! +${healed} HP`,
+                );
+                // Log Fenster aktualisieren
+                if (document.getElementById("battle-log-window")) {
+                  this.createOrUpdateBattleLogWindow(
+                    Game.state.currentBattle.log,
+                  );
                 }
-            } else {
-                // Normaler Klick -> Popup öffnen
-                this.showItemDetailsPopupBattle(itemId);
+              }
             }
+          } else {
+            // Normaler Klick -> Popup öffnen
+            this.showItemDetailsPopupBattle(itemId);
+          }
         });
-    });
-},
+      });
+  },
 
   // Ability-Fenster erstellen/updaten
   createOrUpdateAbilityWindow() {
@@ -2639,13 +2792,18 @@ setupInventoryWindowListeners(windowElement) {
     });
   },
 
-  // Control-Fenster erstellen/updaten
+// Control-Fenster erstellen/updaten
   createOrUpdateControlWindow() {
     const battle = Game.state.currentBattle;
     if (!battle) return;
 
     const player = Game.state.player;
-    const hpPercent = (player.hp / player.maxHp) * 100;
+    
+    // ÄNDERUNG: Dynamische MaxHP holen (Basis + Bonus)
+    const currentMaxHp = Game.getPlayerMaxHp();
+    
+    // ÄNDERUNG: Prozentberechnung mit dem dynamischen Wert
+    const hpPercent = Math.min(100, (player.hp / currentMaxHp) * 100);
 
     let existingWindow = document.getElementById("control-window");
 
@@ -2656,7 +2814,7 @@ setupInventoryWindowListeners(windowElement) {
                     <div class="hp-bar-label">HP</div>
                     <div class="hp-bar-wrapper">
                         <div class="hp-bar-fill" style="width: ${hpPercent}%"></div>
-                        <div class="hp-bar-text">${player.hp}/${player.maxHp}</div>
+                        <div class="hp-bar-text">${player.hp}/${currentMaxHp}</div>
                     </div>
                 </div>
                 

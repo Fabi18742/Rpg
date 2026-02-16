@@ -2462,3 +2462,121 @@ img, svg {
     color: #ffcccc;
     font-style: italic;
 }
+
+/* ===== LEVEL SYSTEM & BADASS UI ===== */
+
+/* XP Bar im Stats Screen */
+.xp-container {
+    width: 100%;
+    margin-bottom: 20px;
+    background: #000;
+    border: 2px solid var(--border-color);
+    padding: 5px;
+}
+
+.xp-label {
+    font-size: 14px;
+    color: #a855f7; /* Lila für XP */
+    font-weight: bold;
+    margin-bottom: 5px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.xp-bar-bg {
+    width: 100%;
+    height: 15px;
+    background: #222;
+    border: 1px solid #444;
+}
+
+.xp-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #7c3aed, #a855f7);
+    width: 0%;
+}
+
+/* Badass Rank Window */
+.badass-screen {
+    padding: 20px;
+    max-width: 600px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.token-display {
+    font-size: 24px;
+    color: #fbbf24; /* Gold/Gelb */
+    font-weight: bold;
+    margin-bottom: 30px;
+    padding: 15px;
+    border: 2px solid #fbbf24;
+    background: rgba(251, 191, 36, 0.1);
+    display: inline-block;
+}
+
+.badass-stats-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.badass-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #000;
+    border: 2px solid var(--border-color);
+    padding: 15px;
+}
+
+.badass-row:hover {
+    border-color: #fbbf24;
+}
+
+.badass-info {
+    text-align: left;
+    flex: 1;
+}
+
+.badass-name {
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+.badass-val {
+    color: #a855f7; /* Lila für den Bonus-Wert */
+    font-weight: bold;
+}
+
+.badass-desc {
+    font-size: 12px;
+    color: var(--placeholder-color);
+}
+
+.badass-btn {
+    background: #000;
+    color: #fbbf24;
+    border: 2px solid #fbbf24;
+    padding: 8px 15px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.badass-btn:hover:not(:disabled) {
+    background: #fbbf24;
+    color: #000;
+}
+
+.badass-btn:disabled {
+    opacity: 0.3;
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+/* Neuer Button im Stats Screen */
+#btn-open-levelup {
+    border-color: #fbbf24;
+    color: #fbbf24;
+}
