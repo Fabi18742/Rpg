@@ -1633,6 +1633,7 @@ const UI = {
     this.elements.buttonGrid.innerHTML = `
             <button class="game-button" id="btn-back">Zurück</button>
         `;
+    this.elements.buttonGrid.className = "button-grid single-button";
 
     document.getElementById("btn-back").addEventListener("click", () => {
       Game.showScreen("hideout");
@@ -1764,6 +1765,7 @@ const UI = {
     this.elements.buttonGrid.innerHTML = `
             <button class="game-button" id="btn-inventory-crawl">Inventar</button>
         `;
+    this.elements.buttonGrid.className = "button-grid single-button";
 
     // Inventar-Button
     document
