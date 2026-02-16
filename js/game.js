@@ -1102,16 +1102,20 @@ playerAttack(abilityIndex) {
       });
 
       // XP gutschreiben
-      if (totalXpGained > 0) {
+if (totalXpGained > 0) {
+        // 1. Altes Level zwischenspeichern
+        const levelBefore = this.state.player.level;
+
         this.gainXp(totalXpGained);
+
         resultMessages.push(
           `<span style="color: #a855f7; font-weight:bold;">+${totalXpGained} XP</span>`,
         );
 
-        // Info falls Level Up (checken wir einfach über Tokens)
-        if (this.state.player.levelTokens > 0) {
+        // 2. Nur wenn das Level jetzt höher ist als vorher, zeige die Nachricht
+        if (this.state.player.level > levelBefore) {
           resultMessages.push(
-            `<strong style="color: #fbbf24;">LEVEL UP! Token verfügbar!</strong>`,
+            `<strong style="color: #fbbf24;">LEVEL UP! Level ${this.state.player.level} erreicht!</strong>`,
           );
         }
       }
