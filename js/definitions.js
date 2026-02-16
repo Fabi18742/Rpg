@@ -394,7 +394,7 @@ const Definitions = {
       stats: { strength: 0, defense: 0, magic: 0, speed: 2 },
       weapon: { baseId: "monster_teeth", effects: [] },
       drops: ["ritual_knochen"],
-      xpValue: 15,
+      xpValue: 0,
     },
     wolf: {
       id: "wolf",
