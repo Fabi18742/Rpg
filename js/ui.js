@@ -2292,11 +2292,11 @@ const UI = {
             </div>
         `;
 
-    // NEU: Den Button "Wiederholen" im Grid hinzufügen
+    // Reihenfolge getauscht: Ritual durchführen (Mitte), Wiederholen (Rechts)
     this.elements.buttonGrid.innerHTML = `
             <button class="game-button" id="btn-back">Zurück</button>
-            <button class="game-button ${hasLastRitual ? "" : "disabled"}" id="btn-repeat-ritual" ${hasLastRitual ? "" : "disabled"}>Wiederholen</button>
             <button class="game-button ${ritual.selectedItems.filter((id) => id !== null).length === 6 ? "" : "disabled"}" id="btn-perform-ritual" ${ritual.selectedItems.filter((id) => id !== null).length === 6 ? "" : "disabled"}>Ritual durchführen</button>
+            <button class="game-button ${hasLastRitual ? "" : "disabled"}" id="btn-repeat-ritual" ${hasLastRitual ? "" : "disabled"}>Wiederholen</button>
         `;
 
     this.elements.buttonGrid.className = "button-grid hideout-grid";
@@ -2308,7 +2308,7 @@ const UI = {
       this.showHideout();
     });
 
-    // NEU: Event Listener für die Wiederholung
+    // Event Listener für die Wiederholung
     document
       .getElementById("btn-repeat-ritual")
       .addEventListener("click", () => {
@@ -2316,7 +2316,6 @@ const UI = {
           // UI neu laden, um die befüllten Slots anzuzeigen
           this.showRitualSelection();
         } else {
-          // Feedback, falls Items fehlen (optional)
           console.log("Nicht genug Materialien für eine Wiederholung!");
         }
       });
