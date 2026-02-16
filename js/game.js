@@ -58,7 +58,7 @@ const Game = {
 
   // Initialisierung
   init() {
-    console.log("Game wird initialisiert... 0.2.25");
+    console.log("Game wird initialisiert... 0.2.26");
 
     // Spielstand laden falls vorhanden
     const savedState = Storage.loadGameState();
@@ -207,7 +207,7 @@ const Game = {
   },
 
   // Waffeninstanz hinzufügen
-  // weaponInstance = { baseId: 'sword', effects: ['testdamage'] }
+  // weaponInstance = { baseId: 'sword', effects: ['sharpness'] }
   addWeapon(weaponInstance) {
     if (!weaponInstance.baseId) {
       console.error("Waffe muss baseId haben");

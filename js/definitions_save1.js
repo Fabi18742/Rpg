@@ -62,12 +62,12 @@ const Definitions = {
             value: 1,
             glitzerValue: 1
         },
-        ritualItem_weak_testdamage: {
-            id: 'ritualItem_weak_testdamage',
+        ritualItem_weak_sharpness: {
+            id: 'ritualItem_weak_sharpness',
             name: 'Schwaches Ritual-Item (Schaden)',
             type: 'ritual',
             description: 'Ein schwaches Item mit Schadensaffinit\u00e4t',
-            modifierType: 'testdamage',
+            modifierType: 'sharpness',
             value: 1,
             glitzerValue: 1
         },
@@ -80,12 +80,12 @@ const Definitions = {
             value: 5,
             glitzerValue: 1
         },
-        ritualItem_medium_testdamage: {
-            id: 'ritualItem_medium_testdamage',
+        ritualItem_medium_sharpness: {
+            id: 'ritualItem_medium_sharpness',
             name: 'Mittleres Ritual-Item (Schaden)',
             type: 'ritual',
             description: 'Ein mittleres Item mit Schadensaffinit\u00e4t',
-            modifierType: 'testdamage',
+            modifierType: 'sharpness',
             value: 5,
             glitzerValue: 1
         },
@@ -98,12 +98,12 @@ const Definitions = {
             value: 10,
             glitzerValue: 1
         },
-        ritualItem_strong_testdamage: {
-            id: 'ritualItem_strong_testdamage',
+        ritualItem_strong_sharpness: {
+            id: 'ritualItem_strong_sharpness',
             name: 'Starkes Ritual-Item (Schaden)',
             type: 'ritual',
             description: 'Ein starkes Item mit Schadensaffinit\u00e4t',
-            modifierType: 'testdamage',
+            modifierType: 'sharpness',
             value: 10,
             glitzerValue: 1        },
         ritualItem_weak_poison: {
@@ -177,9 +177,9 @@ const Definitions = {
 
     // ===== EFFEKT-SYSTEM =====
     effects: {
-        testdamage: {
-            id: 'testdamage',
-            name: 'Testdamage',
+        sharpness: {
+            id: 'sharpness',
+            name: 'sharpness',
             description: 'Fügt +3 zusätzlichen Schaden hinzu',
             glitzerValueMultiplier: 1.5,
             type: 'damage',
@@ -294,7 +294,7 @@ const Definitions = {
             },
             weapon: {                     // Waffeninstanz mit Effekt
                 baseId: 'rubberSword',
-                effects: ['testdamage'] // +3 Schaden Effekt
+                effects: ['sharpness'] // +3 Schaden Effekt
             },
             drops: ['testseed']          // Item-IDs die gedroppt werden
         },
@@ -471,7 +471,7 @@ const Definitions = {
                     currency: 'glitzer'
                 },
                 {
-                    itemId: 'ritualItem_weak_testdamage',
+                    itemId: 'ritualItem_weak_sharpness',
                     price: 0,
                     currency: 'glitzer'
                 },
@@ -481,7 +481,7 @@ const Definitions = {
                     currency: 'glitzer'
                 },
                 {
-                    itemId: 'ritualItem_medium_testdamage',
+                    itemId: 'ritualItem_medium_sharpness',
                     price: 0,
                     currency: 'glitzer'
                 },
@@ -491,7 +491,7 @@ const Definitions = {
                     currency: 'glitzer'
                 },
                 {
-                    itemId: 'ritualItem_strong_testdamage',
+                    itemId: 'ritualItem_strong_sharpness',
                     price: 0,
                     currency: 'glitzer'
                 },
