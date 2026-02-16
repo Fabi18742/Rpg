@@ -58,7 +58,7 @@ const Game = {
 
   // Initialisierung
   init() {
-    console.log("Game wird initialisiert... 0.2.28");
+    console.log("Game wird initialisiert... 0.2.29");
 
     // Spielstand laden falls vorhanden
     const savedState = Storage.loadGameState();
@@ -1897,7 +1897,37 @@ const Game = {
     this.startBattle(boss);
   },
 
-  // ===== RITUAL-SYSTEM =====
+  // ===== RITUAL-SYSTEM =====s
+  fillLastRitual() {
+    if (!this.state.lastRitualItems) return false;
+
+    // 1. Prüfen, ob alle Items noch im Inventar sind
+    const tempInventory = JSON.parse(
+      JSON.stringify(this.state.player.inventory),
+    );
+    let canRepeat = true;
+
+    this.state.lastRitualItems.forEach((itemId) => {
+      const invItem = tempInventory.find(
+        (i) => i.id === itemId && i.quantity > 0,
+      );
+      if (invItem) {
+        invItem.quantity--;
+      } else {
+        canRepeat = false;
+      }
+    });
+
+    // 2. Wenn möglich, Slots füllen
+    if (canRepeat) {
+      this.state.currentRitual = {
+        selectedItems: [...this.state.lastRitualItems],
+      };
+      this.save();
+      return true;
+    }
+    return false;
+  },
 
   // Ritual durchführen
   performRitual() {
@@ -1906,6 +1936,7 @@ const Game = {
       console.log("Ritual benötigt exakt 6 Items");
       return false;
     }
+    this.state.lastRitualItems = [...ritual.selectedItems];
 
     // Items aus Inventar entfernen
     const itemDetails = ritual.selectedItems.map((itemId) => {
@@ -2056,7 +2087,7 @@ const Game = {
 
     // Zeige den Result-Screen. Wenn man "Weiter" klickt, geht's ins Hideout.
     UI.showResultScreen("Ritual erfolgreich!", messages, () => {
-      this.showScreen("hideout");
+      UI.showRitualSelection();
     });
 
     return true;

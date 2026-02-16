@@ -394,23 +394,26 @@ const UI = {
       </div>
   `;
 
-
     // Logik für den Button-Text: Nur die Zahl in Klammern wird farbig
-let tokenText = "Level Up";
-if (player.levelTokens > 0) {
-    // Die Zahl wird in das Span mit der Klasse .token-alert gepackt
-    tokenText = `Level Up <span class="token-alert">(${player.levelTokens})</span>`;
-}
+    let tokenText = "Level Up";
+    if (player.levelTokens > 0) {
+      // Die Zahl wird in das Span mit der Klasse .token-alert gepackt
+      tokenText = `Level Up <span class="token-alert">(${player.levelTokens})</span>`;
+    }
 
-this.elements.buttonGrid.innerHTML = `
+    this.elements.buttonGrid.innerHTML = `
   <button class="game-button" id="btn-back">Zurück</button>
   <button class="game-button" id="btn-open-levelup">${tokenText}</button>
 `;
     // Beide Buttons nutzen jetzt die gleiche Klasse und sehen identisch aus
-    this.elements.buttonGrid.className = "button-grid shop-grid"; 
+    this.elements.buttonGrid.className = "button-grid shop-grid";
 
-    document.getElementById("btn-back").addEventListener("click", () => this.showHideout());
-    document.getElementById("btn-open-levelup").addEventListener("click", () => this.showLevelUpScreen());
+    document
+      .getElementById("btn-back")
+      .addEventListener("click", () => this.showHideout());
+    document
+      .getElementById("btn-open-levelup")
+      .addEventListener("click", () => this.showLevelUpScreen());
   },
 
   showLevelUpScreen() {
@@ -2253,6 +2256,8 @@ this.elements.buttonGrid.innerHTML = `
     }
 
     const ritual = Game.state.currentRitual;
+    // NEU: Prüfen, ob ein gespeichertes Rezept vorhanden ist
+    const hasLastRitual = !!Game.state.lastRitualItems;
 
     this.elements.visualArea.classList.remove("hideout-bg");
     this.elements.sceneContent.innerHTML = `
@@ -2285,10 +2290,14 @@ this.elements.buttonGrid.innerHTML = `
             </div>
         `;
 
+    // NEU: Den Button "Wiederholen" im Grid hinzufügen
     this.elements.buttonGrid.innerHTML = `
             <button class="game-button" id="btn-back">Zurück</button>
+            <button class="game-button ${hasLastRitual ? "" : "disabled"}" id="btn-repeat-ritual" ${hasLastRitual ? "" : "disabled"}>Wiederholen</button>
             <button class="game-button ${ritual.selectedItems.filter((id) => id !== null).length === 6 ? "" : "disabled"}" id="btn-perform-ritual" ${ritual.selectedItems.filter((id) => id !== null).length === 6 ? "" : "disabled"}>Ritual durchführen</button>
         `;
+
+    this.elements.buttonGrid.className = "button-grid hideout-grid";
 
     // Event Listeners
     document.getElementById("btn-back").addEventListener("click", () => {
@@ -2296,6 +2305,19 @@ this.elements.buttonGrid.innerHTML = `
       Game.save();
       this.showHideout();
     });
+
+    // NEU: Event Listener für die Wiederholung
+    document
+      .getElementById("btn-repeat-ritual")
+      .addEventListener("click", () => {
+        if (Game.fillLastRitual()) {
+          // UI neu laden, um die befüllten Slots anzuzeigen
+          this.showRitualSelection();
+        } else {
+          // Feedback, falls Items fehlen (optional)
+          console.log("Nicht genug Materialien für eine Wiederholung!");
+        }
+      });
 
     document
       .getElementById("btn-perform-ritual")
