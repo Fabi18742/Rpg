@@ -27,11 +27,6 @@ const Game = {
         defense: Definitions.player.stats.defense,
         glitzer: Definitions.player.stats.glitzer,
       },
-      bonusStats: {
-        damage: 0.0,
-        resistance: 0.0,
-        health: 0.0,
-      },
       levelTokens: 0,
       xp: 0,
       maxXp: 100,
@@ -533,21 +528,6 @@ const Game = {
     player.levelTokens--;
     this.save();
     return true;
-  },
-
-  // Hilfsfunktion: Max HP neu berechnen (Basis + Bonus)
-  recalculateMaxHp() {
-    const player = this.state.player;
-    const baseHp = Definitions.player.maxHp;
-
-    // Einfache Variante für jetzt: Wir heilen den Spieler um den gewonnenen Betrag
-    const oldMax = player.maxHp;
-    const bonusMultiplier = 1 + player.bonusStats.health;
-
-    // Entscheiden wir uns für "Addieren":
-    const hpGain = Math.floor(player.maxHp * 0.01); // 1% dazu
-    player.maxHp += hpGain;
-    player.hp += hpGain;
   },
 
   // 1. Dynamische Max-HP berechnen (Basis + Bonus)
