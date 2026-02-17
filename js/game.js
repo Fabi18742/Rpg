@@ -58,7 +58,7 @@ const Game = {
 
   // Initialisierung
   init() {
-    console.log("Game wird initialisiert... 0.2.29");
+    console.log("Game wird initialisiert... 0.2.30");
 
     // Spielstand laden falls vorhanden
     const savedState = Storage.loadGameState();
@@ -849,39 +849,54 @@ const Game = {
     const bossStrength = boss.stats.strength;
     const playerDefense = this.getPlayerDefense();
 
-    // 1. Basis-Schaden berechnen: Einfache Subtraktion
-    let rawDamage = bossBaseDamage + bossStrength - playerDefense;
+    // 1. Gesamten eingehenden Schaden berechnen (Basis + Stärke)
+    let rawIncomingDamage = bossBaseDamage + bossStrength;
 
-    // Sicherstellen, dass der Schaden nicht negativ wird
-    if (rawDamage < 0) rawDamage = 0;
+    // 2. Boss-Effekte (Schärfe etc.) VOR der Rüstung draufrechnen
+    let effectLogs = [];
 
-    let finalDamage = rawDamage;
-    let blockedAmount = 0;
-
-    // 2. Block-Multiplikator (Das ist die AP-Aktion im Kampf, die bleibt prozentual)
-    if (battle.damageMultiplier !== undefined) {
-      finalDamage = Math.floor(rawDamage * battle.damageMultiplier);
-      blockedAmount = rawDamage - finalDamage;
-    }
-
-    // 3. Boss-Effekte anwenden (z.B. Giftschaden oder Zusatzeffekte)
     if (bossWeapon && bossWeapon.effects && bossWeapon.effects.length > 0) {
       const effectResult = this.applyEffects(
-        finalDamage,
+        rawIncomingDamage, // Wir geben den bisherigen Rohschaden rein
         bossWeapon.effects,
         boss,
         this.state.player,
         battle,
       );
-      finalDamage = effectResult.damage;
+      // Schärfe (+5) wird hier jetzt zum Rohschaden addiert
+      rawIncomingDamage = effectResult.damage;
+      effectLogs = effectResult.logs;
     }
 
-    // 4. SCHADEN ZUFÜGEN (JETZT ALS ERSTES)
+    // 3. JETZT erst die Verteidigung abziehen (Damit wirkt Rüstung gegen Schärfe)
+    let damageAfterDef = rawIncomingDamage - playerDefense;
+
+    // Schaden darf nicht negativ sein
+    if (damageAfterDef < 0) damageAfterDef = 0;
+
+    let finalDamage = damageAfterDef;
+    let blockedAmount = 0;
+
+    // 4. Block-Multiplikator anwenden (falls geblockt wird)
+    if (battle.damageMultiplier !== undefined) {
+      finalDamage = Math.floor(damageAfterDef * battle.damageMultiplier);
+      blockedAmount = damageAfterDef - finalDamage;
+    }
+
+    // 5. SCHADEN ZUFÜGEN
     this.state.player.hp -= finalDamage;
 
-    // 5. SCHADEN LOGGEN
+    // 6. SCHADEN LOGGEN
+    // Wir bauen den Log so auf, dass die Rechnung logisch ist:
+    // (Basis + Str + Effekte - Def - Block)
     let damageLog = [`${bossBaseDamage} Basis`];
     if (bossStrength > 0) damageLog.push(`${bossStrength} Str`);
+
+    // Effekte hier einfügen (z.B. "+5 Schärfe")
+    if (effectLogs.length > 0) {
+      damageLog.push(...effectLogs);
+    }
+
     if (playerDefense > 0) damageLog.push(`-${playerDefense} Vert.`);
     if (blockedAmount > 0) damageLog.push(`-${blockedAmount} Geblockt`);
 
