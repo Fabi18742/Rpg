@@ -5,54 +5,97 @@ Bonus:
 Stadthalter (3)
 
 
-Story von:
+Story:
 =============
+
 Von Holzhütte (Anfang Ziel 1)
 durch Wald
 -------------
+
 in Stadt
 durch Stadt
 -------------
+
 in Katakomben
 durch Katakomben
 -------------
+
 in Sumpf
 durch Sumpf (Ende Ziel 1)(Anfang Ziel 2)
 -------------
+
 in Outlands
 durch Outlands
 -------------
+
 in ...
 durch ...
 -------------
+
 in Stadtmauern
 durch Stadtmauern
 -------------
+
 in Burg
 durch Burg (Ende Ziel 2)(Bonus Ziel 3)
 -------------
 
 
-ORTE:
+
+Kapitel:
 =============
-Holzhütte:
+
+Wald:
 -------------
 Options: Inventar, Stats, Ausrüstung, Kapitel(Bosskämpfe)
 Abilities: Stich, Schlag, Schnitt
-Kapitel: 1 Bosskampf 1
+Weapons: Alter Brieföffner, Stein im Socken, Zerbrochene Glasflasche
+Bosskampf 1 (Unlocked Stadt / Bosskampf 2)
+
+Stadt:
+-------------
+Options: Händler, Ritual (unlocked durch Stadt events)
+Bosskampf 2 (Unlocked Katakomben / Bosskampf 3)
+
+Katakomben:
+-------------
+
+Bosskampf 3 (Unlocked Sumpf / Bosskampf 4)
+
+Sumpf:
+-------------
+
+Bosskampf 4 (Unlocked Outlands / Bosskampf 5)
+
+Outlands:
+-------------
+
+Bosskampf 5 (Unlocked ... / Bosskampf 6)
 
 
-ABILITIES:
-=============
-Stich (1 | 100% | 1 AP | Stich)
-Schlag (1 | 100% | 1 AP | Schlag)
-Schnitt (1 | 100% | 1 AP | Schnitt)
+... :
+-------------
 
-WEAPONS:
-=============
-Alter Brieföffner (typ: Stich)
-Stein im Socken (typ: Schlag)
-Zerbrochene Glasflasche (typ: Schnitt)
+Bosskampf 6 (Unlocked Stadtmauern / Bosskampf 7)
+
+
+Stadtmauern:
+-------------
+
+Bosskampf 7 (Unlocked Burg / Bosskampf 8)
+
+
+Burg:
+-------------
+
+Bosskampf 8 (Unlocked [Bonus])
+
+
+
+
+
+
+
 
 BOSSE:
 =============
@@ -60,8 +103,41 @@ BOSSE:
 
 
 
+Gegner:
+=============
+Waldgoblin {
+    Gebiet: Wald
+    Typ: Kleiner Gegner im Wald
+}
 
 
+
+
+
+EVENTS: {Einzel Events} [Story Events]
+=============
+
+Wald:
+-------------
+Combat:
+
+Ein knacken im Gebüsch {
+    Gegner: 1 Waldgoblin
+} 
+
+Choice:
+
+
+
+
+Stadt:
+-------------
+
+Story:
+
+??? :[
+    Schaltet Ritual Frei
+]
 
 
 
