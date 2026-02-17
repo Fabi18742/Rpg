@@ -7,7 +7,7 @@ Stadthalter (3)
 
 Story von:
 =============
-Von Holzhütte (Ziel 1)
+Von Holzhütte (Anfang Ziel 1)
 durch Wald
 -------------
 in Stadt
@@ -16,9 +16,59 @@ durch Stadt
 in Katakomben
 durch Katakomben
 -------------
-in Sumpf (Abschluss Ziel 1)(Ziel 2)
-durch Sumpf
+in Sumpf
+durch Sumpf (Ende Ziel 1)(Anfang Ziel 2)
 -------------
 in Outlands
 durch Outlands
 -------------
+in ...
+durch ...
+-------------
+in Stadtmauern
+durch Stadtmauern
+-------------
+in Burg
+durch Burg (Ende Ziel 2)(Bonus Ziel 3)
+-------------
+
+
+ORTE:
+=============
+Holzhütte:
+-------------
+Options: Inventar, Stats, Ausrüstung, Kapitel(Bosskämpfe)
+Abilities: Stich, Schlag, Schnitt
+Kapitel: 1 Bosskampf 1
+
+
+ABILITIES:
+=============
+Stich (1 | 100% | 1 AP | Stich)
+Schlag (1 | 100% | 1 AP | Schlag)
+Schnitt (1 | 100% | 1 AP | Schnitt)
+
+WEAPONS:
+=============
+Alter Brieföffner (typ: Stich)
+Stein im Socken (typ: Schlag)
+Zerbrochene Glasflasche (typ: Schnitt)
+
+BOSSE:
+=============
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
