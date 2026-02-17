@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPG Relaunch</title>
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <div id="app">
+        <div class="visual-area" id="visual-area">
+            <div id="ui-hud" class="hud-overlay"></div>
+            
+            <div id="scene-content" style="opacity: 0.3; font-size: 24px;">
+                [SZENE / GEGNER BILD]
+            </div>
+        </div>
+
+        <div class="action-area">
+            
+            <div id="controls" style="text-align: center; color: #666;">
+                (Automatische Kampf-Simulation läuft...)
+            </div>
+        </div>
+        <div id="log-window" class="draggable-window" style="top: 300px; left: 50px; width: 400px; height: 200px;">
+            <div class="window-header">
+                <span class="window-title">Kampfprotokoll</span>
+                <div class="window-controls">
+                    <div class="win-btn minimize-btn">_</div>
+                </div>
+            </div>
+            <div class="window-content" id="combat-log">
+                <div class="log-entry">Willkommen im Fenstermodus.</div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="src/main.js"></script>
+</body>
+</html>
