@@ -1,49 +1,40 @@
-Ziel:
-In die Stadt weil Abenteuerlust (1)
-Dunkler Ritter (2)
-Bonus:
-Stadthalter (3)
-
-
-Story:
+Kampfsystem
 =============
+Crit Chance als Stat hinzufügen
 
-Von Holzhütte (Anfang Ziel 1)
-durch Wald
--------------
 
-in Stadt
-durch Stadt
--------------
 
-in Katakomben
-durch Katakomben
--------------
+Events
+=============
+Drachennest was Drache spawned
 
-in Sumpf
-durch Sumpf (Ende Ziel 1)(Anfang Ziel 2)
--------------
 
-in Outlands
-durch Outlands
--------------
 
-in ...
-durch ...
--------------
 
-in Stadtmauern
-durch Stadtmauern
--------------
+Startstats
+=============
+Abilities{
+    Schnitt, Stich, Schlag
+}
+Weapons{
+    Alter Brieföffner, Stein im Socken, Zerbrochene Glasflasche
+}
+Rüstung {
+    lederwams
+}
+Items{
 
-in Burg
-durch Burg (Ende Ziel 2)(Bonus Ziel 3)
--------------
+}
 
 
 
 Kapitel:
 =============
+Ziel:
+In die Stadt weil Abenteuerlust (1)
+Dunkler Ritter (2)
+Bonus:
+Stadthalter (3)
 
 Wald:
 -------------
@@ -89,62 +80,6 @@ Burg:
 -------------
 
 Bosskampf 8 (Unlocked [Bonus])
-
-
-
-
-
-
-
-
-BOSSE:
-=============
-
-
-
-
-Gegner:
-=============
-Waldgoblin {
-    Gebiet: Wald
-    Typ: Kleiner Gegner im Wald
-}
-
-
-
-
-
-EVENTS: {Einzel Events} [Story Events]
-=============
-
-Wald:
--------------
-Combat:
-
-Ein knacken im Gebüsch {
-    Gegner: 1 Waldgoblin
-} 
-
-Choice:
-
-
-
-
-Stadt:
--------------
-
-Story:
-
-??? :[
-    Schaltet Ritual Frei
-]
-
-
-
-
-
-
-
 
 
 
