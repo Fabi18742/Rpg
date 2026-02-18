@@ -23,6 +23,9 @@ export class BattleUI {
         return;
     }
 
+    const logWindow = document.getElementById('log-window');
+    if (logWindow) logWindow.style.display = 'flex';
+
     // FALL 1: KAMPF LÄUFT
     if (state.currentEnemy) {
       const enemy = state.currentEnemy;

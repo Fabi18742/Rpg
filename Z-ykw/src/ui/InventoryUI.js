@@ -25,9 +25,8 @@ export class InventoryUI {
         win.style.height = '400px';
         win.style.left = '20px';
         win.style.top = '80px';
-        
-        // Standardmäßig versteckt? Nein, wir lassen es offen zum Testen.
-        // win.style.display = 'none';
+        win.style.display = 'none';
+
 
         win.innerHTML = `
             <div class="window-header">

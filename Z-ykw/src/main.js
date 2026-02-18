@@ -5,7 +5,9 @@ import { CrawlEngine } from './engine/CrawlEngine.js';
 import { HUD } from './ui/HUD.js';
 import { BattleUI } from './ui/BattleUI.js';
 import { CrawlUI } from './ui/CrawlUI.js';
-import { HideoutUI } from './ui/HideoutUI.js'; // NEU
+import { HideoutUI } from './ui/HideoutUI.js';
+import { InventoryUI } from './ui/InventoryUI.js'; // Für das draggable Inventar im Kampf
+import { StatsUI } from './ui/StatsUI.js';       // Für die draggable Stats im Kampf
 import { windowManager } from './ui/WindowManager.js';
 
 console.log("RPG Engine v2.0 starting...");
@@ -18,15 +20,12 @@ window.gameAPI = {
     },
 
     // --- HIDEOUT BEFEHLE ---
-    switchHideoutTab: (tabName) => {
-        if(window.hideoutInstance) window.hideoutInstance.setTab(tabName);
-    },
-
+    // Die Navigation (switchHideoutScreen) wird jetzt direkt in HideoutUI.js registriert.
+    
     startAdventure: () => {
-        // Vom Hideout in den Dungeon wechseln
         console.log("🌲 Aufbrechen in den Wald...");
-        stateManager.enterDungeon(); // State ändern
-        CrawlEngine.startExploration('forest'); // Engine starten
+        stateManager.enterDungeon(); 
+        CrawlEngine.startExploration('forest'); 
     },
 
     // --- CRAWL / KAMPF BEFEHLE ---
@@ -34,15 +33,20 @@ window.gameAPI = {
         CrawlEngine.selectOption(index);
     },
 
-    // Wenn man im Crawl ist ("Weiter" klicken)
     searchEnemy: () => {
-        // Falls wir fertig sind -> Zurück ins Hideout
-        // (Das bauen wir später ein, erstmal weiter erkunden)
         CrawlEngine.generateOptions();
     },
     
     useSkill: (skillId) => {
         ActionEngine.useSkill(skillId);
+    },
+
+    // Brücke für die Kampf-Fenster (Toggles)
+    toggleInventory: () => {
+        if(window.inventoryWindow) window.inventoryWindow.toggle();
+    },
+    toggleStats: () => {
+        if(window.statsWindow) window.statsWindow.toggle();
     },
 
     reset: () => {
@@ -54,37 +58,37 @@ window.gameAPI = {
 try {
     stateManager.init();
     
-    // HUD (Bleibt immer sichtbar oben)
+    // 1. Permanentes HUD initialisieren
     const hud = new HUD('ui-hud');
     hud.init();
 
-    // CONTAINER SETUP
+    // 2. Statische Haupt-Ebenen in der Action-Area vorbereiten
     const controlsArea = document.getElementById('controls');
     controlsArea.innerHTML = ''; 
 
-    // Wir brauchen 3 Haupt-Ebenen, die sich abwechseln
-    
-    // 1. Hideout (Menü)
     const hideoutDiv = document.createElement('div');
     hideoutDiv.id = 'ui-hideout';
     controlsArea.appendChild(hideoutDiv);
 
-    // 2. Battle (Kampf)
     const battleDiv = document.createElement('div');
     battleDiv.id = 'ui-battle';
     controlsArea.appendChild(battleDiv);
     
-    // 3. Crawl (Kartenwahl)
     const crawlDiv = document.createElement('div');
     crawlDiv.id = 'ui-crawl';
     controlsArea.appendChild(crawlDiv);
 
-    // Initialisieren
+    // 3. UI-Instanzen für statische Screens erstellen
     window.hideoutInstance = new HideoutUI('ui-hideout');
     new BattleUI('ui-battle');
     new CrawlUI('ui-crawl');
 
-    // Log Fenster (immer da)
+    // 4. Floating Windows für den Kampf erstellen (starten versteckt)
+    // Diese sind getrennt von den festen Hideout-Screens!
+    window.inventoryWindow = new InventoryUI();
+    window.statsWindow = new StatsUI();
+
+    // 5. Log-Fenster beim WindowManager registrieren
     const logWindow = document.getElementById('log-window');
     if(logWindow) windowManager.addWindow(logWindow, 'log-window');
 
@@ -92,6 +96,7 @@ try {
     console.error("FEHLER BEIM START:", err);
 }
 
+// Globaler Event-Listener für das Kampfprotokoll
 window.addEventListener('combat-log', (e) => {
     const logContainer = document.getElementById('combat-log');
     if (logContainer) {
