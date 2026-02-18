@@ -9,6 +9,7 @@ export const Definitions = {
       speed: 10,
       critChance: 5,
     },
+    baseActionPoints: 3,
   },
   items: {
     rusty_sword: {
@@ -49,6 +50,7 @@ export const Definitions = {
       type: "attack",
       damageMult: 1.0, // 100% Schaden
       text: "greift an",
+      apCost: 1,
     },
     heavy_strike: {
       id: "heavy_strike",
@@ -57,6 +59,7 @@ export const Definitions = {
       damageMult: 1.5, // 150% Schaden
       accuracy: 0.7, // 70% Trefferchance (Logik bauen wir gleich)
       text: "holt weit aus",
+      apCost: 2,
     },
     quick_heal: {
       id: "quick_heal",
@@ -64,9 +67,10 @@ export const Definitions = {
       type: "heal",
       value: 15,
       text: "verbindet die Wunden",
+      apCost: 1,
     },
   },
-  
+
   enemies: {
     goblin: {
       id: "goblin",

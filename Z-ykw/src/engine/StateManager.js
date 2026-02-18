@@ -11,6 +11,8 @@ class StateManager {
       player: {
         hp: 0,
         maxHp: 0,
+        currentAp: 0,
+        maxAp: 0,
         xp: 0,
         level: 1,
         stats: {},
@@ -46,13 +48,39 @@ class StateManager {
       this.state.player.hp = Definitions.player.baseHp;
       this.state.player.stats = { ...Definitions.player.baseStats };
 
-      // Start-Items nur beim allerersten Start
       this.addItem("rusty_sword");
       this.addItem("potion_small");
 
       this.state.location = "hideout";
+      this.state.player.maxAp = Definitions.player.baseActionPoints;
+      this.state.player.currentAp = Definitions.player.baseActionPoints;
     }
 
+    if (!this.state.player.maxAp) {
+      this.state.player.maxAp = Definitions.player.baseActionPoints;
+      this.state.player.currentAp = Definitions.player.baseActionPoints;
+    }
+
+    this.notify();
+  }
+
+  modifyPlayerAp(amount) {
+    this.state.player.currentAp += amount;
+
+    // Nicht über Max AP gehen
+    if (this.state.player.currentAp > this.state.player.maxAp) {
+      this.state.player.currentAp = this.state.player.maxAp;
+    }
+    // Nicht unter 0 gehen
+    if (this.state.player.currentAp < 0) {
+      this.state.player.currentAp = 0;
+    }
+
+    this.notify();
+  }
+
+  resetPlayerAp() {
+    this.state.player.currentAp = this.state.player.maxAp;
     this.notify();
   }
 
