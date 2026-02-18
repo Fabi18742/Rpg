@@ -121,24 +121,18 @@ export class ActionEngine {
 
   static executeAttack(source, target, skill = null) {
     const state = stateManager.getState();
-    let attackerStats, defenderStats, weapon, attackerName;
+    let attacker, defender, attackerName;
 
-    // Standard-Werte falls kein Skill übergeben wurde (z.B. Gegner-Angriff)
-    const dmgMult = skill ? skill.damageMult || 1 : 1;
-    const accuracy = skill ? skill.accuracy || 1 : 1;
+    // Skill-Genauigkeit prüfen (Hit Chance)
+    const accuracy = skill ? skill.accuracy || 1 : 1; // Standard 100%
 
     if (source === "player") {
-      attackerStats = state.player.stats;
-      weapon = state.player.equipped.weapon;
-      defenderStats = { defense: state.currentEnemy.defense || 0 };
+      attacker = state.player;
+      defender = state.currentEnemy;
       attackerName = "Du";
     } else {
-      attackerStats = { strength: state.currentEnemy.strength, critChance: 0 };
-      weapon = null;
-      const armorDef = state.player.equipped.armor
-        ? state.player.equipped.armor.defense
-        : 0;
-      defenderStats = { defense: state.player.stats.defense + armorDef };
+      attacker = state.currentEnemy;
+      defender = state.player;
       attackerName = state.currentEnemy.name;
     }
 
@@ -148,49 +142,51 @@ export class ActionEngine {
         `${attackerName} verfehl${source === "player" ? "st" : "t"} das Ziel!`,
         "neutral",
       );
-      if (source === "player") {
-        this.checkTurnEnd();
-      }
+      if (source === "player") this.checkTurnEnd();
       return;
     }
 
-    // 2. Schaden berechnen
-    const calculation = StatCalculator.calculateAttackDamage(
-      attackerStats,
-      weapon,
+    // 2. Schaden berechnen (via StatCalculator Pipeline)
+    const attackResult = StatCalculator.calculateAttack(attacker, skill);
+
+    // 3. Verteidigung berechnen
+    const defenseResult = StatCalculator.calculateDefense(
+      defender,
+      attackResult.damage,
     );
 
-    // Skill-Multiplikator anwenden (Pipeline)
-    let rawDamage = Math.floor(calculation.damage * dmgMult);
+    const finalDamage = defenseResult.damage;
 
-    const finalDamage = StatCalculator.calculateIncomingDamage(
-      rawDamage,
-      defenderStats.defense,
-    );
+    // 4. Logging & State Update
+    let logMsg = "";
 
-    let critMsg = calculation.isCrit ? " (KRITISCH!)" : "";
-    const type = source === "player" ? "player" : "enemy";
+    // Crit Nachricht
+    if (attackResult.isCrit) {
+      logMsg += " (KRITISCH!)";
+    }
+
     const verb = source === "player" ? "triffst" : "trifft";
-
-    // Text aus Skill oder Standard
     const actionText = skill
       ? skill.text
       : source === "player"
         ? "greifst an"
         : "greift an";
 
+    // Beispiel Log: "Du (Wuchtschlag) triffst für 15 Schaden! (KRITISCH!)"
+    const type = source === "player" ? "player" : "enemy";
     this.log(
-      `${attackerName} ${source === "player" ? "" : "(" + actionText + ")"} ${verb} für ${finalDamage} Schaden${critMsg}!`,
+      `${attackerName} ${source === "player" ? "" : "(" + actionText + ")"} ${verb} für ${finalDamage} Schaden${logMsg}!`,
       type,
     );
 
+    // HP abziehen
     if (target === "player") {
       stateManager.modifyPlayerHp(-finalDamage);
     } else {
       stateManager.modifyEnemyHp(-finalDamage);
     }
 
-    // Wenn Spieler angegriffen hat -> Gegner Zug
+    // 5. Runden-Ende Check (nur für Spieler)
     if (source === "player") {
       if (stateManager.getState().currentEnemy.hp <= 0) {
         this.winCombat();

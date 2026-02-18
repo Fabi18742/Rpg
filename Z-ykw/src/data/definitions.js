@@ -8,15 +8,18 @@ export const Definitions = {
       defense: 0,
       speed: 10,
       critChance: 5,
+      critMultiplier: 1.5
     },
     baseActionPoints: 3,
   },
+
   items: {
     rusty_sword: {
       id: "rusty_sword",
       name: "Rostiges Schwert",
       type: "weapon",
       damage: 5,
+      critChance: 10,
       value: 10,
     },
     iron_shield: {
