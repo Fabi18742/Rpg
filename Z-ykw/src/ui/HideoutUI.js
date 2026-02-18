@@ -77,7 +77,7 @@ export class HideoutUI {
 
     switch (this.activeScreen) {
       case "main":
-        this.sceneContent.innerHTML = ""; // Nur Hintergrundbild
+        this.sceneContent.innerHTML = "";
         break;
       case "stats":
         this.sceneContent.innerHTML = `
@@ -109,6 +109,52 @@ export class HideoutUI {
                         <div class="static-inventory-grid">${itemsHTML || "Leer"}</div>
                     </div>`;
         break;
+      case "ritual":
+        const ritualItems = state.ritual.selectedItems;
+        const availableRitualItems = state.player.inventory.filter(
+          (i) => i.type === "ritual",
+        );
+
+        this.sceneContent.innerHTML = `
+            <div class="static-screen-overlay">
+                <h2>Das Alchemie-Ritual</h2>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <p style="font-size: 12px; color: #888;">Wähle 6 Ritual-Komponenten</p>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px;">
+                            ${[0, 1, 2, 3, 4, 5]
+                              .map((idx) => {
+                                const item = ritualItems[idx];
+                                return `
+                                    <div onclick="window.gameAPI.removeFromRitual(${idx})" 
+                                         style="width: 60px; height: 60px; border: 2px dashed #444; background: #000; cursor: pointer;">
+                                        ${item ? `<span>✨</span>` : ""}
+                                    </div>`;
+                              })
+                              .join("")}
+                        </div>
+                        </div>
+
+                    <div style="border-left: 1px solid #333; padding-left: 20px; max-height: 300px; overflow-y: auto;">
+                        <p style="font-size: 12px; color: #888;">Verfügbare Ritual-Zutaten:</p>
+                        ${
+                          availableRitualItems.length > 0
+                            ? availableRitualItems
+                                .map(
+                                  (item) => `
+                                <div class="static-inv-item" style="margin-bottom: 5px; padding: 5px;">
+                                    <span style="font-size: 13px;">${item.name}</span>
+                                    <button class="small-btn" onclick="window.gameAPI.addToRitual('${item.id}')">+</button>
+                                </div>`,
+                                )
+                                .join("")
+                            : "<p style='font-size:11px; color:#555'>Keine Ritualgegenstände im Inventar.</p>"
+                        }
+                    </div>
+                </div>
+            </div>`;
+        break;
+
       default:
         this.sceneContent.innerHTML = `<div class="static-screen-overlay"><h2>${this.activeScreen}</h2><p>In Arbeit...</p></div>`;
     }

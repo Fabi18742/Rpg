@@ -44,6 +44,25 @@ export const Definitions = {
       description: "Glibberig.",
       goldValue: 2,
     },
+    magic_shard: {
+      id: "magic_shard",
+      name: "Magiesplitter",
+      type: "ritual",
+      description: "Ein vibrierendes Kristallstück.",
+      goldValue: 10,
+      ritualValue: 5,
+      modifierType: "sharpness"
+    },
+    ancient_wood: {
+      id: "ancient_wood",
+      name: "Uraltes Holz",
+      type: "ritual",
+      description: "Hart wie Eisen.",
+      goldValue: 5,
+      ritualValue: 3,
+      modifierType: "defense"
+    },
+    
   },
 
   abilities: {

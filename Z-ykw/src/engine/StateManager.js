@@ -1,6 +1,7 @@
 // src/engine/StateManager.js
 import { Definitions } from "../data/definitions.js";
 import { Storage } from "./Storage.js";
+import { RitualEngine } from "./RitualEngine.js";
 
 const SAVE_KEY = "rpg_savegame_v1";
 
@@ -24,7 +25,7 @@ class StateManager {
         active: false,
         enemies: [],
         targetIndex: 0,
-        log: []
+        log: [],
       },
       crawl: {
         active: false,
@@ -32,6 +33,9 @@ class StateManager {
         security: 0,
         chaos: 0,
         choices: null,
+      },
+      ritual: {
+        selectedItems: []
       },
     };
     this.listeners = [];
@@ -46,11 +50,11 @@ class StateManager {
       this.state = loadedState;
       this.state.location = "hideout";
       this.state.combat = {
-            active: false,
-            enemies: [],
-            targetIndex: 0,
-            log: []
-        };
+        active: false,
+        enemies: [],
+        targetIndex: 0,
+        log: [],
+      };
       this.state.currentEnemy = null;
       this.state.crawl.active = false;
       this.state.crawl.choices = null;
@@ -125,51 +129,53 @@ class StateManager {
   }
   // -------------------
 
-startCombat(enemyIds) {
-      this.state.combat.active = true;
-      this.state.combat.enemies = enemyIds.map(def => ({...def, maxHp: def.hp})); // Kopien erstellen
-      this.state.combat.targetIndex = 0; // Standard: Ersten Gegner fokussieren
-      this.notify();
+  startCombat(enemyIds) {
+    this.state.combat.active = true;
+    this.state.combat.enemies = enemyIds.map((def) => ({
+      ...def,
+      maxHp: def.hp,
+    })); // Kopien erstellen
+    this.state.combat.targetIndex = 0; // Standard: Ersten Gegner fokussieren
+    this.notify();
   }
   endCombat() {
-      this.state.combat.active = false;
-      this.state.combat.enemies = [];
-      this.state.combat.targetIndex = 0;
-      this.state.currentEnemy = null; // Zur Sicherheit, falls alte UI darauf zugreift
-      this.notify();
+    this.state.combat.active = false;
+    this.state.combat.enemies = [];
+    this.state.combat.targetIndex = 0;
+    this.state.currentEnemy = null; // Zur Sicherheit, falls alte UI darauf zugreift
+    this.notify();
   }
 
   setTarget(index) {
-      if (index >= 0 && index < this.state.combat.enemies.length) {
-          // Nur lebende Ziele anvisieren? Das checken wir in der UI/Engine
-          this.state.combat.targetIndex = index;
-          this.notify();
-      }
+    if (index >= 0 && index < this.state.combat.enemies.length) {
+      // Nur lebende Ziele anvisieren? Das checken wir in der UI/Engine
+      this.state.combat.targetIndex = index;
+      this.notify();
+    }
   }
 
   modifyEnemyHp(index, amount) {
-      const enemy = this.state.combat.enemies[index];
-      if (!enemy) return;
+    const enemy = this.state.combat.enemies[index];
+    if (!enemy) return;
 
-      enemy.hp += amount;
-      if (enemy.hp < 0) enemy.hp = 0;
-      
-      if (enemy.hp === 0 && index === this.state.combat.targetIndex) {
-          this.autoTargetNextLiving();
-      }
+    enemy.hp += amount;
+    if (enemy.hp < 0) enemy.hp = 0;
 
-      this.notify();
+    if (enemy.hp === 0 && index === this.state.combat.targetIndex) {
+      this.autoTargetNextLiving();
+    }
+
+    this.notify();
   }
 
   autoTargetNextLiving() {
-      const enemies = this.state.combat.enemies;
-      // Suche ersten Gegner mit HP > 0
-      const nextAlive = enemies.findIndex(e => e.hp > 0);
-      if (nextAlive !== -1) {
-          this.state.combat.targetIndex = nextAlive;
-      }
+    const enemies = this.state.combat.enemies;
+    // Suche ersten Gegner mit HP > 0
+    const nextAlive = enemies.findIndex((e) => e.hp > 0);
+    if (nextAlive !== -1) {
+      this.state.combat.targetIndex = nextAlive;
+    }
   }
-
 
   addItem(itemId) {
     const itemDef = Definitions.items[itemId];
@@ -304,6 +310,52 @@ startCombat(enemyIds) {
   endCrawl() {
     this.state.crawl.active = false;
     this.notify();
+  }
+
+  addItemToRitual(itemId) {
+    if (this.state.ritual.selectedItems.length >= 6) return false;
+
+    // Item aus Inventar finden & entfernen
+    const itemIndex = this.state.player.inventory.findIndex(
+      (i) => i.id === itemId,
+    );
+    if (itemIndex === -1) return false;
+
+    const item = this.state.player.inventory.splice(itemIndex, 1)[0];
+    this.state.ritual.selectedItems.push(item);
+
+    this.notify();
+    return true;
+  }
+
+  removeItemFromRitual(index) {
+    const item = this.state.ritual.selectedItems.splice(index, 1)[0];
+    if (item) {
+      this.state.player.inventory.push(item);
+      this.notify();
+    }
+  }
+
+  performRitual() {
+    if (this.state.ritual.selectedItems.length !== 6) return;
+
+    const result = RitualEngine.calculateResult(
+      this.state.ritual.selectedItems,
+    );
+
+    // Items werden durch Ritual Engine "verbraucht" (bereits aus Inventar weg)
+    this.state.ritual.selectedItems = [];
+
+    // Ergebnis dem Inventar hinzufügen
+    // Wir generieren eine ID für das neue Item
+    const newId = `crafted_${Date.now()}`;
+    const craftedWeapon = { ...result, id: newId };
+
+    this.state.player.inventory.push(craftedWeapon);
+
+    this.notify();
+    this.saveGame();
+    return craftedWeapon;
   }
 }
 

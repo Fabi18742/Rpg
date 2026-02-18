@@ -64,6 +64,16 @@ window.gameAPI = {
     }
   },
 
+  addToRitual: (id) => stateManager.addItemToRitual(id),
+
+  removeFromRitual: (idx) => stateManager.removeItemFromRitual(idx),
+
+  doRitual: () => stateManager.performRitual(),
+
+  addItem: (itemId) => {
+    stateManager.addItem(itemId);
+  },
+
   reset: () => {
     if (confirm("Spielstand wirklich löschen?")) stateManager.resetGame();
   },
