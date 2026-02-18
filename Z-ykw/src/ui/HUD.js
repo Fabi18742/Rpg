@@ -18,37 +18,36 @@ export class HUD {
 
 // src/ui/HUD.js
 
-  render(state) {
-    if (!this.container) return;
+render(state) {
+  if (!this.container) return;
 
-    let html = "";
+  let html = "";
 
-    // Das HUD zeigt NUR Crawl-Stats (Sicherheit/Chaos), wenn man im Dungeon ist
-    if (state.crawl && state.crawl.active) {
-      const sec = state.crawl.security;
-      const chaos = state.crawl.chaos;
+  if (state.crawl && state.crawl.active && (!state.combat || !state.combat.active)) {
+    const sec = state.crawl.security;
+    const chaos = state.crawl.chaos;
 
-      html = `
-                <div class="crawl-stats" style="margin-top: 0; border-top: none;">
-                    <div class="stat-row">
-                        <span class="stat-label" style="color:#d6bcfa">Chaos</span>
-                        <span class="stat-value chaos-value">${chaos}</span>
-                    </div>
+    html = `
+              <div class="crawl-stats" style="margin-top: 0; border-top: none;">
+                  <div class="stat-row">
+                      <span class="stat-label" style="color:#d6bcfa">Chaos</span>
+                      <span class="stat-value chaos-value">${chaos}</span>
+                  </div>
 
-                    <div class="bar-label">
-                        <span>Sicherheit</span>
-                        <span>${sec}%</span>
-                    </div>
-                    <div class="bar-container">
-                        <div class="security-fill" style="width: ${sec}%"></div>
-                    </div>
-                </div>
-            `;
-    }
-
-    this.container.innerHTML = html;
-    
-    // Container komplett verstecken, wenn kein Crawl läuft (kein leerer schwarzer Kasten)
-    this.container.style.display = html ? "block" : "none";
+                  <div class="bar-label">
+                      <span>Sicherheit</span>
+                      <span>${sec}%</span>
+                  </div>
+                  <div class="bar-container">
+                      <div class="security-fill" style="width: ${sec}%"></div>
+                  </div>
+              </div>
+          `;
   }
+
+  this.container.innerHTML = html;
+  
+  // Container komplett verstecken, wenn kein Inhalt da ist
+  this.container.style.display = html ? "block" : "none";
+}
 }
