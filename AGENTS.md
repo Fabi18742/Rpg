@@ -38,26 +38,32 @@ Anweisungen für die KI:
 
 4. Nutze das Observer-Pattern (Events/Signals), um die UI zu benachrichtigen.
 
+5. Unterscheide strikt zwischen **Statischen Screens** und **Floating Windows**:
+   - Statische Screens (Hideout, Battle, Crawl) sitzen fest in der `action-area` und wechseln sich basierend auf `state.location` ab.
+   - Nur das Inventar, der Log und die detaillierten Stats sind als "Draggable Windows" (Popups) konzipiert.
+   - Das Hideout darf NIEMALS ein Popup-Fenster sein, sondern ist das fundamentale Interface im Zustand `hideout`.
+
 
 Sobald diese drei „unsichtbaren“ Logik-Dateien perfekt funktionieren, kümmerst du dich um die UI. So stellst du sicher, dass dein „Gehirn“ (die Engine) sauber ist, bevor du das „Gesicht“ (die UI) baust.
 
 rpg-relaunch/
-├── index.html          # Der Einstiegspunkt (lädt main.js)
-├── styles/
-│   └── main.css        # Dein gesamtes UI-Styling (CSS)
 ├── src/
-│   ├── main.js         # Initialisiert das Spiel und die Module
-│   ├── data/
-│   │   └── definitions.js  # DER CONTENT: Items, Gegner, Skills, Quests
-│   ├── engine/         # DIE LOGIK: Rein mathematisch & funktional
-│   │   ├── StateManager.js   # Verwaltet den Spielzustand (HP, Inventar)
+│   ├── engine/           # DIE LOGIK (Rein mathematisch & funktional)
+│   │   ├── StateManager.js   # Verwaltet den globalen Spielzustand
 │   │   ├── StatCalculator.js # Berechnet effektive Stats (Basis + Gear)
-│   │   └── ActionEngine.js   # Berechnet Kämpfe und Skill-Effekte
-│   └── ui/             # DAS GESICHT: Reagiert nur auf den State
+│   │   ├── ActionEngine.js   # Berechnet Kämpfe und Skill-Effekte
+│   │   └── CrawlEngine.js    # Verwaltet Exploration und Event-Logik
+│   └── ui/               # DAS GESICHT (Reagiert nur auf den State)
 │       ├── Component.js      # Basis-Klasse für UI-Elemente
-│       ├── HUD.js            # Anzeige für HP, Gold, Level
-│       ├── InventoryUI.js    # Darstellung des Inventars
-│       └── BattleUI.js       # Kampf-Interface und Log
+│       ├── HUD.js            # Permanente Anzeige (HP, XP, Welt-Stats)
+│       ├── WindowManager.js  # Verwaltung von Drag & Z-Index für Popups
+│       # --- STATISCHE SCREENS (Feste Ebenen in der Action-Area) ---
+│       ├── HideoutUI.js      # Hauptmenü im Unterschlupf (KEIN Fenster)
+│       ├── BattleUI.js       # Kampf-Interface
+│       ├── CrawlUI.js        # Event-Auswahl und Erkundung
+│       # --- FLOATING WINDOWS (Verschiebbare Popups) ---
+│       ├── InventoryUI.js    # Draggable Inventar-Fenster
+│       └── StatsUI.js        # Draggable Charakterbogen
 └── assets/             # Bilder, Icons und Sounds
 
 src/data/definitions.js: Hier definierst du alles. Wenn du ein neues Item mit „Crit“-Stats willst, fügst du es hier einfach hinzu. Die Engine erkennt es automatisch.
