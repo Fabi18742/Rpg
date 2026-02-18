@@ -268,3 +268,226 @@ body {
     gap: 10px;
     z-index: 50;
 }
+
+/* --- Crawl UI (HUD Erweiterung) --- */
+.crawl-stats {
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid #444;
+}
+
+.bar-label {
+    font-size: 11px;
+    color: #888;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 2px;
+}
+
+.bar-container {
+    width: 100%;
+    height: 6px;
+    background: #222;
+    border: 1px solid #444;
+    margin-bottom: 8px;
+}
+
+/* Sicherheitsleiste: Grün */
+.security-fill {
+    height: 100%;
+    background-color: #4caf50; 
+    transition: width 0.3s;
+}
+
+/* Chaos Indikator: Lila Text */
+.chaos-value {
+    color: #d6bcfa; /* Helles Lila */
+    font-weight: bold;
+}
+
+/* Crawl Selection Cards */
+.crawl-selection-container {
+    padding: 10px;
+}
+
+.crawl-cards {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.crawl-card {
+    background: #1a1a1a;
+    border: 1px solid #444;
+    padding: 15px;
+    width: 140px;
+    cursor: pointer;
+    transition: transform 0.2s, border-color 0.2s;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.crawl-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent-color);
+    background: #222;
+}
+
+.card-title {
+    font-weight: bold;
+    color: #e0e0e0;
+    font-size: 13px;
+}
+
+.card-text {
+    font-size: 11px;
+    color: #888;
+    flex-grow: 1;
+}
+
+.card-cost {
+    font-size: 10px;
+    border-top: 1px solid #333;
+    padding-top: 5px;
+}
+
+/* --- HIDEOUT UI (Das Versteck) --- */
+#ui-hideout {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: #111; /* Dunkler Hintergrund */
+    color: #eee;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Header & Tabs */
+.hideout-header {
+    background: #1a1a1a;
+    border-bottom: 1px solid #333;
+    padding: 0;
+}
+
+.hideout-tabs {
+    display: flex;
+    width: 100%;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 15px;
+    background: #222;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: #888;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    text-transform: uppercase;
+    transition: all 0.2s;
+}
+
+.tab-btn:hover {
+    background: #2a2a2a;
+    color: #fff;
+}
+
+.tab-btn.active {
+    background: #111;
+    color: #fbbf24; /* Goldene Farbe für aktiven Tab */
+    border-bottom: 3px solid #fbbf24;
+}
+
+/* Content Area */
+.hideout-content {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto; /* Scrollbar wenn nötig */
+}
+
+/* Stats Panel im Hideout */
+.stats-panel-static {
+    background: #161616;
+    border: 1px solid #333;
+    padding: 15px;
+    border-radius: 4px;
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #222;
+}
+
+.stat-plus-btn {
+    background: #4caf50;
+    color: white;
+    border: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    margin-left: 10px;
+}
+
+.stat-plus-btn:hover {
+    background: #66bb6a;
+}
+
+/* Inventory Liste im Hideout */
+.inventory-list-static {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.inv-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    padding: 10px;
+}
+
+.inv-row.equipped {
+    border-color: #fbbf24; /* Goldener Rand für Ausgerüstetes */
+}
+
+.small-btn {
+    background: #333;
+    border: 1px solid #555;
+    color: #ccc;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.small-btn:hover {
+    background: #444;
+    border-color: #999;
+}
+
+/* Footer (Aufbrechen Button) */
+.adventure-btn {
+    width: 100%;
+    padding: 20px;
+    background: #2d1b1b;
+    color: #ff6b6b;
+    border: none;
+    border-top: 1px solid #5c2b2b;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: background 0.2s;
+}
+
+.adventure-btn:hover {
+    background: #3d2222;
+}

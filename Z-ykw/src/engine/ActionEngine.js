@@ -5,6 +5,64 @@ import { Definitions } from '../data/definitions.js';
 
 export class ActionEngine {
 
+    // --- ITEM INTERAKTION ---
+    
+    static useItem(itemId) {
+        const itemDef = Definitions.items[itemId];
+        if (!itemDef) {
+            console.error("Item Definition nicht gefunden:", itemId);
+            return;
+        }
+
+        if (itemDef.type === 'consumable') {
+            this.consumeItem(itemDef);
+        } else if (itemDef.type === 'weapon' || itemDef.type === 'armor') {
+            this.toggleEquipItem(itemDef);
+        } else {
+            this.log(`Du betrachtest ${itemDef.name}.`, 'neutral');
+        }
+    }
+
+    static consumeItem(itemDef) {
+        if (itemDef.effect === 'heal') {
+            const player = stateManager.getState().player;
+            const healAmount = itemDef.value || 0;
+            
+            // Prüfung: Ist Heilung nötig?
+            if (player.hp >= player.maxHp) {
+                this.log("Deine Gesundheit ist bereits voll.", 'neutral');
+                return; // Item wird NICHT verbraucht
+            }
+            
+            // Versuche Item zu entfernen
+            if (stateManager.removeItem(itemDef.id)) {
+                stateManager.modifyPlayerHp(healAmount);
+                this.log(`${itemDef.name} getrunken: +${healAmount} HP.`, 'player');
+            } else {
+                this.log("Fehler: Item konnte nicht verbraucht werden.", 'neutral');
+            }
+        }
+    }
+
+    // NEU: Toggle Logik (Anziehen / Ausziehen)
+    static toggleEquipItem(itemDef) {
+        const player = stateManager.getState().player;
+        const currentEquip = itemDef.type === 'weapon' ? player.equipped.weapon : player.equipped.armor;
+
+        // Ist genau dieses Item schon ausgerüstet?
+        if (currentEquip && currentEquip.id === itemDef.id) {
+            // Ja -> Ablegen
+            stateManager.unequipItem(itemDef.type);
+            this.log(`${itemDef.name} abgelegt.`, 'neutral');
+        } else {
+            // Nein -> Anziehen
+            stateManager.equipItem(itemDef.id);
+            this.log(`${itemDef.name} ausgerüstet.`, 'neutral');
+        }
+    }
+
+    // --- KAMPF LOGIK ---
+
     static startCombat(enemyId) {
         const enemyDef = Definitions.enemies[enemyId];
         if (!enemyDef) return;
@@ -14,18 +72,21 @@ export class ActionEngine {
         this.log(`Ein wildes ${enemy.name} taucht auf!`, 'neutral');
     }
 
-    static playerAttack() {
+static useSkill(skillId) {
         const state = stateManager.getState();
         if (!state.currentEnemy) return;
 
-        this.executeAttack('player', 'enemy');
+        const skill = Definitions.abilities[skillId];
+        if (!skill) return;
 
-        if (stateManager.getState().currentEnemy.hp <= 0) {
-            this.winCombat();
-        } else {
-            setTimeout(() => {
-                this.enemyTurn();
-            }, 800); // Etwas schneller als vorher
+        // Skill-Logik ausführen
+        if (skill.type === 'attack') {
+            this.executeAttack('player', 'enemy', skill);
+        } else if (skill.type === 'heal') {
+            stateManager.modifyPlayerHp(skill.value);
+            this.log(`Du nutzt ${skill.name} und heilst ${skill.value} HP.`, 'player');
+            // Nach Heilung ist der Gegner dran?
+            setTimeout(() => this.enemyTurn(), 800);
         }
     }
 
@@ -41,61 +102,80 @@ export class ActionEngine {
         }
     }
 
-    static executeAttack(source, target) {
+static executeAttack(source, target, skill = null) {
         const state = stateManager.getState();
-        let attackerStats, defenderStats, weapon;
+        let attackerStats, defenderStats, weapon, attackerName;
+        
+        // Standard-Werte falls kein Skill übergeben wurde (z.B. Gegner-Angriff)
+        const dmgMult = skill ? (skill.damageMult || 1) : 1;
+        const accuracy = skill ? (skill.accuracy || 1) : 1;
 
         if (source === 'player') {
-            // NEU: Echte Stats aus dem State!
             attackerStats = state.player.stats; 
             weapon = state.player.equipped.weapon;
-            
-            // Gegner Stats (vereinfacht)
             defenderStats = { defense: state.currentEnemy.defense || 0 };
+            attackerName = "Du";
         } else {
-            // Gegner greift an
-            attackerStats = { strength: state.currentEnemy.strength };
+            attackerStats = { strength: state.currentEnemy.strength, critChance: 0 };
             weapon = null; 
-            
-            // Spieler Def (Rüstung wird im Calculator beachtet, wenn wir Armor übergeben würden)
-            // Hier vereinfacht: Wir berechnen Spieler-Def manuell oder erweitern StatCalculator
             const armorDef = state.player.equipped.armor ? state.player.equipped.armor.defense : 0;
             defenderStats = { defense: state.player.stats.defense + armorDef };
+            attackerName = state.currentEnemy.name;
         }
 
-        const rawDamage = StatCalculator.calculateAttackDamage(attackerStats, weapon);
+        // 1. Trefferchance prüfen
+        if (Math.random() > accuracy) {
+            this.log(`${attackerName} verfehl${source === 'player'?'st':'t'} das Ziel!`, 'neutral');
+            if (source === 'player') setTimeout(() => this.enemyTurn(), 800);
+            return;
+        }
+
+        // 2. Schaden berechnen
+        const calculation = StatCalculator.calculateAttackDamage(attackerStats, weapon);
+        
+        // Skill-Multiplikator anwenden (Pipeline)
+        let rawDamage = Math.floor(calculation.damage * dmgMult);
+
         const finalDamage = StatCalculator.calculateIncomingDamage(rawDamage, defenderStats.defense);
 
+        let critMsg = calculation.isCrit ? " (KRITISCH!)" : "";
         const type = source === 'player' ? 'player' : 'enemy';
-        const attackerName = source === 'player' ? 'Du' : state.currentEnemy.name;
+        const verb = source === 'player' ? 'triffst' : 'trifft';
         
-        this.log(`${attackerName} trifft für ${finalDamage} Schaden!`, type);
+        // Text aus Skill oder Standard
+        const actionText = skill ? skill.text : (source==='player'?"greifst an":"greift an");
+
+        this.log(`${attackerName} ${source==='player'?'':'('+actionText+')'} ${verb} für ${finalDamage} Schaden${critMsg}!`, type);
 
         if (target === 'player') {
             stateManager.modifyPlayerHp(-finalDamage);
         } else {
             stateManager.modifyEnemyHp(-finalDamage);
         }
+
+        // Wenn Spieler angegriffen hat -> Gegner Zug
+        if (source === 'player') {
+            if (stateManager.getState().currentEnemy.hp <= 0) {
+                this.winCombat();
+            } else {
+                setTimeout(() => this.enemyTurn(), 800);
+            }
+        }
     }
 
-    // --- NEU: Loot & XP Logik ---
     static winCombat() {
         const enemy = stateManager.getState().currentEnemy;
         this.log(`${enemy.name} besiegt!`, 'player');
         
-        // 1. XP geben
         if (enemy.xp) {
             stateManager.addXp(enemy.xp);
             this.log(`+${enemy.xp} Erfahrung erhalten.`, 'neutral');
         }
 
-        // 2. Loot würfeln
         if (enemy.lootTable) {
             enemy.lootTable.forEach(loot => {
                 if (Math.random() < loot.chance) {
-                    // Item droppen
                     stateManager.addItem(loot.itemId);
-                    // Name für Log holen
                     const itemName = Definitions.items[loot.itemId].name;
                     this.log(`Beute: ${itemName}`, 'neutral');
                 }
