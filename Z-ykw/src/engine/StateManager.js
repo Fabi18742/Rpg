@@ -45,8 +45,15 @@ class StateManager {
       console.log("📂 Spielstand gefunden & geladen.");
       this.state = loadedState;
       this.state.location = "hideout";
+      this.state.combat = {
+            active: false,
+            enemies: [],
+            targetIndex: 0,
+            log: []
+        };
       this.state.currentEnemy = null;
       this.state.crawl.active = false;
+      this.state.crawl.choices = null;
     } else {
       console.log("✨ Kein Spielstand. Neues Spiel gestartet.");
       this.state.player.maxHp = Definitions.player.baseHp;
