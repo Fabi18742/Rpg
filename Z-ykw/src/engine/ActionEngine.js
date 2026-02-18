@@ -65,14 +65,18 @@ export class ActionEngine {
 
   // --- KAMPF LOGIK ---
 
-  static startCombat(enemyId) {
-    const enemyDef = Definitions.enemies[enemyId];
-    if (!enemyDef) return;
+  static startCombat(enemyIds) {
+    const enemies = enemyIds
+      .map((id) => Definitions.enemies[id])
+      .filter((e) => e);
 
-    const enemy = { ...enemyDef, maxHp: enemyDef.hp };
+    if (enemies.length === 0) return;
+
     stateManager.resetPlayerAp();
-    stateManager.setEnemy(enemy);
-    this.log(`Ein wildes ${enemy.name} taucht auf!`, "neutral");
+    stateManager.startCombat(enemies);
+
+    const names = enemies.map((e) => e.name).join(" & ");
+    this.log(`Kampf gestartet gegen: ${names}!`, "neutral");
   }
 
   static useSkill(skillId) {
@@ -104,91 +108,117 @@ export class ActionEngine {
     }
   }
 
-  static enemyTurn() {
-    const state = stateManager.getState();
-    if (!state.currentEnemy) return;
+static enemyTurn() {
+        const state = stateManager.getState();
+        if (!state.combat.active) return;
 
-    this.executeAttack("enemy", "player");
+        const enemies = state.combat.enemies;
+        let incomingDamageTotal = 0;
 
-    if (stateManager.getState().player.hp <= 0) {
-      this.log("Du wurdest besiegt...", "enemy");
-      stateManager.setEnemy(null);
-    } else {
-      stateManager.resetPlayerAp();
-      this.log("Du bist am Zug.", "neutral");
+        this.log("--- Gegner Zug ---", 'neutral');
+
+        // JEDER lebende Gegner greift an
+        enemies.forEach((enemy, index) => {
+            if (enemy.hp > 0) {
+                // Wir übergeben den Index, damit executeAttack weiß, wer angreift
+                this.executeAttack('enemy', index);
+            }
+        });
+
+        // Player Death Check
+        if (stateManager.getState().player.hp <= 0) {
+            this.log("Du wurdest besiegt...", 'enemy');
+            stateManager.saveGame(); // Oder Reset Logik
+            // stateManager.setCombatActive(false);
+        } else {
+            stateManager.resetPlayerAp();
+            this.log("Du bist am Zug.", 'neutral');
+        }
     }
-  }
 
-  static executeAttack(source, target, skill = null) {
+  static executeAttack(source, sourceIndex = null, skill = null) {
     const state = stateManager.getState();
     let attacker, defender, attackerName;
 
     // Skill-Genauigkeit prüfen (Hit Chance)
-    const accuracy = skill ? skill.accuracy || 1 : 1; // Standard 100%
+    const accuracy = skill ? skill.accuracy || 1 : 1;
 
+    // --- 1. ZIEL UND ANGREIFER ERMITTELN ---
     if (source === "player") {
       attacker = state.player;
-      defender = state.currentEnemy;
+
+      // ZIEL: Der aktuell anvisierte Gegner aus dem Combat-State
+      const targetIdx = state.combat.targetIndex;
+      defender = state.combat.enemies[targetIdx];
       attackerName = "Du";
+
+      // Sicherheitscheck: Existiert das Ziel und lebt es?
+      if (!defender || defender.hp <= 0) {
+        this.log("Dieses Ziel ist bereits besiegt!", "neutral");
+        return; // Abbruch
+      }
     } else {
-      attacker = state.currentEnemy;
+      // ZIEL: Gegner greift Spieler an
+      // Wir holen den spezifischen Gegner aus dem Array anhand des sourceIndex
+      attacker = state.combat.enemies[sourceIndex];
       defender = state.player;
-      attackerName = state.currentEnemy.name;
+      attackerName = attacker.name;
     }
 
-    // 1. Trefferchance prüfen
+    // --- 2. TREFFERCHANCE ---
     if (Math.random() > accuracy) {
       this.log(
         `${attackerName} verfehl${source === "player" ? "st" : "t"} das Ziel!`,
         "neutral",
       );
+      // Bei Fehlschlag prüfen wir trotzdem, ob der Zug vorbei ist
       if (source === "player") this.checkTurnEnd();
       return;
     }
 
-    // 2. Schaden berechnen (via StatCalculator Pipeline)
+    // --- 3. SCHADEN BERECHNEN (Pipeline) ---
     const attackResult = StatCalculator.calculateAttack(attacker, skill);
 
-    // 3. Verteidigung berechnen
+    // --- 4. VERTEIDIGUNG BERECHNEN ---
     const defenseResult = StatCalculator.calculateDefense(
       defender,
       attackResult.damage,
     );
-
     const finalDamage = defenseResult.damage;
 
-    // 4. Logging & State Update
-    let logMsg = "";
-
-    // Crit Nachricht
-    if (attackResult.isCrit) {
-      logMsg += " (KRITISCH!)";
-    }
-
+    // --- 5. LOGGING ---
+    let logMsg = attackResult.isCrit ? " (KRITISCH!)" : "";
     const verb = source === "player" ? "triffst" : "trifft";
+
+    // Name des Skills oder Standard-Text
     const actionText = skill
       ? skill.text
       : source === "player"
         ? "greifst an"
         : "greift an";
+    // Wenn Spieler angreift, zeigen wir auch WEN er trifft
+    const targetName = source === "player" ? defender.name : "";
 
-    // Beispiel Log: "Du (Wuchtschlag) triffst für 15 Schaden! (KRITISCH!)"
     const type = source === "player" ? "player" : "enemy";
     this.log(
-      `${attackerName} ${source === "player" ? "" : "(" + actionText + ")"} ${verb} für ${finalDamage} Schaden${logMsg}!`,
+      `${attackerName} ${source === "player" ? "" : "(" + actionText + ")"} ${verb} ${targetName} für ${finalDamage} Schaden${logMsg}!`,
       type,
     );
 
-    // HP abziehen
-    if (target === "player") {
-      stateManager.modifyPlayerHp(-finalDamage);
+    // --- 6. HP ABZIEHEN ---
+    if (source === "player") {
+      // WICHTIG: Dem spezifischen Gegner im Array Schaden zufügen
+      stateManager.modifyEnemyHp(state.combat.targetIndex, -finalDamage);
     } else {
-      stateManager.modifyEnemyHp(-finalDamage);
+      stateManager.modifyPlayerHp(-finalDamage);
     }
 
-    // 5. Runden-Ende Check (nur für Spieler)
+    // --- 7. RUNDEN-ENDE & SIEG-CHECK (Nur nach Spieler-Aktion) ---
     if (source === "player") {
-      if (stateManager.getState().currentEnemy.hp <= 0) {
+      // Prüfen: Sind ALLE Gegner im Array tot?
+      const allDead = state.combat.enemies.every((e) => e.hp <= 0);
+
+      if (allDead) {
         this.winCombat();
       } else {
         this.checkTurnEnd();
@@ -203,27 +233,42 @@ export class ActionEngine {
     }
   }
 
-  static winCombat() {
-    const enemy = stateManager.getState().currentEnemy;
-    this.log(`${enemy.name} besiegt!`, "player");
+static winCombat() {
+        const state = stateManager.getState();
+        const enemies = state.combat.enemies;
 
-    if (enemy.xp) {
-      stateManager.addXp(enemy.xp);
-      this.log(`+${enemy.xp} Erfahrung erhalten.`, "neutral");
-    }
+        this.log("Alle Gegner besiegt!", "player");
 
-    if (enemy.lootTable) {
-      enemy.lootTable.forEach((loot) => {
-        if (Math.random() < loot.chance) {
-          stateManager.addItem(loot.itemId);
-          const itemName = Definitions.items[loot.itemId].name;
-          this.log(`Beute: ${itemName}`, "neutral");
+        // 1. XP berechnen (Summe aller Gegner)
+        let totalXp = 0;
+        enemies.forEach(enemy => {
+            totalXp += (enemy.xp || 0);
+        });
+
+        if (totalXp > 0) {
+            stateManager.addXp(totalXp);
+            this.log(`+${totalXp} Erfahrung erhalten.`, "neutral");
         }
-      });
-    }
 
-    stateManager.setEnemy(null);
-  }
+        // 2. Loot für JEDEN Gegner berechnen
+        enemies.forEach(enemy => {
+            if (enemy.lootTable) {
+                enemy.lootTable.forEach((loot) => {
+                    if (Math.random() < loot.chance) {
+                        stateManager.addItem(loot.itemId);
+                        
+                        // Name auflösen für schöneres Log
+                        const itemDef = Definitions.items[loot.itemId];
+                        const itemName = itemDef ? itemDef.name : loot.itemId;
+                        
+                        this.log(`Beute: ${itemName}`, "neutral");
+                    }
+                });
+            }
+        });
+
+        stateManager.endCombat(); 
+    }
 
   static log(message, type = "neutral") {
     const event = new CustomEvent("combat-log", { detail: { message, type } });

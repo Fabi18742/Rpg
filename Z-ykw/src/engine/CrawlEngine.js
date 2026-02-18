@@ -47,10 +47,23 @@ export class CrawlEngine {
         this.handleEvent(eventDef);
     }
 
-    static handleEvent(eventDef) {
+static handleEvent(eventDef) {
         if (eventDef.type === 'combat') {
             ActionEngine.log(eventDef.text, 'neutral');
-            ActionEngine.startCombat(eventDef.enemyId);
+            
+            // FIX: Wir prüfen, ob es eine einzelne ID oder eine Liste ist
+            // und übergeben IMMER ein Array an die ActionEngine.
+            let enemyList = [];
+            
+            if (eventDef.enemies) {
+                // Es ist schon eine Liste (neues System)
+                enemyList = eventDef.enemies;
+            } else if (eventDef.enemyId) {
+                // Es ist eine einzelne ID (altes System) -> In Array packen
+                enemyList = [eventDef.enemyId];
+            }
+            
+            ActionEngine.startCombat(enemyList);
         } 
         else if (eventDef.type === 'choice') {
             // Einfacher Text-Event (später mehr)

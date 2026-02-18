@@ -20,7 +20,12 @@ class StateManager {
         equipped: { weapon: null, armor: null },
         skills: ["normal_attack", "heavy_strike", "quick_heal"],
       },
-      currentEnemy: null,
+      combat: {
+        active: false,
+        enemies: [],
+        targetIndex: 0,
+        log: []
+      },
       crawl: {
         active: false,
         worldId: null,
@@ -113,17 +118,51 @@ class StateManager {
   }
   // -------------------
 
-  setEnemy(enemy) {
-    this.state.currentEnemy = enemy;
-    this.notify();
+startCombat(enemyIds) {
+      this.state.combat.active = true;
+      this.state.combat.enemies = enemyIds.map(def => ({...def, maxHp: def.hp})); // Kopien erstellen
+      this.state.combat.targetIndex = 0; // Standard: Ersten Gegner fokussieren
+      this.notify();
+  }
+  endCombat() {
+      this.state.combat.active = false;
+      this.state.combat.enemies = [];
+      this.state.combat.targetIndex = 0;
+      this.state.currentEnemy = null; // Zur Sicherheit, falls alte UI darauf zugreift
+      this.notify();
   }
 
-  modifyEnemyHp(amount) {
-    if (!this.state.currentEnemy) return;
-    this.state.currentEnemy.hp += amount;
-    if (this.state.currentEnemy.hp < 0) this.state.currentEnemy.hp = 0;
-    this.notify();
+  setTarget(index) {
+      if (index >= 0 && index < this.state.combat.enemies.length) {
+          // Nur lebende Ziele anvisieren? Das checken wir in der UI/Engine
+          this.state.combat.targetIndex = index;
+          this.notify();
+      }
   }
+
+  modifyEnemyHp(index, amount) {
+      const enemy = this.state.combat.enemies[index];
+      if (!enemy) return;
+
+      enemy.hp += amount;
+      if (enemy.hp < 0) enemy.hp = 0;
+      
+      if (enemy.hp === 0 && index === this.state.combat.targetIndex) {
+          this.autoTargetNextLiving();
+      }
+
+      this.notify();
+  }
+
+  autoTargetNextLiving() {
+      const enemies = this.state.combat.enemies;
+      // Suche ersten Gegner mit HP > 0
+      const nextAlive = enemies.findIndex(e => e.hp > 0);
+      if (nextAlive !== -1) {
+          this.state.combat.targetIndex = nextAlive;
+      }
+  }
+
 
   addItem(itemId) {
     const itemDef = Definitions.items[itemId];

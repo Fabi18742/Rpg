@@ -13,7 +13,7 @@ export class BattleUI {
     this.render(stateManager.getState());
   }
 
-  render(state) {
+render(state) {
     if (!this.container) return;
 
     // Im Hideout ausblenden
@@ -26,14 +26,52 @@ export class BattleUI {
     const logWindow = document.getElementById('log-window');
     if (logWindow) logWindow.style.display = 'flex';
 
-    // FALL 1: KAMPF LÄUFT
-    if (state.currentEnemy) {
-      const enemy = state.currentEnemy;
+    // FALL 1: KAMPF LÄUFT (Neue Multi-Target Logik)
+    // Wir prüfen auf state.combat.active und ob Gegner da sind
+    if (state.combat && state.combat.active && state.combat.enemies.length > 0) {
+      
+      const enemies = state.combat.enemies;
       const player = state.player;
-      const hpPercent = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
-      const skills = player.skills || ["normal_attack"];
+      const targetIndex = state.combat.targetIndex; // Wen greifen wir an?
 
-      // Skill-Buttons generieren
+      // 1. Gegner-Liste generieren
+      const enemiesHTML = enemies.map((enemy, index) => {
+          const isDead = enemy.hp <= 0;
+          const isSelected = index === targetIndex;
+          const hpPercent = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
+
+          // Styling für Karte (Ausgewählt vs Normal vs Tot)
+          let cardStyle = "padding: 10px; margin-bottom: 8px; background: #222; border: 2px solid #444; cursor: pointer; transition: all 0.2s;";
+          
+          if (isDead) {
+              cardStyle += " opacity: 0.5; filter: grayscale(100%); border-color: #333; cursor: default;";
+          } else if (isSelected) {
+              cardStyle += " border-color: #fbbf24; background: #2a2a2a; transform: scale(1.02);";
+          }
+
+          // Klick-Handler nur für lebende Gegner
+          const onClick = isDead ? '' : `onclick="window.gameAPI.setTarget(${index})"`;
+          // Indikator-Pfeil für das Ziel
+          const selectionIndicator = isSelected ? '<span style="color: #fbbf24; float: right;">◀ Ziel</span>' : '';
+
+          return `
+            <div class="enemy-card" style="${cardStyle}" ${onClick}>
+                <div style="display:flex; justify-content:space-between; margin-bottom: 5px;">
+                    <strong style="color: ${isSelected ? '#fbbf24' : '#fff'};">
+                        ${isDead ? '💀 ' : ''}${enemy.name}
+                    </strong>
+                    <span style="font-size: 0.9em; color: #ccc;">${enemy.hp} / ${enemy.maxHp}</span>
+                </div>
+                <div style="width:100%; height: 6px; background: #111; border-radius: 2px; overflow: hidden;">
+                    <div style="width: ${hpPercent}%; height: 100%; background: #ff6b6b; transition: width 0.2s;"></div>
+                </div>
+                ${!isDead && isSelected ? `<div style="font-size: 10px; color: #fbbf24; text-align: right; margin-top: 2px;"></div>` : ''}
+            </div>
+          `;
+      }).join("");
+
+      // 2. Skill-Buttons generieren (Wie vorher)
+      const skills = player.skills || ["normal_attack"];
       const buttonsHTML = skills.map((skillId) => {
           const skill = Definitions.abilities[skillId];
           if (!skill) return "";
@@ -49,13 +87,10 @@ export class BattleUI {
                   </button>`;
         }).join("");
 
+      // 3. HTML Zusammenbauen
       this.container.innerHTML = `
-            <div style="margin-bottom: 10px; color: #ff6b6b;">
-                <strong>VS. ${enemy.name}</strong> 
-                (${enemy.hp} / ${enemy.maxHp} HP)
-                <div style="width: 100%; height: 5px; background: #333; margin-top: 5px;">
-                    <div style="width: ${hpPercent}%; height: 100%; background: #ff6b6b; transition: width 0.2s;"></div>
-                </div>
+            <div class="enemies-container" style="margin-bottom: 15px; max-height: 250px; overflow-y: auto;">
+                ${enemiesHTML}
             </div>
             
             <div style="text-align:center; margin-bottom: 10px; color: #fbbf24; font-weight:bold;">
