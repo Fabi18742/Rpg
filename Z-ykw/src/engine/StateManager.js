@@ -18,6 +18,7 @@ class StateManager {
         level: 1,
         stats: {},
         inventory: [],
+        weapons: [],
         equipped: { weapon: null, armor: null },
         skills: ["normal_attack", "heavy_strike", "quick_heal"],
       },
@@ -58,6 +59,9 @@ class StateManager {
       this.state.currentEnemy = null;
       this.state.crawl.active = false;
       this.state.crawl.choices = null;
+      if (!this.state.ritual) {
+          this.state.ritual = { selectedItems: [] };
+      }
     } else {
       console.log("✨ Kein Spielstand. Neues Spiel gestartet.");
       this.state.player.maxHp = Definitions.player.baseHp;
@@ -336,26 +340,25 @@ class StateManager {
     }
   }
 
-  performRitual() {
-    if (this.state.ritual.selectedItems.length !== 6) return;
+performRitual() {
+    if (this.state.ritual.selectedItems.length !== 6) return null;
 
-    const result = RitualEngine.calculateResult(
-      this.state.ritual.selectedItems,
-    );
-
-    // Items werden durch Ritual Engine "verbraucht" (bereits aus Inventar weg)
-    this.state.ritual.selectedItems = [];
-
-    // Ergebnis dem Inventar hinzufügen
-    // Wir generieren eine ID für das neue Item
-    const newId = `crafted_${Date.now()}`;
-    const craftedWeapon = { ...result, id: newId };
-
-    this.state.player.inventory.push(craftedWeapon);
-
-    this.notify();
-    this.saveGame();
-    return craftedWeapon;
+    const result = RitualEngine.calculateResult(this.state.ritual.selectedItems);
+    
+    if (result) {
+        this.state.ritual.selectedItems = [];
+        
+        // ÄNDERUNG: In die Waffen-Liste pushen!
+        // Wir stellen sicher, dass das Array existiert (für alte Savegames)
+        if (!this.state.player.weapons) this.state.player.weapons = [];
+        
+        this.state.player.weapons.push(result);
+        
+        this.notify();
+        this.saveGame();
+        return result;
+    }
+    return null;
   }
 }
 

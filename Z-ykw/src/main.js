@@ -64,11 +64,34 @@ window.gameAPI = {
     }
   },
 
-  addToRitual: (id) => stateManager.addItemToRitual(id),
+  addToRitual: (itemId) => {
+    const success = stateManager.addItemToRitual(itemId);
+    if (!success) {
+      console.log("Kann nicht hinzufügen (Voll oder nicht gefunden)");
+    }
+  },
 
-  removeFromRitual: (idx) => stateManager.removeItemFromRitual(idx),
+  removeFromRitual: (index) => {
+    stateManager.removeItemFromRitual(index);
+  },
 
-  doRitual: () => stateManager.performRitual(),
+  doRitual: () => {
+    const result = stateManager.performRitual();
+    if (result) {
+      // Erfolg!
+      ActionEngine.log(
+        `RITUAL VOLLENDET: ${result.name} geschmiedet!`,
+        "player",
+      );
+
+      // Da wir jetzt Waffen vom Inventar getrennt haben,
+      // leiten wir den Spieler zum "Equipment"-Screen (Ausrüstung),
+      // damit er die neue Waffe sehen/ausrüsten kann.
+      window.gameAPI.switchHideoutScreen("equipment");
+    } else {
+      ActionEngine.log("Das Ritual benötigt genau 6 Zutaten.", "neutral");
+    }
+  },
 
   addItem: (itemId) => {
     stateManager.addItem(itemId);

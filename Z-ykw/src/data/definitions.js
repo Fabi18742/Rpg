@@ -8,20 +8,12 @@ export const Definitions = {
       defense: 0,
       speed: 10,
       critChance: 5,
-      critMultiplier: 1.5
+      critMultiplier: 1.5,
     },
     baseActionPoints: 3,
   },
 
   items: {
-    rusty_sword: {
-      id: "rusty_sword",
-      name: "Rostiges Schwert",
-      type: "weapon",
-      damage: 5,
-      critChance: 10,
-      value: 10,
-    },
     iron_shield: {
       id: "iron_shield",
       name: "Eisenschild",
@@ -44,25 +36,107 @@ export const Definitions = {
       description: "Glibberig.",
       goldValue: 2,
     },
-    magic_shard: {
-      id: "magic_shard",
-      name: "Magiesplitter",
+    ritual_shard: {
+      id: "ritual_shard",
+      name: "Ritualsplitter",
       type: "ritual",
-      description: "Ein vibrierendes Kristallstück.",
-      goldValue: 10,
-      ritualValue: 5,
-      modifierType: "sharpness"
+      description: "Ein energetisch geladenes Fragment.",
+      ritualValue: 5, // Hoher Wert
+      modifierType: "sharpness",
     },
-    ancient_wood: {
-      id: "ancient_wood",
-      name: "Uraltes Holz",
+    ritual_essence: {
+      id: "ritual_essence",
+      name: "Wald-Essenz",
       type: "ritual",
-      description: "Hart wie Eisen.",
-      goldValue: 5,
-      ritualValue: 3,
-      modifierType: "defense"
+      description: "Die pure Kraft der Natur.",
+      ritualValue: 3, // Mittlerer Wert
+      modifierType: "poison",
     },
-    
+    ritual_stone: {
+      id: "ritual_stone",
+      name: "Runenstein",
+      type: "ritual",
+      description: "Ein schwerer Stein mit Gravuren.",
+      ritualValue: 8, // Sehr hoher Wert
+      modifierType: "defense",
+    },
+  },
+
+  weapons: {
+    rusty_sword: {
+      id: "rusty_sword",
+      name: "Rostiges Schwert",
+      type: "weapon",
+      damage: 5,
+      critChance: 10,
+      value: 10,
+    },
+    dagger: {
+      id: "dagger",
+      name: "Ritual-Dolch",
+      type: "weapon",
+      damage: 8,
+      critChance: 15, // Dolche sind schnell -> mehr Crit
+      ritualValue: 12,
+      description: "Eine leichte, schnelle Klinge aus dem Ritual.",
+    },
+
+    // Tier 2 (Summe ~20-25)
+    sword: {
+      id: "sword",
+      name: "Ritual-Schwert",
+      type: "weapon",
+      damage: 12,
+      critChance: 10,
+      ritualValue: 22,
+      description: "Eine ausgewogene Waffe, geschmiedet durch Magie.",
+    },
+
+    // Tier 3 (Summe ~30+)
+    axe: {
+      id: "axe",
+      name: "Ritual-Axt",
+      type: "weapon",
+      damage: 18,
+      critChance: 5, // Äxte sind wuchtig -> weniger Crit, mehr Damage
+      ritualValue: 32,
+      description: "Eine schwere Waffe voller roher Energie.",
+    },
+  },
+
+  effects: {
+    sharpness: {
+      id: "sharpness",
+      name: "Schärfe",
+      description: "Erhöht den Schaden.",
+      type: "stat_boost",
+      stat: "damage",
+      value: 3, // +3 Schaden pro Stack
+    },
+    poison: {
+      id: "poison",
+      name: "Gift",
+      description: "Verursacht Schaden über Zeit.",
+      type: "on_hit",
+      trigger: "apply_poison",
+      value: 2, // 2 Giftschaden pro Runde
+    },
+    lifesteal: {
+      id: "lifesteal",
+      name: "Vampirismus",
+      description: "Heilt dich bei jedem Treffer.",
+      type: "on_hit",
+      trigger: "heal_attacker",
+      value: 0.2, // 20% des Schadens als Heilung
+    },
+    defense: {
+      id: "defense",
+      name: "Härte",
+      description: "Erhöht die Verteidigung beim Tragen.",
+      type: "stat_boost",
+      stat: "defense",
+      value: 2,
+    },
   },
 
   abilities: {
