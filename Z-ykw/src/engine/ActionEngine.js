@@ -79,9 +79,10 @@ export class ActionEngine {
     this.log(`Kampf gestartet gegen: ${names}!`, "neutral");
   }
 
-  static useSkill(skillId) {
+static useSkill(skillId) {
     const state = stateManager.getState();
-    if (!state.currentEnemy) return;
+    
+    if (!state.combat || !state.combat.active) return;
 
     const skill = Definitions.abilities[skillId];
     if (!skill) return;
@@ -91,13 +92,15 @@ export class ActionEngine {
 
     if (currentAp < cost) {
       this.log(`Nicht genug Ausdauer! (Benötigt: ${cost} AP)`, "neutral");
-      return; // Abbruch, Aktion wird nicht ausgeführt
+      return;
     }
 
     stateManager.modifyPlayerAp(-cost);
 
     if (skill.type === "attack") {
-      this.executeAttack("player", "enemy", skill);
+      // FIX: Übergabe von null als sourceIndex, da der Spieler angreift
+      // Signatur ist: executeAttack(source, sourceIndex, skill)
+      this.executeAttack("player", null, skill);
     } else if (skill.type === "heal") {
       stateManager.modifyPlayerHp(skill.value);
       this.log(

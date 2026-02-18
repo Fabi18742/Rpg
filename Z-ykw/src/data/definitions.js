@@ -112,7 +112,7 @@ export const Definitions = {
     combat_goblin: {
       id: "combat_goblin",
       type: "combat",
-      enemyId: "goblin",
+      enemies: ["goblin", "goblin"],
       securityCost: 5,
       text: "Ein Goblin springt aus dem Gebüsch!",
     },

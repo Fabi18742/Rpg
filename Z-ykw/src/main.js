@@ -41,6 +41,10 @@ window.gameAPI = {
         ActionEngine.useSkill(skillId);
     },
 
+    setTarget: (index) => {
+        stateManager.setTarget(index);
+    },
+
     // Brücke für die Kampf-Fenster (Toggles)
     toggleInventory: () => {
         if(window.inventoryWindow) window.inventoryWindow.toggle();
