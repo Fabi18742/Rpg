@@ -1,9 +1,11 @@
 // src/ui/BattleUI.js
 import { stateManager } from "../engine/StateManager.js";
 import { Definitions } from "../data/definitions.js";
+import { windowManager } from "./WindowManager.js";
 
 export class BattleUI {
   constructor(elementId) {
+    // Der statische Container wird nur noch für den "Leerlauf" im Dungeon genutzt
     this.container = document.getElementById(elementId);
 
     stateManager.subscribe((state) => {
@@ -13,119 +15,140 @@ export class BattleUI {
     this.render(stateManager.getState());
   }
 
-render(state) {
-    if (!this.container) return;
-
-    // Im Hideout ausblenden
+  render(state) {
+    // 1. Hideout-Check: Alles ausblenden
     if (state.location === 'hideout') {
-        this.container.style.display = 'none';
+        if (this.container) this.container.style.display = 'none';
+        this.hideBattleWindows();
         return;
     }
 
-    // Log-Fenster sicherstellen
-    const logWindow = document.getElementById('log-window');
-    if (logWindow) logWindow.style.display = 'flex';
-
-    // FALL 1: KAMPF LÄUFT (Neue Multi-Target Logik)
-    // Wir prüfen auf state.combat.active und ob Gegner da sind
+    // 2. KAMPF LÄUFT
     if (state.combat && state.combat.active && state.combat.enemies.length > 0) {
-      
-      const enemies = state.combat.enemies;
-      const player = state.player;
-      const targetIndex = state.combat.targetIndex; // Wen greifen wir an?
+        // Starres UI-Feld leeren
+        if (this.container) this.container.style.display = 'none';
+        
+        // Schwebende Fenster aktualisieren
+        this.updateEnemyWindow(state);
+        this.updateAbilityWindow(state);
+        this.updateControlWindow(state);
 
-      // 1. Gegner-Liste generieren
-      const enemiesHTML = enemies.map((enemy, index) => {
+        // Kampflog sicherstellen
+        const logWin = document.getElementById('log-window');
+        if (logWin) logWin.style.display = 'flex';
+    } 
+    // 3. KEIN KAMPF (Dungeon Leerlauf)
+    else {
+        this.hideBattleWindows();
+
+        if (state.location === 'dungeon' && !state.crawl.choices) {
+            if (this.container) {
+                this.container.innerHTML = `
+                    <div style="margin-bottom: 15px; color: #888; text-align: center;">Das Gebiet ist ruhig.</div>
+                    <div style="display: flex; gap: 10px; justify-content: center;">
+                        <button class="game-button" onclick="window.gameAPI.searchEnemy()">Weiter suchen 👣</button>
+                        <button class="game-button" onclick="window.gameAPI.returnHome()">🏠 Heimkehren</button>
+                    </div>
+                `;
+                this.container.style.display = 'block';
+            }
+        } else {
+            if (this.container) this.container.style.display = 'none';
+        }
+    }
+  }
+
+  hideBattleWindows() {
+      ['enemy-window', 'ability-window', 'control-window'].forEach(id => {
+          const win = document.getElementById(id);
+          if (win) win.style.display = 'none';
+      });
+  }
+
+  // --- FENSTER 1: GEGNER ---
+  updateEnemyWindow(state) {
+      const enemiesHTML = state.combat.enemies.map((enemy, index) => {
           const isDead = enemy.hp <= 0;
-          const isSelected = index === targetIndex;
+          const isSelected = index === state.combat.targetIndex;
           const hpPercent = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
-
-          // Styling für Karte (Ausgewählt vs Normal vs Tot)
-          let cardStyle = "padding: 10px; margin-bottom: 8px; background: #222; border: 2px solid #444; cursor: pointer; transition: all 0.2s;";
           
-          if (isDead) {
-              cardStyle += " opacity: 0.5; filter: grayscale(100%); border-color: #333; cursor: default;";
-          } else if (isSelected) {
-              cardStyle += " border-color: #fbbf24; background: #2a2a2a; transform: scale(1.02);";
-          }
+          let style = "padding: 10px; margin-bottom: 8px; background: #111; border: 2px solid #444; cursor: pointer;";
+          if (isDead) style += " opacity: 0.4; filter: grayscale(1); cursor: default;";
+          else if (isSelected) style += " border-color: #fbbf24; background: #222;";
 
-          // Klick-Handler nur für lebende Gegner
           const onClick = isDead ? '' : `onclick="window.gameAPI.setTarget(${index})"`;
-          // Indikator-Pfeil für das Ziel
-          const selectionIndicator = isSelected ? '<span style="color: #fbbf24; float: right;">◀ Ziel</span>' : '';
 
           return `
-            <div class="enemy-card" style="${cardStyle}" ${onClick}>
-                <div style="display:flex; justify-content:space-between; margin-bottom: 5px;">
-                    <strong style="color: ${isSelected ? '#fbbf24' : '#fff'};">
-                        ${isDead ? '💀 ' : ''}${enemy.name}
-                    </strong>
-                    <span style="font-size: 0.9em; color: #ccc;">${enemy.hp} / ${enemy.maxHp}</span>
+            <div class="enemy-card" style="${style}" ${onClick}>
+                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                    <strong style="color:${isSelected ? '#fbbf24' : '#fff'}">${isDead ? '💀 ' : ''}${enemy.name}</strong>
+                    <span>${enemy.hp}/${enemy.maxHp}</span>
                 </div>
-                <div style="width:100%; height: 6px; background: #111; border-radius: 2px; overflow: hidden;">
-                    <div style="width: ${hpPercent}%; height: 100%; background: #ff6b6b; transition: width 0.2s;"></div>
-                </div>
-                ${!isDead && isSelected ? `<div style="font-size: 10px; color: #fbbf24; text-align: right; margin-top: 2px;"></div>` : ''}
-            </div>
-          `;
+                <div style="width:100%; height:4px; background:#000;"><div style="width:${hpPercent}%; height:100%; background:#ff6b6b;"></div></div>
+            </div>`;
       }).join("");
 
-      // 2. Skill-Buttons generieren (Wie vorher)
-      const skills = player.skills || ["normal_attack"];
-      const buttonsHTML = skills.map((skillId) => {
+      this.ensureWindow('enemy-window', 'Gegner', `<div style="padding:10px;">${enemiesHTML}</div>`, { width: '300px', left: '50px', top: '50px' });
+  }
+
+  // --- FENSTER 2: FÄHIGKEITEN ---
+  updateAbilityWindow(state) {
+      const buttonsHTML = state.player.skills.map(skillId => {
           const skill = Definitions.abilities[skillId];
-          if (!skill) return "";
-
           const cost = skill.apCost || 0;
-          const hasEnoughAp = player.currentAp >= cost;
+          const canAfford = state.player.currentAp >= cost;
           
-          // Ausgrauen, wenn zu wenig AP
-          const disabledAttr = hasEnoughAp ? "" : 'disabled style="opacity: 0.5; cursor: not-allowed;"';
+          return `
+            <div class="ability-button-card ${canAfford ? '' : 'disabled'}" 
+                 onclick="${canAfford ? `window.gameAPI.useSkill('${skillId}')` : ''}"
+                 style="width:180px; padding:10px; background:#111; border:2px solid #444; margin:5px; text-align:center; cursor:pointer;">
+                <div style="font-weight:bold; color:#fbbf24;">${skill.name}</div>
+                <div style="font-size:0.8em; color:#888;">Kosten: ${cost} AP</div>
+            </div>`;
+      }).join("");
 
-          return `<button class="game-button" onclick="window.gameAPI.useSkill('${skillId}')" ${disabledAttr}>
-                    ${skill.name} <br><span style="font-size:0.7em; color: #fbbf24;">(${cost} AP)</span>
-                  </button>`;
-        }).join("");
+      this.ensureWindow('ability-window', 'Fähigkeiten', 
+          `<div style="display:flex; flex-wrap:wrap; justify-content:center;">${buttonsHTML}</div>`, 
+          { width: '420px', left: '400px', top: '50px' });
+  }
 
-      // 3. HTML Zusammenbauen
-      this.container.innerHTML = `
-            <div class="enemies-container" style="margin-bottom: 15px; max-height: 250px; overflow-y: auto;">
-                ${enemiesHTML}
+  // --- FENSTER 3: STATUS ---
+  updateControlWindow(state) {
+      const hpPercent = (state.player.hp / state.player.maxHp) * 100;
+      const content = `
+        <div style="padding:15px;">
+            <div style="margin-bottom:10px;">
+                <div style="display:flex; justify-content:space-between; font-size:14px; font-weight:bold;"><span>HP</span><span>${state.player.hp}/${state.player.maxHp}</span></div>
+                <div style="width:100%; height:12px; background:#000; border:1px solid #444;"><div style="width:${hpPercent}%; height:100%; background:#dc2626;"></div></div>
             </div>
-            
-            <div style="text-align:center; margin-bottom: 10px; color: #fbbf24; font-weight:bold;">
-                AP: ${player.currentAp} / ${player.maxAp}
+            <div style="text-align:center; color:#fbbf24; font-weight:bold; margin-bottom:15px; font-size:1.2em;">⚡ AP: ${state.player.currentAp}/${state.player.maxAp}</div>
+            <div style="display:flex; gap:10px; justify-content:center;">
+                <button class="game-button" style="min-height:40px; padding:5px 15px;" onclick="window.gameAPI.toggleInventory()">🎒 Inv.</button>
+                <button class="game-button" style="min-height:40px; padding:5px 15px;" onclick="window.gameAPI.toggleStats()">📊 Stats</button>
             </div>
+        </div>`;
 
-            <div class="button-row" style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom: 15px;">
-                ${buttonsHTML}
-            </div>
+      this.ensureWindow('control-window', 'Status', content, { width: '300px', left: '400px', top: '350px' });
+  }
 
-            <div style="display: flex; justify-content: center; gap: 10px; border-top: 1px solid #444; padding-top: 10px;">
-                <button class="game-button" style="padding: 5px 15px; min-height: 40px; font-size: 14px;" onclick="window.gameAPI.toggleInventory()">🎒 Inventar</button>
-                <button class="game-button" style="padding: 5px 15px; min-height: 40px; font-size: 14px;" onclick="window.gameAPI.toggleStats()">📊 Stats</button>
-            </div>
-      `;
-      this.container.style.display = "block";
-    
-    } 
-    // FALL 2: CRAWL/EVENT
-    else if (state.crawl && state.crawl.choices) {
-        this.container.innerHTML = '';
-        this.container.style.display = 'none';
-    }
-    // FALL 3: LEERLAUF
-    else {
-        this.container.innerHTML = `
-            <div style="margin-bottom: 15px; color: #888; text-align: center;">
-                Das Gebiet ist ruhig.
-            </div>
-            <div style="display: flex; gap: 10px; justify-content: center;">
-                <button class="game-button" onclick="window.gameAPI.searchEnemy()">Weiter suchen 👣</button>
-                <button class="game-button" onclick="window.gameAPI.returnHome()">🏠 Heimkehren</button>
-            </div>
-        `;
-        this.container.style.display = 'block';
-    }
+  // Helper, um Fenster sicher zu erstellen oder nur den Inhalt zu updaten
+  ensureWindow(id, title, contentHTML, pos) {
+      let win = document.getElementById(id);
+      if (!win) {
+          win = document.createElement('div');
+          win.id = id;
+          win.className = 'draggable-window';
+          win.style.position = 'fixed';
+          win.style.width = pos.width;
+          win.style.left = pos.left;
+          win.style.top = pos.top;
+          win.innerHTML = `
+            <div class="window-header"><span class="window-title">${title}</span><div class="window-controls"><div class="win-btn minimize-btn">_</div></div></div>
+            <div class="window-content"></div>`;
+          document.body.appendChild(win);
+          windowManager.addWindow(win, id);
+      }
+      win.querySelector('.window-content').innerHTML = contentHTML;
+      win.style.display = 'flex';
   }
 }
