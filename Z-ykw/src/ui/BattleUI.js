@@ -33,6 +33,8 @@ export class BattleUI {
         this.updateAbilityWindow(state);
         this.updateControlWindow(state);
 
+        this.applyPreferences();
+
         // Kampflog sicherstellen
         const logWin = document.getElementById('log-window');
         if (logWin) logWin.style.display = 'flex';
@@ -58,8 +60,19 @@ export class BattleUI {
     }
   }
 
+  applyPreferences() {
+      const showInv = localStorage.getItem('pref_inventory_visible') === 'true';
+      const showStats = localStorage.getItem('pref_stats_visible') === 'true';
+
+      const invWin = document.getElementById('inventory-window');
+      const statsWin = document.getElementById('stats-window');
+
+      if (invWin) invWin.style.display = showInv ? 'flex' : 'none';
+      if (statsWin) statsWin.style.display = showStats ? 'flex' : 'none';
+  }
+
   hideBattleWindows() {
-      ['enemy-window', 'ability-window', 'control-window'].forEach(id => {
+      ['enemy-window', 'ability-window', 'control-window', 'log-window','inventory-window','stats-window', ].forEach(id => {
           const win = document.getElementById(id);
           if (win) win.style.display = 'none';
       });
