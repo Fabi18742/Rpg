@@ -10,12 +10,12 @@ import { InventoryUI } from "./ui/InventoryUI.js";
 import { StatsUI } from "./ui/StatsUI.js";
 import { windowManager } from "./ui/WindowManager.js";
 import { Definitions } from "./data/definitions.js";
+import { ResultUI } from "./ui/ResultUI.js";
 
 console.log("RPG Engine v2.0 starting...");
 
 // --- GLOBAL API ---
 window.gameAPI = {
-  // Allgemein
   useItem: (itemId) => {
     ActionEngine.useItem(itemId);
   },
@@ -95,16 +95,19 @@ window.gameAPI = {
   doRitual: () => {
     const result = stateManager.performRitual();
     if (result) {
-      // Erfolg!
-      ActionEngine.log(
-        `RITUAL VOLLENDET: ${result.name} geschmiedet!`,
-        "player",
-      );
-
-      window.gameAPI.switchHideoutScreen("equipment");
+      const messages = [
+        `Du spürst, wie dunkle Magie durch den Raum fließt...`,
+        `Waffe erschaffen: <strong style="color: var(--accent-color); font-size: 1.2em;">${result.name}</strong>`,
+        `<span style="color: #aaa; font-size: 0.9em;">(Sieh sie dir in der Ausrüstung an)</span>`,
+      ];
+      stateManager.setResult("Ritual Vollendet!", messages, "ritual");
     } else {
       ActionEngine.log("Das Ritual benötigt genau 6 Zutaten.", "neutral");
     }
+  },
+  
+  clearRitual: () => {
+    stateManager.clearRitual();
   },
 
   equipWeapon: (weaponId) => {
@@ -126,10 +129,22 @@ window.gameAPI = {
     if (confirm("Spielstand wirklich löschen?")) stateManager.resetGame();
   },
 
+  closeResult: () => {
+    const context = stateManager.clearResult();
+
+    // Nach dem Kampf: Gegner plündern & zurück in den Dungeon-Leerlauf
+    if (context === "combat_win") {
+      stateManager.endCombat();
+    }
+    // Nach dem Ritual: In den Ausrüstungs-Screen wechseln
+    else if (context === "ritual") {
+      window.gameAPI.switchHideoutScreen("ritual");
+    }
+  },
+
   selectShopItem: (side, index) => {
-    // Speichert im UI-Modul, was gerade angeklickt ist
     window.hideoutInstance.shopSelection = { side, index, qty: 1 };
-    stateManager.notify(); // UI neu zeichnen
+    stateManager.notify();
   },
 
   changeShopQty: (baseDelta, event) => {
@@ -235,6 +250,7 @@ try {
   // Diese sind getrennt von den festen Hideout-Screens!
   window.inventoryWindow = new InventoryUI();
   window.statsWindow = new StatsUI();
+  new ResultUI();
 
   // 5. Log-Fenster beim WindowManager registrieren
   const logWindow = document.getElementById("log-window");

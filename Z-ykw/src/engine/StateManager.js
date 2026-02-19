@@ -9,6 +9,7 @@ class StateManager {
   constructor() {
     this.state = {
       location: "hideout",
+      activeResult: null,
       player: {
         hp: 0,
         maxHp: 0,
@@ -130,6 +131,18 @@ class StateManager {
     this.saveGame();
   }
 
+  setResult(title, messages, context) {
+    this.state.activeResult = { title, messages, context };
+    this.notify();
+  }
+
+  clearResult() {
+    const context = this.state.activeResult?.context;
+    this.state.activeResult = null;
+    this.notify();
+    return context;
+  }
+
   // --- Persistence ---
   saveGame() {
     Storage.save(SAVE_KEY, this.state);
@@ -193,8 +206,10 @@ class StateManager {
     const itemDef = Definitions.items[itemId];
     if (itemDef) {
       // Prüfen, ob das Item schon im Inventar existiert
-      const existingItem = this.state.player.inventory.find(i => i.id === itemId);
-      
+      const existingItem = this.state.player.inventory.find(
+        (i) => i.id === itemId,
+      );
+
       if (existingItem) {
         // Wenn ja, Menge erhöhen
         existingItem.quantity = (existingItem.quantity || 1) + amount;
@@ -202,7 +217,7 @@ class StateManager {
         // Wenn nein, neu hinzufügen mit Menge
         this.state.player.inventory.push({ ...itemDef, quantity: amount });
       }
-      
+
       this.notify();
       this.saveGame();
     }
@@ -214,15 +229,15 @@ class StateManager {
 
     if (itemIndex !== -1) {
       const item = inventory[itemIndex];
-      
+
       // Prüfen, ob wir mehr als die geforderte Menge haben
       if (item.quantity && item.quantity > amount) {
         item.quantity -= amount;
       } else {
         // Falls nicht, Item komplett aus Array löschen
-        inventory.splice(itemIndex, 1); 
+        inventory.splice(itemIndex, 1);
       }
-      
+
       this.notify();
       this.saveGame();
       return true;
@@ -397,14 +412,24 @@ class StateManager {
   addItemToRitual(itemId) {
     if (this.state.ritual.selectedItems.length >= 6) return false;
 
-    // Item aus Inventar finden & entfernen
-    const itemIndex = this.state.player.inventory.findIndex(
-      (i) => i.id === itemId,
-    );
+    const inventory = this.state.player.inventory;
+    const itemIndex = inventory.findIndex((i) => i.id === itemId);
+
     if (itemIndex === -1) return false;
 
-    const item = this.state.player.inventory.splice(itemIndex, 1)[0];
-    this.state.ritual.selectedItems.push(item);
+    const item = inventory[itemIndex];
+
+    // Nur 1 abziehen statt das ganze Item zu löschen
+    if (item.quantity && item.quantity > 1) {
+      item.quantity -= 1;
+    } else {
+      inventory.splice(itemIndex, 1);
+    }
+
+    // Eine saubere Kopie (ohne Quantity) in den Kreis legen
+    const ritualItem = { ...item };
+    delete ritualItem.quantity;
+    this.state.ritual.selectedItems.push(ritualItem);
 
     this.notify();
     return true;
@@ -413,8 +438,8 @@ class StateManager {
   removeItemFromRitual(index) {
     const item = this.state.ritual.selectedItems.splice(index, 1)[0];
     if (item) {
-      this.state.player.inventory.push(item);
-      this.notify();
+      // Nutzt unsere schlaue addItem-Funktion, damit es sich wieder sauber stapelt!
+      this.addItem(item.id, 1);
     }
   }
 
@@ -439,6 +464,19 @@ class StateManager {
       return result;
     }
     return null;
+  }
+
+  clearRitual() {
+    // Solange noch Items im Ritual-Kreis liegen
+    while (this.state.ritual.selectedItems.length > 0) {
+        const item = this.state.ritual.selectedItems.pop();
+        if (item && item.id) {
+            // Legt das Item sauber mit unserer neuen Stapel-Logik zurück
+            this.addItem(item.id, 1);
+        }
+    }
+    this.saveGame();
+    this.notify();
   }
 }
 

@@ -23,6 +23,9 @@ export class HideoutUI {
   }
 
   setScreen(screen) {
+    if (this.activeScreen === "ritual" && screen !== "ritual") {
+      window.gameAPI.clearRitual();
+    }
     this.activeScreen = screen;
     this.render(stateManager.getState());
   }
@@ -682,7 +685,7 @@ export class HideoutUI {
                                   (item) => `
                                 <div class="static-inv-item" style="background: #111; border: 1px solid #444; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
                                     <div style="display:flex; flex-direction:column; gap: 4px;">
-                                        <span style="font-size: 16px; color: var(--accent-color); font-weight: bold;">${item.name}</span>
+                                        <span style="font-size: 16px; color: var(--accent-color); font-weight: bold;">${item.name}${item.quantity > 1 ? ` <span style="color: #fbbf24; font-size: 12px; margin-left: 5px;">x${item.quantity}</span>` : ""}</span>
                                         <span style="font-size: 12px; color: #888;">Kraft: ${item.ritualValue || 0}</span>
                                     </div>
                                     <button class="game-button" onclick="window.gameAPI.addToRitual('${item.id}')" style="min-height: 40px; width: 40px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 20px;">+</button>

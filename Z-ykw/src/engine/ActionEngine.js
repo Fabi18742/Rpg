@@ -143,55 +143,58 @@ export class ActionEngine {
     }
   }
 
-static enemyTurn() {
+  static enemyTurn() {
     const state = stateManager.getState();
     if (!state.combat.active) return;
 
     const enemies = state.combat.enemies;
-    this.log("--- Gegner Zug ---", 'neutral');
+    this.log("--- Gegner Zug ---", "neutral");
 
     // 1. Gegner Aktionen & Status Effekte
     enemies.forEach((enemy, index) => {
-        if (enemy.hp > 0) {
-            // DoT auf Gegner anwenden
-            const diedFromDot = this.processTurnEffects(enemy, false);
-            
-            if (diedFromDot) {
-                this.log(`${enemy.name} ist an seinen Wunden erlegen!`, "player");
-                stateManager.notify(); 
-            } else {
-                // Nur angreifen, wenn er nicht durch Gift gestorben ist
-                this.executeAttack('enemy', index);
-            }
+      if (enemy.hp > 0) {
+        // DoT auf Gegner anwenden
+        const diedFromDot = this.processTurnEffects(enemy, false);
+
+        if (diedFromDot) {
+          this.log(`${enemy.name} ist an seinen Wunden erlegen!`, "player");
+          stateManager.notify();
+        } else {
+          // Nur angreifen, wenn er nicht durch Gift gestorben ist
+          this.executeAttack("enemy", index);
         }
+      }
     });
 
     // 2. Prüfen ob Spieler durch die Angriffe gestorben ist
     if (stateManager.getState().player.hp <= 0) {
-        this.log("Du wurdest besiegt...", 'enemy');
-        stateManager.saveGame(); 
-        return; 
+      this.log("Du wurdest besiegt...", "enemy");
+      stateManager.saveGame();
+      return;
     }
 
     // 3. Status Effekte auf dem Spieler (Start seines Zuges)
-    const playerDied = this.processTurnEffects(stateManager.getState().player, true);
+    const playerDied = this.processTurnEffects(
+      stateManager.getState().player,
+      true,
+    );
     if (playerDied) {
-        this.log("Du bist an deinen Wunden erlegen...", 'enemy');
-        stateManager.saveGame();
-        return; 
+      this.log("Du bist an deinen Wunden erlegen...", "enemy");
+      stateManager.saveGame();
+      return;
     }
 
     // 4. Spieler ist wieder dran (falls noch Gegner leben)
-    const allDead = state.combat.enemies.every(e => e.hp <= 0);
+    const allDead = state.combat.enemies.every((e) => e.hp <= 0);
     if (allDead) {
-        this.winCombat();
+      this.winCombat();
     } else {
-        stateManager.resetPlayerAp();
-        this.log("Du bist am Zug.", 'neutral');
+      stateManager.resetPlayerAp();
+      this.log("Du bist am Zug.", "neutral");
     }
   }
 
-static executeAttack(source, sourceIndex = null, skill = null) {
+  static executeAttack(source, sourceIndex = null, skill = null) {
     const state = stateManager.getState();
     let attacker, defender, attackerName;
 
@@ -205,7 +208,7 @@ static executeAttack(source, sourceIndex = null, skill = null) {
       attackerName = "Du";
       if (!defender || defender.hp <= 0) {
         this.log("Dieses Ziel ist bereits besiegt!", "neutral");
-        return; 
+        return;
       }
     } else {
       attacker = state.combat.enemies[sourceIndex];
@@ -214,24 +217,37 @@ static executeAttack(source, sourceIndex = null, skill = null) {
     }
 
     if (Math.random() > accuracy) {
-      this.log(`${attackerName} verfehl${source === "player" ? "st" : "t"} das Ziel!`, "neutral");
+      this.log(
+        `${attackerName} verfehl${source === "player" ? "st" : "t"} das Ziel!`,
+        "neutral",
+      );
       if (source === "player") this.checkTurnEnd();
       return;
     }
 
     // Schaden berechnen
     const attackResult = StatCalculator.calculateAttack(attacker, skill);
-    const defenseResult = StatCalculator.calculateDefense(defender, attackResult.damage);
+    const defenseResult = StatCalculator.calculateDefense(
+      defender,
+      attackResult.damage,
+    );
     const finalDamage = defenseResult.damage;
 
     // Logging
     let logMsg = attackResult.isCrit ? " (KRITISCH!)" : "";
     const verb = source === "player" ? "triffst" : "trifft";
-    const actionText = skill ? skill.text : source === "player" ? "greifst an" : "greift an";
+    const actionText = skill
+      ? skill.text
+      : source === "player"
+        ? "greifst an"
+        : "greift an";
     const targetName = source === "player" ? defender.name : "";
     const type = source === "player" ? "player" : "enemy";
-    
-    this.log(`${attackerName} ${source === "player" ? "" : "(" + actionText + ")"} ${verb} ${targetName} für ${finalDamage} Schaden${logMsg}!`, type);
+
+    this.log(
+      `${attackerName} ${source === "player" ? "" : "(" + actionText + ")"} ${verb} ${targetName} für ${finalDamage} Schaden${logMsg}!`,
+      type,
+    );
 
     // HP Abziehen
     if (source === "player") {
@@ -242,8 +258,18 @@ static executeAttack(source, sourceIndex = null, skill = null) {
 
     // --- NEU: AKTIVE EFFEKTE (On Hit) ANWENDEN ---
     // Passiert nur, wenn man auch Schaden gemacht hat (> 0)
-    if (attackResult.activeEffects && attackResult.activeEffects.length > 0 && finalDamage > 0) {
-        this.processActiveEffects(attackResult.activeEffects, attacker, defender, finalDamage, source === "player");
+    if (
+      attackResult.activeEffects &&
+      attackResult.activeEffects.length > 0 &&
+      finalDamage > 0
+    ) {
+      this.processActiveEffects(
+        attackResult.activeEffects,
+        attacker,
+        defender,
+        finalDamage,
+        source === "player",
+      );
     }
 
     // Runden-Ende & Sieg-Check
@@ -264,135 +290,167 @@ static executeAttack(source, sourceIndex = null, skill = null) {
     }
   }
 
-  static processActiveEffects(effectIds, attacker, defender, damageDealt, isPlayerSource) {
-      effectIds.forEach(effectId => {
-          const effectDef = Definitions.effects[effectId];
-          if (!effectDef) return;
+  static processActiveEffects(
+    effectIds,
+    attacker,
+    defender,
+    damageDealt,
+    isPlayerSource,
+  ) {
+    effectIds.forEach((effectId) => {
+      const effectDef = Definitions.effects[effectId];
+      if (!effectDef) return;
 
-          // Ist es ein Treffer-Effekt?
-          if (effectDef.type === "on_hit") {
-              
-              if (effectDef.trigger === "apply_status") {
-                  const chance = effectDef.applyChance !== undefined ? effectDef.applyChance : 1.0;
-                  
-                  if (Math.random() <= chance) {
-                      this.applyStatusEffect(defender, effectDef);
-                  }
-              } 
-              
-              // Fall 2: Sich selbst heilen (z.B. Vampirismus)
-              else if (effectDef.trigger === "heal_attacker") {
-                  const heal = Math.floor(damageDealt * effectDef.value);
-                  if (heal > 0) {
-                      if (isPlayerSource) {
-                          stateManager.modifyPlayerHp(heal);
-                          this.log(`Du heilst dich um ${heal} HP durch ${effectDef.name}!`, "player");
-                      } else {
-                          attacker.hp += heal;
-                          this.log(`${attacker.name} heilt sich um ${heal} HP durch ${effectDef.name}.`, "enemy");
-                          stateManager.notify();
-                      }
-                  }
-              }
+      // Ist es ein Treffer-Effekt?
+      if (effectDef.type === "on_hit") {
+        if (effectDef.trigger === "apply_status") {
+          const chance =
+            effectDef.applyChance !== undefined ? effectDef.applyChance : 1.0;
+
+          if (Math.random() <= chance) {
+            this.applyStatusEffect(defender, effectDef);
           }
-      });
+        }
+
+        // Fall 2: Sich selbst heilen (z.B. Vampirismus)
+        else if (effectDef.trigger === "heal_attacker") {
+          const heal = Math.floor(damageDealt * effectDef.value);
+          if (heal > 0) {
+            if (isPlayerSource) {
+              stateManager.modifyPlayerHp(heal);
+              this.log(
+                `Du heilst dich um ${heal} HP durch ${effectDef.name}!`,
+                "player",
+              );
+            } else {
+              attacker.hp += heal;
+              this.log(
+                `${attacker.name} heilt sich um ${heal} HP durch ${effectDef.name}.`,
+                "enemy",
+              );
+              stateManager.notify();
+            }
+          }
+        }
+      }
+    });
   }
 
   static applyStatusEffect(target, effectDef) {
-      if (!target.statusEffects) target.statusEffects = [];
+    if (!target.statusEffects) target.statusEffects = [];
 
-      const existing = target.statusEffects.find(e => e.id === effectDef.statusId);
-      const name = target.name || "Du";
+    const existing = target.statusEffects.find(
+      (e) => e.id === effectDef.statusId,
+    );
+    const name = target.name || "Du";
 
-      if (existing) {
-          // --- STACK-LOGIK: Stacks addieren statt Dauer verlängern ---
-          existing.stacks += (effectDef.stacksToApply || 1);
-          this.log(`🧪 ${name}: ${effectDef.name} stapelt sich auf ${existing.stacks}!`, "neutral");
-      } else {
-          target.statusEffects.push({
-              id: effectDef.statusId,
-              name: effectDef.name,
-              baseDamage: effectDef.baseDamage || 0,
-              stacks: effectDef.stacksToApply || 1, // Nutzt Stacks
-              type: effectDef.statusType 
-          });
-          this.log(`🧪 ${name} leidet nun unter ${effectDef.name} (${effectDef.stacksToApply} Stacks)!`, "neutral");
-      }
-      stateManager.notify();
+    if (existing) {
+      // --- STACK-LOGIK: Stacks addieren statt Dauer verlängern ---
+      existing.stacks += effectDef.stacksToApply || 1;
+      this.log(
+        `🧪 ${name}: ${effectDef.name} stapelt sich auf ${existing.stacks}!`,
+        "neutral",
+      );
+    } else {
+      target.statusEffects.push({
+        id: effectDef.statusId,
+        name: effectDef.name,
+        baseDamage: effectDef.baseDamage || 0,
+        stacks: effectDef.stacksToApply || 1, // Nutzt Stacks
+        type: effectDef.statusType,
+      });
+      this.log(
+        `🧪 ${name} leidet nun unter ${effectDef.name} (${effectDef.stacksToApply} Stacks)!`,
+        "neutral",
+      );
+    }
+    stateManager.notify();
   }
 
   static processTurnEffects(entity, isPlayer) {
-      if (!entity.statusEffects || entity.statusEffects.length === 0) return false;
-      
-      let died = false;
+    if (!entity.statusEffects || entity.statusEffects.length === 0)
+      return false;
 
-      // Rückwärts loopen, damit wir sicher löschen können
-      for (let i = entity.statusEffects.length - 1; i >= 0; i--) {
-          const effect = entity.statusEffects[i];
+    let died = false;
 
-          if (effect.type === "dot") {
-              // --- SCHADENS-LOGIK: Basis + Stacks ---
-              const dmg = effect.baseDamage + effect.stacks;
+    // Rückwärts loopen, damit wir sicher löschen können
+    for (let i = entity.statusEffects.length - 1; i >= 0; i--) {
+      const effect = entity.statusEffects[i];
 
-              if (isPlayer) {
-                  stateManager.modifyPlayerHp(-dmg);
-              } else {
-                  entity.hp -= dmg;
-              }
-              const name = isPlayer ? "Du erleidest" : `${entity.name} erleidet`;
-              this.log(`🧪 ${name} ${dmg} Schaden durch ${effect.name}.`, "neutral");
-          }
+      if (effect.type === "dot") {
+        // --- SCHADENS-LOGIK: Basis + Stacks ---
+        const dmg = effect.baseDamage + effect.stacks;
 
-          // --- ABKLING-LOGIK: 1 Stack pro Runde abziehen ---
-          effect.stacks--;
-          if (effect.stacks <= 0) {
-              const name = isPlayer ? "Dir" : entity.name;
-              this.log(`${effect.name} auf ${name} ist abgeklungen.`, "neutral");
-              entity.statusEffects.splice(i, 1);
-          }
-          
-          if (entity.hp <= 0) died = true;
+        if (isPlayer) {
+          stateManager.modifyPlayerHp(-dmg);
+        } else {
+          entity.hp -= dmg;
+        }
+        const name = isPlayer ? "Du erleidest" : `${entity.name} erleidet`;
+        this.log(`🧪 ${name} ${dmg} Schaden durch ${effect.name}.`, "neutral");
       }
-      
-      if (!isPlayer) stateManager.notify();
-      return died;
+
+      // --- ABKLING-LOGIK: 1 Stack pro Runde abziehen ---
+      effect.stacks--;
+      if (effect.stacks <= 0) {
+        const name = isPlayer ? "Dir" : entity.name;
+        this.log(`${effect.name} auf ${name} ist abgeklungen.`, "neutral");
+        entity.statusEffects.splice(i, 1);
+      }
+
+      if (entity.hp <= 0) died = true;
+    }
+
+    if (!isPlayer) stateManager.notify();
+    return died;
   }
 
   static winCombat() {
     const state = stateManager.getState();
     const enemies = state.combat.enemies;
+    const messages = [];
 
-    this.log("Alle Gegner besiegt!", "player");
-
-    // 1. XP berechnen (Summe aller Gegner)
     let totalXp = 0;
+    let totalGold = 0;
+
     enemies.forEach((enemy) => {
       totalXp += enemy.xp || 0;
-    });
+      totalGold += enemy.gold || 5; // Wenn kein Gold definiert ist, gibt's standardmäßig 5
 
-    if (totalXp > 0) {
-      stateManager.addXp(totalXp);
-      this.log(`+${totalXp} Erfahrung erhalten.`, "neutral");
-    }
-
-    // 2. Loot für JEDEN Gegner berechnen
-    enemies.forEach((enemy) => {
       if (enemy.lootTable) {
         enemy.lootTable.forEach((loot) => {
           if (Math.random() < loot.chance) {
             stateManager.addItem(loot.itemId);
-
-            // Name auflösen für schöneres Log
             const itemDef = Definitions.items[loot.itemId];
             const itemName = itemDef ? itemDef.name : loot.itemId;
-
-            this.log(`Beute: ${itemName}`, "neutral");
+            messages.push(
+              `Beute: <strong style="color: var(--accent-color);">${itemName}</strong>`,
+            );
           }
         });
       }
     });
 
-    stateManager.endCombat();
+    if (totalXp > 0) {
+      stateManager.addXp(totalXp);
+      messages.unshift(
+        `<span style="color: #a855f7; font-weight: bold;">+${totalXp} Erfahrung</span>`,
+      );
+    }
+
+    if (totalGold > 0) {
+      stateManager.modifyGold(totalGold);
+      messages.unshift(
+        `<span style="color: #fbbf24; font-weight: bold;">+${totalGold} Gold</span>`,
+      );
+    }
+
+    if (messages.length === 0)
+      messages.push("Die Monster hatten nichts von Wert bei sich.");
+
+    // Level-Up Logik triggern, falls XP-Schwelle erreicht
+    // Den Kampf noch NICHT beenden, das passiert erst beim Klick auf "Weiter"!
+    stateManager.setResult("KAMPF GEWONNEN!", messages, "combat_win");
   }
 
   static log(message, type = "neutral") {
