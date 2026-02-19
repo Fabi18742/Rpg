@@ -15,26 +15,24 @@ export class CrawlEngine {
     if (!state.crawl.active) return;
 
     if (state.crawl.security <= 0) {
+      const worldDef = Definitions.worlds[state.crawl.worldId];
+      const bossId = worldDef.bossId;
+
       ActionEngine.log(
-        "Die Sicherheit ist auf 0 gefallen... Ein gewaltiger Gegner nähert sich!",
+        `Die Sicherheit ist auf 0 gefallen... ${Definitions.enemies[bossId].name} erscheint!`,
         "enemy",
       );
 
-      // Löst sofort einen Kampf aus, statt Karten zu ziehen.
-      // (Vorübergehend nehmen wir hier zwei Wölfe als "Boss-Ersatz",
-      // bis du einen echten Boss in die definitions.js einträgst)
-      ActionEngine.startCombat(["wolf", "wolf"]);
+      ActionEngine.startCombat([bossId], true);
       return;
     }
 
     const world = Definitions.worlds[state.crawl.worldId];
-    const pool = world.events; // Array von IDs ["combat_goblin", ...]
+    const pool = world.events;
 
-    // 3 Zufällige ziehen (ohne Duplikate wenn möglich)
     const shuffled = [...pool].sort(() => 0.5 - Math.random());
     const selectedIds = shuffled.slice(0, 3);
 
-    // Events auflösen (IDs -> Objekte)
     const choices = selectedIds.map((id) => Definitions.events[id]);
 
     stateManager.setCrawlChoices(choices);
@@ -63,15 +61,11 @@ export class CrawlEngine {
     if (eventDef.type === "combat") {
       ActionEngine.log(eventDef.text, "neutral");
 
-      // FIX: Wir prüfen, ob es eine einzelne ID oder eine Liste ist
-      // und übergeben IMMER ein Array an die ActionEngine.
       let enemyList = [];
 
       if (eventDef.enemies) {
-        // Es ist schon eine Liste (neues System)
         enemyList = eventDef.enemies;
       } else if (eventDef.enemyId) {
-        // Es ist eine einzelne ID (altes System) -> In Array packen
         enemyList = [eventDef.enemyId];
       }
 

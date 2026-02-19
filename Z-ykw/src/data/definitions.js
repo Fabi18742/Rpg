@@ -185,6 +185,20 @@ export const Definitions = {
       xp: 25,
       lootTable: [{ itemId: "goblin_ear", chance: 0.1 }],
     },
+    
+    //Bosse
+    wald_boss: {
+      id: "wald_boss",
+      name: "Großer Wald-Wächter",
+      hp: 120,
+      strength: 10,
+      defense: 3,
+      xp: 150,
+      gold: 50,
+      lootTable: [
+        { itemId: "ritual_stone", chance: 1.0 }
+      ],
+    },
   },
 
   worlds: {
@@ -192,7 +206,8 @@ export const Definitions = {
       id: "forest",
       name: "Düsterwald",
       description: "Ein dunkler Wald voller Gefahren.",
-      baseSecurity: 100,
+      baseSecurity: 10,
+      bossId: "wald_boss",
       events: ["combat_goblin", "combat_wolf", "event_shrine"],
     },
   },

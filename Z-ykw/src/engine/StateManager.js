@@ -155,26 +155,28 @@ class StateManager {
   }
   // -------------------
 
-  startCombat(enemyIds) {
+  startCombat(enemyIds, isBoss = false) {
     this.state.combat.active = true;
+    this.state.combat.isBoss = isBoss;
     this.state.combat.enemies = enemyIds.map((def) => ({
       ...def,
       maxHp: def.hp,
-    })); // Kopien erstellen
-    this.state.combat.targetIndex = 0; // Standard: Ersten Gegner fokussieren
+    }));
+    this.state.combat.targetIndex = 0;
     this.notify();
   }
+
   endCombat() {
     this.state.combat.active = false;
+    this.state.combat.isBoss = false;
     this.state.combat.enemies = [];
     this.state.combat.targetIndex = 0;
-    this.state.currentEnemy = null; // Zur Sicherheit, falls alte UI darauf zugreift
+    this.state.currentEnemy = null;
     this.notify();
   }
 
   setTarget(index) {
     if (index >= 0 && index < this.state.combat.enemies.length) {
-      // Nur lebende Ziele anvisieren? Das checken wir in der UI/Engine
       this.state.combat.targetIndex = index;
       this.notify();
     }
@@ -283,9 +285,14 @@ class StateManager {
     this.saveGame();
   }
 
-addXp(amount) {
-    if (this.state.location === "dungeon" && this.state.crawl && this.state.crawl.active && this.state.crawl.lootTrack) {
-        this.state.crawl.lootTrack.xp += amount;
+  addXp(amount) {
+    if (
+      this.state.location === "dungeon" &&
+      this.state.crawl &&
+      this.state.crawl.active &&
+      this.state.crawl.lootTrack
+    ) {
+      this.state.crawl.lootTrack.xp += amount;
     }
 
     this.state.player.xp += amount;
@@ -298,9 +305,15 @@ addXp(amount) {
     }
   }
 
-modifyGold(amount) {
-    if (amount > 0 && this.state.location === "dungeon" && this.state.crawl && this.state.crawl.active && this.state.crawl.lootTrack) {
-        this.state.crawl.lootTrack.gold += amount;
+  modifyGold(amount) {
+    if (
+      amount > 0 &&
+      this.state.location === "dungeon" &&
+      this.state.crawl &&
+      this.state.crawl.active &&
+      this.state.crawl.lootTrack
+    ) {
+      this.state.crawl.lootTrack.gold += amount;
     }
 
     if (this.state.player.gold === undefined) this.state.player.gold = 0;

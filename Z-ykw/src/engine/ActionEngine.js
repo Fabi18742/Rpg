@@ -97,7 +97,7 @@ export class ActionEngine {
 
   // --- KAMPF LOGIK ---
 
-  static startCombat(enemyIds) {
+  static startCombat(enemyIds, isBoss = false) {
     const enemies = enemyIds
       .map((id) => Definitions.enemies[id])
       .filter((e) => e);
@@ -105,7 +105,7 @@ export class ActionEngine {
     if (enemies.length === 0) return;
 
     stateManager.resetPlayerAp();
-    stateManager.startCombat(enemies);
+    stateManager.startCombat(enemies, isBoss);
 
     const names = enemies.map((e) => e.name).join(" & ");
     this.log(`Kampf gestartet gegen: ${names}!`, "neutral");
@@ -473,8 +473,8 @@ export class ActionEngine {
     if (messages.length === 0)
       messages.push("Die Monster hatten nichts von Wert bei sich.");
 
-    // BOSS-CHECK & DUNGEON-ENDE (unverändert)
-    if (state.crawl && state.crawl.active && state.crawl.security <= 0) {
+    // BOSS-CHECK & DUNGEON-ENDE
+    if (state.crawl && state.crawl.active && state.combat.isBoss) {
       const loot = state.crawl.lootTrack;
       const bossMessages = [
         `<div style="font-size: 1.1em; margin-bottom: 20px;">Du hast den Level-Boss besiegt und entkommst mit deiner Beute!</div>`,
