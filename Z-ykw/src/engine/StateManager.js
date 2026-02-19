@@ -303,26 +303,6 @@ class StateManager {
     this.saveGame();
   }
 
-  addXp(amount) {
-    if (
-      this.state.location === "dungeon" &&
-      this.state.crawl &&
-      this.state.crawl.active &&
-      this.state.crawl.lootTrack
-    ) {
-      this.state.crawl.lootTrack.xp += amount;
-    }
-
-    this.state.player.xp += amount;
-    const nextLevelXp = this.state.player.level * 100;
-    if (this.state.player.xp >= nextLevelXp) {
-      this.levelUp();
-    } else {
-      this.notify();
-      this.saveGame();
-    }
-  }
-
   modifyGold(amount) {
     if (
       amount > 0 &&
@@ -341,23 +321,63 @@ class StateManager {
     this.saveGame();
   }
 
+  addXp(amount) {
+    if (
+      this.state.location === "dungeon" &&
+      this.state.crawl &&
+      this.state.crawl.active &&
+      this.state.crawl.lootTrack
+    ) {
+      this.state.crawl.lootTrack.xp += amount;
+    }
+
+    this.state.player.xp += amount;
+
+    // NEU: While-Schleife (falls man SEHR viel XP bekommt und gleich 2 Level aufsteigt)
+    while (this.state.player.xp >= this.state.player.level * 100) {
+      const nextLevelXp = this.state.player.level * 100;
+      this.state.player.xp -= nextLevelXp; // XP-Überhang behalten!
+      this.levelUp();
+    }
+
+    this.notify();
+    this.saveGame();
+  }
+
   levelUp() {
     this.state.player.level++;
-    this.state.player.xp = 0;
-    this.state.player.maxHp += 10;
+
+    // NEU: Token geben statt automatisch Stats zu verteilen
+    if (this.state.player.tokens === undefined) this.state.player.tokens = 0;
+    this.state.player.tokens++;
+
+    // Bonus: Vollheilung bei Level Up
     this.state.player.hp = this.state.player.maxHp;
-    this.state.player.stats.strength += 1;
 
     const event = new CustomEvent("combat-log", {
       detail: {
-        message: `LEVEL UP! Stufe ${this.state.player.level} erreicht!`,
+        message: `LEVEL UP! Stufe ${this.state.player.level} erreicht! (+1 Token)`,
         type: "player",
       },
     });
     window.dispatchEvent(event);
+  }
 
+  investToken(stat) {
+    if (!this.state.player.tokens || this.state.player.tokens <= 0)
+      return false;
+
+    if (stat === "strength") this.state.player.stats.strength += 1;
+    if (stat === "defense") this.state.player.stats.defense += 1;
+    if (stat === "maxHp") {
+      this.state.player.maxHp += 10;
+      this.state.player.hp += 10; // direkt mitheilen
+    }
+
+    this.state.player.tokens--;
     this.notify();
     this.saveGame();
+    return true;
   }
 
   equipWeapon(weaponId) {

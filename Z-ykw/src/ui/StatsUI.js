@@ -72,10 +72,18 @@ export class StatsUI {
       })
       .join(", ");
 
+    const tokens = p.tokens || 0;
+    const tokenAlert =
+      tokens > 0
+        ? `<div style="color: #fbbf24; font-weight: bold; margin-top: 8px; animation: pulse 2s infinite;">Level Up! (${tokens} Token)</div>`
+        : "";
+    const nextXp = p.level * 100;
+
     this.container.innerHTML = `
             <div style="text-align: center; border-bottom: 1px solid #444; padding-bottom: 10px; margin-bottom: 15px;">
                 <div style="font-size: 1.4em; font-weight: bold; color: #fbbf24;">Stufe ${p.level}</div>
-                <div style="font-size: 0.9em; color: #888;">${p.xp} XP</div>
+                <div style="font-size: 0.9em; color: #888;">${p.xp} / ${nextXp} XP</div>
+                ${tokenAlert}
                 <div style="font-size: 1.1em; color: #fbbf24; margin-top: 8px; font-weight: bold;">🪙 ${p.gold || 0} Gold</div>
             </div>
 
@@ -111,16 +119,19 @@ export class StatsUI {
                     <strong>⚡ Kritisch</strong> 
                     <span>${totalCrit}%</span>
                 </div>
-                <div class="stat-row">
-                    <strong>🦶 Tempo</strong> 
-                    <span>${p.stats.speed}</span>
-                </div>
             </div>
 
             <div style="border-top: 1px solid #444; padding-top: 10px;">
                 <strong style="display:block; margin-bottom: 5px; color: #aaa;">Fähigkeiten:</strong>
                 <div style="font-size: 0.9em; line-height: 1.4;">${skillNames}</div>
             </div>
+            <style>
+                @keyframes pulse {
+                    0% { opacity: 1; text-shadow: 0 0 5px rgba(251, 191, 36, 0.5); }
+                    50% { opacity: 0.7; text-shadow: 0 0 15px rgba(251, 191, 36, 1); }
+                    100% { opacity: 1; text-shadow: 0 0 5px rgba(251, 191, 36, 0.5); }
+                }
+            </style>
         `;
   }
 

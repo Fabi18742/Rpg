@@ -53,6 +53,7 @@ window.gameAPI = {
       localStorage.setItem("pref_inventory_visible", isVisible);
     }
   },
+
   toggleStats: () => {
     if (window.statsWindow) {
       window.statsWindow.toggle();
@@ -79,6 +80,10 @@ window.gameAPI = {
 
   selectChoice: (index) => {
     CrawlEngine.resolveChoice(index);
+  },
+
+  investToken: (stat) => {
+    stateManager.investToken(stat);
   },
 
   addToRitual: (itemId) => {

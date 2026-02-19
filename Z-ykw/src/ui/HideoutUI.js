@@ -35,7 +35,7 @@ export class HideoutUI {
       this.container.style.display = "none";
       if (this.visualArea) this.visualArea.classList.remove("hideout-bg");
       if (this.sceneContent) {
-          this.sceneContent.innerHTML = ""; 
+        this.sceneContent.innerHTML = "";
       }
       return;
     }
@@ -55,11 +55,17 @@ export class HideoutUI {
 
   renderActionArea(state) {
     if (this.activeScreen === "main") {
+      const tokens = state.player.tokens || 0;
+      const tokenBadge =
+        tokens > 0
+          ? ' <span style="color:#fbbf24; text-shadow: 0 0 5px #fbbf24;">(↑)</span>'
+          : "";
+
       this.container.innerHTML = `
                 <div class="button-grid hideout-grid">
                     <button class="game-button" onclick="window.gameAPI.switchHideoutScreen('equipment')">Ausrüstung</button>
                     <button class="game-button" onclick="window.gameAPI.switchHideoutScreen('shop')">Shop</button>
-                    <button class="game-button" onclick="window.gameAPI.switchHideoutScreen('stats')">Stats</button>
+                    <button class="game-button" onclick="window.gameAPI.switchHideoutScreen('stats')">Stats${tokenBadge}</button>
                     <button class="game-button" onclick="window.gameAPI.switchHideoutScreen('inventory')">Inventar</button>
                     <button class="game-button" onclick="window.gameAPI.switchHideoutScreen('ritual')">Das Ritual</button>
                     <button class="game-button adventure-btn" onclick="window.gameAPI.startAdventure()">Boss-Kämpfe</button>
@@ -218,30 +224,61 @@ export class HideoutUI {
         this.sceneContent.innerHTML = "";
         break;
       case "stats":
+        const tokens = p.tokens || 0;
+        const nextXp = p.level * 100;
+        const tokenMsg =
+          tokens > 0
+            ? `<div style="text-align: center; color: #fbbf24; margin-bottom: 20px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; animation: pulse 2s infinite;">Level Up! ${tokens} Token verfügbar</div>`
+            : "";
+
+        const btnStr =
+          tokens > 0
+            ? `<button class="game-button" onclick="window.gameAPI.investToken('strength')" style="min-height: 30px; padding: 0 15px; font-size: 14px; width: auto; margin-left: 15px;">+1</button>`
+            : "";
+        const btnDef =
+          tokens > 0
+            ? `<button class="game-button" onclick="window.gameAPI.investToken('defense')" style="min-height: 30px; padding: 0 15px; font-size: 14px; width: auto; margin-left: 15px;">+1</button>`
+            : "";
+        const btnHp =
+          tokens > 0
+            ? `<button class="game-button" onclick="window.gameAPI.investToken('maxHp')" style="min-height: 30px; padding: 0 15px; font-size: 14px; width: auto; margin-left: 15px;">+10</button>`
+            : "";
+
         this.sceneContent.innerHTML = `
             <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                <h2 style="color: var(--accent-color); margin-bottom: 40px; margin-top: 0;">Charakterbogen</h2>
+                <h2 style="color: var(--accent-color); margin-bottom: 20px; margin-top: 0;">Charakterbogen</h2>
+                ${tokenMsg}
                 <div class="stat-grid-large" style="width: 100%; max-width: 500px; background: rgba(0,0,0,0.5); border: 2px solid #444; padding: 30px; font-size: 18px;">
                     <div class="stat-entry" style="margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px;">
                         <span>Stufe:</span> <span style="color: var(--accent-color); font-weight: bold;">${p.level}</span>
                     </div>
                     <div class="stat-entry" style="margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px;">
-                        <span>XP:</span> <span>${p.xp}</span>
+                        <span>XP:</span> <span>${p.xp} / ${nextXp}</span>
                     </div>
-                    <div class="stat-entry" style="margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px;">
-                        <span>HP:</span> <span style="color: #ff6b6b; font-weight: bold;">${p.hp} / ${p.maxHp}</span>
+                    <div class="stat-entry" style="margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
+                        <span>HP:</span> 
+                        <div style="display: flex; align-items: center;"><span style="color: #ff6b6b; font-weight: bold;">${p.hp} / ${p.maxHp}</span>${btnHp}</div>
                     </div>
-                    <div class="stat-entry" style="margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px;">
-                        <span>Stärke:</span> <span>${p.stats.strength}</span>
+                    <div class="stat-entry" style="margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
+                        <span>Stärke:</span> 
+                        <div style="display: flex; align-items: center;"><span>${p.stats.strength}</span>${btnStr}</div>
                     </div>
-                    <div class="stat-entry" style="margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px;">
-                        <span>Abwehr:</span> <span>${p.stats.defense}</span>
+                    <div class="stat-entry" style="margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
+                        <span>Abwehr:</span> 
+                        <div style="display: flex; align-items: center;"><span>${p.stats.defense || 0}</span>${btnDef}</div>
                     </div>
                     <div class="stat-entry" style="padding-top: 5px;">
                         <span>Gold:</span> <span>${p.gold || 0}</span>
                     </div>
                 </div>
-            </div>`;
+            </div>
+            <style>
+                @keyframes pulse {
+                    0% { opacity: 1; text-shadow: 0 0 10px rgba(251, 191, 36, 0.5); }
+                    50% { opacity: 0.7; text-shadow: 0 0 20px rgba(251, 191, 36, 1); }
+                    100% { opacity: 1; text-shadow: 0 0 10px rgba(251, 191, 36, 0.5); }
+                }
+            </style>`;
         break;
 
       case "shop":
@@ -474,10 +511,12 @@ export class HideoutUI {
         `;
         break;
 
-case "weapon_selection":
-        const invWeapons = (p.inventory || []).filter(i => i.type === "weapon" || i.damage !== undefined);
+      case "weapon_selection":
+        const invWeapons = (p.inventory || []).filter(
+          (i) => i.type === "weapon" || i.damage !== undefined,
+        );
         const allWeapons = [...(p.weapons || []), ...invWeapons];
-        
+
         const currentWeaponId = p.equipped.weapon ? p.equipped.weapon.id : null;
 
         let weaponsHTML = "";
