@@ -20,16 +20,12 @@ window.gameAPI = {
     ActionEngine.useItem(itemId);
   },
 
-  // --- HIDEOUT BEFEHLE ---
-  // Die Navigation (switchHideoutScreen) wird jetzt direkt in HideoutUI.js registriert.
-
   startAdventure: () => {
     console.log("🌲 Aufbrechen in den Wald...");
     stateManager.enterDungeon();
     CrawlEngine.startExploration("forest");
   },
 
-  // --- CRAWL / KAMPF BEFEHLE ---
   _internalSelectOption: (index) => {
     CrawlEngine.selectOption(index);
   },
@@ -49,7 +45,6 @@ window.gameAPI = {
   toggleInventory: () => {
     if (window.inventoryWindow) {
       window.inventoryWindow.toggle();
-      // Speichere den neuen Zustand
       const win = document.getElementById("inventory-window");
       const isVisible = win.style.display !== "none";
       localStorage.setItem("pref_inventory_visible", isVisible);
@@ -58,7 +53,6 @@ window.gameAPI = {
   toggleStats: () => {
     if (window.statsWindow) {
       window.statsWindow.toggle();
-      // Speichere den neuen Zustand
       const win = document.getElementById("stats-window");
       const isVisible = win.style.display !== "none";
       localStorage.setItem("pref_stats_visible", isVisible);
@@ -66,7 +60,6 @@ window.gameAPI = {
   },
 
   openAbilitySelection: (slotIndex) => {
-    // Merkt sich temporär, auf welchen Slot wir geklickt haben
     window.currentSkillSlot = slotIndex;
     window.gameAPI.switchHideoutScreen("ability_selection");
   },
@@ -79,6 +72,10 @@ window.gameAPI = {
   unequipSkill: (slotIndex) => {
     stateManager.unequipSkill(slotIndex);
     window.gameAPI.switchHideoutScreen("equipment");
+  },
+
+  selectChoice: (index) => {
+    CrawlEngine.resolveChoice(index);
   },
 
   addToRitual: (itemId) => {
@@ -140,6 +137,8 @@ window.gameAPI = {
       window.gameAPI.switchHideoutScreen("main");
     } else if (context === "ritual") {
       window.gameAPI.switchHideoutScreen("ritual");
+    } else if (context === "crawl_event") {
+      CrawlEngine.generateOptions();
     }
   },
 

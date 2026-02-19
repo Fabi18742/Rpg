@@ -36,6 +36,7 @@ class StateManager {
         security: 0,
         chaos: 0,
         choices: null,
+        activeEvent: null,
       },
       ritual: {
         selectedItems: [],
@@ -441,6 +442,18 @@ class StateManager {
       // Nutzt unsere schlaue addItem-Funktion, damit es sich wieder sauber stapelt!
       this.addItem(item.id, 1);
     }
+  }
+
+  setActiveEvent(eventDef) {
+    if (!this.state.crawl.active) return;
+    this.state.crawl.activeEvent = eventDef;
+    this.notify();
+  }
+
+  clearActiveEvent() {
+    if (!this.state.crawl.active) return;
+    this.state.crawl.activeEvent = null;
+    this.notify();
   }
 
   performRitual() {
