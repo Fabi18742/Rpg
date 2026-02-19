@@ -21,9 +21,12 @@ window.gameAPI = {
   },
 
   startAdventure: () => {
-    console.log("🌲 Aufbrechen in den Wald...");
+    window.gameAPI.switchHideoutScreen("world_selection");
+  },
+
+  startWorldCrawl: (worldId) => {
     stateManager.enterDungeon();
-    CrawlEngine.startExploration("forest");
+    CrawlEngine.startExploration(worldId);
   },
 
   _internalSelectOption: (index) => {

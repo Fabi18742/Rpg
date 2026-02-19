@@ -17,10 +17,9 @@ export class CrawlUI {
         });
     }
 
-    render(state) {
+render(state) {
         if (!this.container) return;
 
-        // Wenn wir nicht im Dungeon sind, alles unsichtbar machen
         if (state.location !== "dungeon") {
             this.container.style.display = 'none';
             if (this.sceneContent && this.wasRenderingEvent) {
@@ -30,21 +29,27 @@ export class CrawlUI {
             return;
         }
 
-        // 1. GIBT ES EIN AKTIVES TEXT-EVENT? -> Dann zeige die Geschichte!
         if (state.crawl.activeEvent) {
             this.renderEventScreen(state.crawl.activeEvent);
             return;
         }
 
-        // Clean-Up: Wenn das Event vorbei ist, leere die Bildfläche
         if (this.sceneContent && this.wasRenderingEvent) {
             this.sceneContent.innerHTML = '';
             this.wasRenderingEvent = false;
         }
 
-        // 2. NORMALER CRAWL (Karten ziehen)
         if (state.crawl.active && !state.combat.active && state.crawl.choices) {
-            this.container.innerHTML = this.buildChoicesHTML(state.crawl.choices);
+            
+            if (this.sceneContent) {
+                this.sceneContent.innerHTML = this.buildChoicesHTML(state.crawl.choices);
+            }
+
+            this.container.innerHTML = `
+                <div class="button-grid single-button" style="display: flex; justify-content: center; width: 100%;">
+                    <button class="game-button" onclick="window.gameAPI.toggleInventory()">Inventar öffnen</button>
+                </div>
+            `;
             this.container.style.display = 'block';
         } else {
             this.container.innerHTML = '';
@@ -80,16 +85,23 @@ export class CrawlUI {
         `;
     }
 
-    buildChoicesHTML(choices) {
+buildChoicesHTML(choices) {
         return `
-            <div class="crawl-selection-container">
-                <h3 style="color:#aaa; text-align:center; margin-bottom:10px;">Wähle deinen Weg</h3>
-                <div class="crawl-cards" style="display: flex; gap: 15px; justify-content: center;">
+            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <h2 style="color: var(--accent-color); margin-bottom: 40px; font-size: 32px; text-transform: uppercase; letter-spacing: 2px;">Wähle deinen Weg</h2>
+                <div style="display: flex; gap: 30px; justify-content: center; width: 100%; max-width: 900px;">
                     ${choices.map((event, index) => `
-                        <div class="crawl-card" onclick="window.gameAPI._internalSelectOption(${index})" style="background: #111; border: 2px solid #444; padding: 20px; width: 200px; cursor: pointer; text-align: center; transition: all 0.2s;">
-                            <div class="card-title" style="color: var(--accent-color); font-weight: bold; font-size: 16px; margin-bottom: 10px;">${event.name || "Ereignis"}</div>
-                            <div class="card-text" style="color: #888; font-size: 12px; margin-bottom: 15px;">${event.text.substring(0, 60)}...</div>
-                            <div class="card-cost" style="font-size: 11px; color: #ff6b6b; border-top: 1px solid #333; padding-top: 8px;">Verlust: -${event.securityCost || 0}% Sicherheit</div>
+                        <div onclick="window.gameAPI._internalSelectOption(${index})" 
+                             style="background: rgba(0,0,0,0.7); border: 2px solid #444; padding: 30px 20px; width: 250px; cursor: pointer; text-align: center; transition: all 0.2s; display: flex; flex-direction: column; justify-content: space-between; min-height: 250px;"
+                             onmouseover="this.style.background='rgba(40,40,40,0.9)'; this.style.borderColor='var(--accent-color)'" 
+                             onmouseout="this.style.background='rgba(0,0,0,0.7)'; this.style.borderColor='#444'">
+                            <div>
+                                <div style="color: var(--accent-color); font-weight: bold; font-size: 18px; margin-bottom: 15px;">${event.name || "Ereignis"}</div>
+                                <div style="color: #aaa; font-size: 14px; line-height: 1.5;">${event.text.substring(0, 80)}...</div>
+                            </div>
+                            <div style="font-size: 12px; color: #ff6b6b; border-top: 1px solid #333; padding-top: 15px; margin-top: 15px; font-weight: bold;">
+                                Verlust: -${event.securityCost || 0}% Sicherheit
+                            </div>
                         </div>
                     `).join('')}
                 </div>

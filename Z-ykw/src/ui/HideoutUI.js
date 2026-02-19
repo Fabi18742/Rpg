@@ -34,6 +34,9 @@ export class HideoutUI {
     if (!this.container || state.location !== "hideout") {
       this.container.style.display = "none";
       if (this.visualArea) this.visualArea.classList.remove("hideout-bg");
+      if (this.sceneContent) {
+          this.sceneContent.innerHTML = ""; 
+      }
       return;
     }
 
@@ -188,6 +191,12 @@ export class HideoutUI {
               }
           </div>
       `;
+    } else if (this.activeScreen === "world_selection") {
+      this.container.innerHTML = `
+                <div class="button-grid single-button">
+                    <button class="game-button" onclick="window.gameAPI.switchHideoutScreen('main')">Zurück</button>
+                </div>
+            `;
     } else {
       this.container.innerHTML = `
                 <div class="button-grid single-button">
@@ -697,6 +706,54 @@ export class HideoutUI {
                         </div>
                     </div>
 
+                </div>
+            </div>`;
+        break;
+
+      case "world_selection":
+        let worldsHTML = "";
+        const defeated = p.defeatedBosses || [];
+
+        Object.values(Definitions.worlds).forEach((world) => {
+          const isUnlocked =
+            !world.requiredBoss || defeated.includes(world.requiredBoss);
+          const bossDef = Definitions.enemies[world.bossId];
+          const bossName = bossDef ? bossDef.name : "Unbekannt";
+
+          if (isUnlocked) {
+            worldsHTML += `
+                    <div style="background: rgba(0,0,0,0.7); border: 2px solid var(--accent-color); padding: 20px; text-align: center; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; justify-content: space-between;"
+                         onclick="window.gameAPI.startWorldCrawl('${world.id}')"
+                         onmouseover="this.style.background='rgba(40,40,40,0.9)'" onmouseout="this.style.background='rgba(0,0,0,0.7)'">
+                        <div>
+                            <h3 style="color: var(--accent-color); margin: 0 0 10px 0; font-size: 24px;">${world.name}</h3>
+                            <p style="color: #aaa; font-size: 14px; margin-bottom: 15px;">${world.description}</p>
+                        </div>
+                        <div style="border-top: 1px solid #444; padding-top: 10px; font-size: 12px; color: #ff6b6b; font-weight: bold;">
+                            Boss: ${bossName}
+                        </div>
+                    </div>
+                `;
+          } else {
+            worldsHTML += `
+                    <div style="background: rgba(0,0,0,0.5); border: 2px solid #444; padding: 20px; text-align: center; opacity: 0.5; filter: grayscale(1); display: flex; flex-direction: column; justify-content: space-between;">
+                        <div>
+                            <h3 style="color: #666; margin: 0 0 10px 0; font-size: 24px;">???</h3>
+                            <p style="color: #444; font-size: 14px; margin-bottom: 15px;">Diese Welt ist noch gesperrt.</p>
+                        </div>
+                        <div style="border-top: 1px solid #333; padding-top: 10px; font-size: 12px; color: #666;">
+                            Besiege den Boss der vorherigen Welt.
+                        </div>
+                    </div>
+                `;
+          }
+        });
+
+        this.sceneContent.innerHTML = `
+            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 10; display: flex; flex-direction: column; align-items: center; padding-top: 50px;">
+                <h2 style="color: var(--accent-color); margin-bottom: 30px; font-size: 32px; text-transform: uppercase; letter-spacing: 2px;">Wähle dein Ziel</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; width: 100%; max-width: 1000px; padding: 20px;">
+                    ${worldsHTML}
                 </div>
             </div>`;
         break;

@@ -23,6 +23,7 @@ class StateManager {
         weapons: [],
         equipped: { weapon: null, armor: null },
         skills: ["normal_attack", "heavy_strike", "quick_heal"],
+        defeatedBosses: [],
       },
       combat: {
         active: false,
@@ -142,6 +143,16 @@ class StateManager {
     this.state.activeResult = null;
     this.notify();
     return context;
+  }
+
+  addDefeatedBoss(bossId) {
+    if (!this.state.player.defeatedBosses) this.state.player.defeatedBosses = []; // Fallback für alte Saves
+    
+    if (!this.state.player.defeatedBosses.includes(bossId)) {
+      this.state.player.defeatedBosses.push(bossId);
+      this.saveGame();
+      this.notify();
+    }
   }
 
   // --- Persistence ---

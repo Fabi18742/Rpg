@@ -185,19 +185,27 @@ export const Definitions = {
       xp: 25,
       lootTable: [{ itemId: "goblin_ear", chance: 0.1 }],
     },
-    
+
     //Bosse
-    wald_boss: {
-      id: "wald_boss",
+    boss_forest: {
+      id: "boss_forest",
       name: "Großer Wald-Wächter",
-      hp: 120,
-      strength: 10,
-      defense: 3,
-      xp: 150,
+      hp: 100,
+      strength: 8,
+      defense: 1,
+      xp: 100,
       gold: 50,
-      lootTable: [
-        { itemId: "ritual_stone", chance: 1.0 }
-      ],
+      lootTable: [{ itemId: "ritual_stone", chance: 1.0 }],
+    },
+    boss_city: {
+      id: "boss_city",
+      name: "Korrupter Stadthalter",
+      hp: 200,
+      strength: 12,
+      defense: 3,
+      xp: 250,
+      gold: 120,
+      lootTable: [{ itemId: "potion_small", chance: 1.0 }],
     },
   },
 
@@ -207,7 +215,17 @@ export const Definitions = {
       name: "Düsterwald",
       description: "Ein dunkler Wald voller Gefahren.",
       baseSecurity: 10,
-      bossId: "wald_boss",
+      bossId: "boss_forest",
+      requiredBoss: null,
+      events: ["combat_goblin", "combat_wolf", "event_shrine"],
+    },
+    city: {
+      id: "city",
+      name: "Die dunkle Stadt",
+      description: "Eine verlassene Stadt voller Diebe und Halsabschneider.",
+      baseSecurity: 15,
+      bossId: "boss_city",
+      requiredBoss: "boss_forest",
       events: ["combat_goblin", "combat_wolf", "event_shrine"],
     },
   },
@@ -239,7 +257,7 @@ export const Definitions = {
       ],
     },
   },
-  
+
   merchants: {
     traveling_merchant: {
       id: "traveling_merchant",

@@ -434,7 +434,6 @@ export class ActionEngine {
           if (Math.random() < loot.chance) {
             stateManager.addItem(loot.itemId);
 
-            // NEU: Im Sammelbecken hochzählen statt sofort eine Nachricht zu pushen
             const currentAmount = gatheredLoot.get(loot.itemId) || 0;
             gatheredLoot.set(loot.itemId, currentAmount + 1);
           }
@@ -458,7 +457,6 @@ export class ActionEngine {
       );
     }
 
-    // 3. NEU: Alle gesammelten Items konsolidiert ausgeben
     if (gatheredLoot.size > 0) {
       gatheredLoot.forEach((amount, itemId) => {
         const itemDef =
@@ -475,6 +473,10 @@ export class ActionEngine {
 
     // BOSS-CHECK & DUNGEON-ENDE
     if (state.crawl && state.crawl.active && state.combat.isBoss) {
+      const worldDef = Definitions.worlds[state.crawl.worldId];
+      if (worldDef && worldDef.bossId) {
+        stateManager.addDefeatedBoss(worldDef.bossId);
+      }
       const loot = state.crawl.lootTrack;
       const bossMessages = [
         `<div style="font-size: 1.1em; margin-bottom: 20px;">Du hast den Level-Boss besiegt und entkommst mit deiner Beute!</div>`,
