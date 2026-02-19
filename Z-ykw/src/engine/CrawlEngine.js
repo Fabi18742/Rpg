@@ -14,6 +14,19 @@ export class CrawlEngine {
     const state = stateManager.getState();
     if (!state.crawl.active) return;
 
+    if (state.crawl.security <= 0) {
+      ActionEngine.log(
+        "Die Sicherheit ist auf 0 gefallen... Ein gewaltiger Gegner nähert sich!",
+        "enemy",
+      );
+
+      // Löst sofort einen Kampf aus, statt Karten zu ziehen.
+      // (Vorübergehend nehmen wir hier zwei Wölfe als "Boss-Ersatz",
+      // bis du einen echten Boss in die definitions.js einträgst)
+      ActionEngine.startCombat(["wolf", "wolf"]);
+      return;
+    }
+
     const world = Definitions.worlds[state.crawl.worldId];
     const pool = world.events; // Array von IDs ["combat_goblin", ...]
 
@@ -69,31 +82,35 @@ export class CrawlEngine {
     }
   }
   static resolveChoice(choiceIndex) {
-        const state = stateManager.getState();
-        const event = state.crawl.activeEvent;
-        if (!event || !event.choices || !event.choices[choiceIndex]) return;
+    const state = stateManager.getState();
+    const event = state.crawl.activeEvent;
+    if (!event || !event.choices || !event.choices[choiceIndex]) return;
 
-        const choice = event.choices[choiceIndex];
-        const messages = [];
+    const choice = event.choices[choiceIndex];
+    const messages = [];
 
-        stateManager.clearActiveEvent();
+    stateManager.clearActiveEvent();
 
-        if (choice.effect === 'none') {
-            messages.push("Du setzt deinen Weg fort, ohne dass etwas passiert.");
-        } else {
-            const parts = choice.effect.split('_');
-            const effectType = parts[0];
-            const amount = parseInt(parts[1]) || 0;
+    if (choice.effect === "none") {
+      messages.push("Du setzt deinen Weg fort, ohne dass etwas passiert.");
+    } else {
+      const parts = choice.effect.split("_");
+      const effectType = parts[0];
+      const amount = parseInt(parts[1]) || 0;
 
-            if (effectType === 'heal') {
-                stateManager.modifyPlayerHp(amount);
-                messages.push(`<span style="color: #22c55e; font-weight: bold;">+${amount} HP geheilt</span>`);
-            } else if (effectType === 'damage') {
-                stateManager.modifyPlayerHp(-amount);
-                messages.push(`<span style="color: #ff6b6b; font-weight: bold;">-${amount} HP verloren</span>`);
-            }
-        }
-
-        stateManager.setResult(event.name, messages, "crawl_event");
+      if (effectType === "heal") {
+        stateManager.modifyPlayerHp(amount);
+        messages.push(
+          `<span style="color: #22c55e; font-weight: bold;">+${amount} HP geheilt</span>`,
+        );
+      } else if (effectType === "damage") {
+        stateManager.modifyPlayerHp(-amount);
+        messages.push(
+          `<span style="color: #ff6b6b; font-weight: bold;">-${amount} HP verloren</span>`,
+        );
+      }
     }
+
+    stateManager.setResult(event.name, messages, "crawl_event");
+  }
 }

@@ -199,9 +199,7 @@ export class ActionEngine {
   // NEU: Handhabt den Tod des Spielers
   static loseCombat() {
     this.log("Du wurdest besiegt...", "enemy");
-    const messages = [
-      "Die Dunkelheit umfängt dich...",
-    ];
+    const messages = ["Die Dunkelheit umfängt dich..."];
     stateManager.setResult("DU BIST GESTORBEN", messages, "combat_loss");
   }
 
@@ -426,20 +424,18 @@ export class ActionEngine {
 
     enemies.forEach((enemy) => {
       totalXp += enemy.xp || 0;
-      totalGold += enemy.gold || 5; // Wenn kein Gold definiert ist, gibt's standardmäßig 5
+      totalGold += enemy.gold || 5;
 
-      if (enemy.lootTable) {
-        enemy.lootTable.forEach((loot) => {
-          if (Math.random() < loot.chance) {
-            stateManager.addItem(loot.itemId);
-            const itemDef = Definitions.items[loot.itemId];
-            const itemName = itemDef ? itemDef.name : loot.itemId;
-            messages.push(
-              `Beute: <strong style="color: var(--accent-color);">${itemName}</strong>`,
-            );
-          }
-        });
-      }
+if (enemy.lootTable) {
+  enemy.lootTable.forEach((loot) => {
+    if (Math.random() < loot.chance) {
+      stateManager.addItem(loot.itemId);
+      const itemDef = Definitions.items[loot.itemId] || Definitions.weapons[loot.itemId];
+      const itemName = itemDef ? itemDef.name : loot.itemId;
+      messages.push(`<span style="color: #fff;">1x ${itemName}</span>`);
+    }
+  });
+}
     });
 
     if (totalXp > 0) {
@@ -459,9 +455,45 @@ export class ActionEngine {
     if (messages.length === 0)
       messages.push("Die Monster hatten nichts von Wert bei sich.");
 
-    // Level-Up Logik triggern, falls XP-Schwelle erreicht
-    // Den Kampf noch NICHT beenden, das passiert erst beim Klick auf "Weiter"!
-    stateManager.setResult("KAMPF GEWONNEN!", messages, "combat_win");
+    if (state.crawl && state.crawl.active && state.crawl.security <= 0) {
+      const loot = state.crawl.lootTrack;
+      const bossMessages = [
+        `<div style="font-size: 1.1em; margin-bottom: 20px;">Du hast den Level-Boss besiegt und entkommst mit deiner Beute!</div>`,
+        `<div style="border-top: 1px solid #444; margin-bottom: 10px;"></div>`,
+        `<div style="color: #aaa; font-size: 0.9em; text-transform: uppercase; margin-bottom: 10px;">Gesamte Ausbeute dieses Dungeons:</div>`,
+      ];
+
+      if (loot.xp > 0)
+        bossMessages.push(
+          `<span style="color: #a855f7; font-weight: bold;">Erfahrung: +${loot.xp} XP</span>`,
+        );
+      if (loot.gold > 0)
+        bossMessages.push(
+          `<span style="color: #fbbf24; font-weight: bold;">Gold: +${loot.gold} G</span>`,
+        );
+
+      if (loot.items.length > 0) {
+        loot.items.forEach((i) => {
+          const def = Definitions.items[i.id] || Definitions.weapons[i.id];
+          bossMessages.push(
+            `<span style="color: #fff;">${i.amount}x ${def ? def.name : i.id}</span>`,
+          );
+        });
+      } else {
+        bossMessages.push(
+          `<span style="color: #888; font-style: italic;">Keine Items gefunden...</span>`,
+        );
+      }
+
+      stateManager.setResult(
+        "DUNGEON ABGESCHLOSSEN!",
+        bossMessages,
+        "boss_win",
+      );
+    } else {
+      // Normaler Kampf
+      stateManager.setResult("KAMPF GEWONNEN!", messages, "combat_win");
+    }
   }
 
   static log(message, type = "neutral") {

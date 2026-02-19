@@ -46,21 +46,7 @@ export class BattleUI {
     // 3. KEIN KAMPF (Dungeon Leerlauf)
     else {
       this.hideBattleWindows();
-
-      if (state.location === "dungeon" && !state.crawl.choices) {
-        if (this.container) {
-          this.container.innerHTML = `
-                    <div style="margin-bottom: 15px; color: #888; text-align: center;">Das Gebiet ist ruhig.</div>
-                    <div style="display: flex; gap: 10px; justify-content: center;">
-                        <button class="game-button" onclick="window.gameAPI.searchEnemy()">Weiter suchen 👣</button>
-                        <button class="game-button" onclick="window.gameAPI.returnHome()">🏠 Heimkehren</button>
-                    </div>
-                `;
-          this.container.style.display = "block";
-        }
-      } else {
-        if (this.container) this.container.style.display = "none";
-      }
+      if (this.container) this.container.style.display = "none";
     }
   }
 

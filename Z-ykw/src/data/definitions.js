@@ -217,7 +217,7 @@ export const Definitions = {
       type: "choice",
       name: "Verlassener Schrein",
       text: "Du findest einen alten Schrein. Er leuchtet schwach.",
-      securityCost: 0,
+      securityCost: 1,
       choices: [
         { text: "Beten (+10 HP)", effect: "heal_10" },
         { text: "Ignorieren", effect: "none" },

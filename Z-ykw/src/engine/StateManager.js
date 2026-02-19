@@ -204,21 +204,30 @@ class StateManager {
   }
 
   addItem(itemId, amount = 1) {
-    const itemDef = Definitions.items[itemId];
+    if (
+      this.state.location === "dungeon" &&
+      this.state.crawl &&
+      this.state.crawl.active &&
+      this.state.crawl.lootTrack
+    ) {
+      const existingTracker = this.state.crawl.lootTrack.items.find(
+        (i) => i.id === itemId,
+      );
+      if (existingTracker) existingTracker.amount += amount;
+      else
+        this.state.crawl.lootTrack.items.push({ id: itemId, amount: amount });
+    }
+
+    const itemDef = Definitions.items[itemId] || Definitions.weapons[itemId];
     if (itemDef) {
-      // Prüfen, ob das Item schon im Inventar existiert
       const existingItem = this.state.player.inventory.find(
         (i) => i.id === itemId,
       );
-
       if (existingItem) {
-        // Wenn ja, Menge erhöhen
         existingItem.quantity = (existingItem.quantity || 1) + amount;
       } else {
-        // Wenn nein, neu hinzufügen mit Menge
         this.state.player.inventory.push({ ...itemDef, quantity: amount });
       }
-
       this.notify();
       this.saveGame();
     }
@@ -274,7 +283,11 @@ class StateManager {
     this.saveGame();
   }
 
-  addXp(amount) {
+addXp(amount) {
+    if (this.state.location === "dungeon" && this.state.crawl && this.state.crawl.active && this.state.crawl.lootTrack) {
+        this.state.crawl.lootTrack.xp += amount;
+    }
+
     this.state.player.xp += amount;
     const nextLevelXp = this.state.player.level * 100;
     if (this.state.player.xp >= nextLevelXp) {
@@ -285,7 +298,11 @@ class StateManager {
     }
   }
 
-  modifyGold(amount) {
+modifyGold(amount) {
+    if (amount > 0 && this.state.location === "dungeon" && this.state.crawl && this.state.crawl.active && this.state.crawl.lootTrack) {
+        this.state.crawl.lootTrack.gold += amount;
+    }
+
     if (this.state.player.gold === undefined) this.state.player.gold = 0;
     this.state.player.gold += amount;
     if (this.state.player.gold < 0) this.state.player.gold = 0;
@@ -378,6 +395,8 @@ class StateManager {
       security: world.baseSecurity,
       chaos: 0,
       choices: null,
+      activeEvent: null,
+      lootTrack: { xp: 0, gold: 0, items: [] },
     };
     this.notify();
   }
@@ -482,11 +501,11 @@ class StateManager {
   clearRitual() {
     // Solange noch Items im Ritual-Kreis liegen
     while (this.state.ritual.selectedItems.length > 0) {
-        const item = this.state.ritual.selectedItems.pop();
-        if (item && item.id) {
-            // Legt das Item sauber mit unserer neuen Stapel-Logik zurück
-            this.addItem(item.id, 1);
-        }
+      const item = this.state.ritual.selectedItems.pop();
+      if (item && item.id) {
+        // Legt das Item sauber mit unserer neuen Stapel-Logik zurück
+        this.addItem(item.id, 1);
+      }
     }
     this.saveGame();
     this.notify();

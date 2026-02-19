@@ -128,11 +128,19 @@ window.gameAPI = {
 
   closeResult: () => {
     const context = stateManager.clearResult();
+
     if (context === "combat_win") {
       stateManager.endCombat();
+      CrawlEngine.generateOptions();
     } else if (context === "combat_loss") {
       stateManager.state.player.hp = stateManager.state.player.maxHp;
       stateManager.endCombat();
+      stateManager.endCrawl();
+      stateManager.returnToHideout();
+      window.gameAPI.switchHideoutScreen("main");
+    } else if (context === "boss_win") {
+      stateManager.endCombat();
+      stateManager.endCrawl();
       stateManager.returnToHideout();
       window.gameAPI.switchHideoutScreen("main");
     } else if (context === "ritual") {
