@@ -96,8 +96,11 @@ export class HideoutUI {
                     <div class="stat-entry" style="margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px;">
                         <span>Stärke:</span> <span>${p.stats.strength}</span>
                     </div>
-                    <div class="stat-entry" style="padding-bottom: 5px;">
+                    <div class="stat-entry" style="margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px;">
                         <span>Abwehr:</span> <span>${p.stats.defense}</span>
+                    </div>
+                    <div class="stat-entry" style="padding-top: 5px;">
+                        <span>Gold:</span> <span>${p.gold || 0}</span>
                     </div>
                 </div>
             </div>`;

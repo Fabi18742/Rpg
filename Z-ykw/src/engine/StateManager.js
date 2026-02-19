@@ -16,6 +16,7 @@ class StateManager {
         maxAp: 0,
         xp: 0,
         level: 1,
+        gold: 0,
         stats: {},
         inventory: [],
         weapons: [],
@@ -248,6 +249,14 @@ class StateManager {
       this.notify();
       this.saveGame();
     }
+  }
+
+  modifyGold(amount) {
+    if (this.state.player.gold === undefined) this.state.player.gold = 0;
+    this.state.player.gold += amount;
+    if (this.state.player.gold < 0) this.state.player.gold = 0;
+    this.notify();
+    this.saveGame();
   }
 
   levelUp() {
