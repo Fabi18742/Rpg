@@ -264,8 +264,6 @@ static executeAttack(source, sourceIndex = null, skill = null) {
     }
   }
 
-  // --- NEUE EFFEKT SYSTEM HOOKS ---
-
   static processActiveEffects(effectIds, attacker, defender, damageDealt, isPlayerSource) {
       effectIds.forEach(effectId => {
           const effectDef = Definitions.effects[effectId];
@@ -274,9 +272,12 @@ static executeAttack(source, sourceIndex = null, skill = null) {
           // Ist es ein Treffer-Effekt?
           if (effectDef.type === "on_hit") {
               
-              // Fall 1: Gegner Status verpassen (z.B. Gift)
               if (effectDef.trigger === "apply_status") {
-                  this.applyStatusEffect(defender, effectDef);
+                  const chance = effectDef.applyChance !== undefined ? effectDef.applyChance : 1.0;
+                  
+                  if (Math.random() <= chance) {
+                      this.applyStatusEffect(defender, effectDef);
+                  }
               } 
               
               // Fall 2: Sich selbst heilen (z.B. Vampirismus)
@@ -304,24 +305,22 @@ static executeAttack(source, sourceIndex = null, skill = null) {
       const name = target.name || "Du";
 
       if (existing) {
-          // Dauer auffrischen
-          existing.duration = Math.max(existing.duration, effectDef.duration);
-          this.log(`${name}: ${effectDef.name} wurde verlängert!`, "neutral");
+          // --- STACK-LOGIK: Stacks addieren statt Dauer verlängern ---
+          existing.stacks += (effectDef.stacksToApply || 1);
+          this.log(`🧪 ${name}: ${effectDef.name} stapelt sich auf ${existing.stacks}!`, "neutral");
       } else {
-          // Neuen Status anlegen
           target.statusEffects.push({
               id: effectDef.statusId,
               name: effectDef.name,
-              value: effectDef.value,
-              duration: effectDef.duration,
-              type: effectDef.statusType // z.B. "dot"
+              baseDamage: effectDef.baseDamage || 0,
+              stacks: effectDef.stacksToApply || 1, // Nutzt Stacks
+              type: effectDef.statusType 
           });
-          this.log(`${name} leidet nun unter ${effectDef.name}!`, "neutral");
+          this.log(`🧪 ${name} leidet nun unter ${effectDef.name} (${effectDef.stacksToApply} Stacks)!`, "neutral");
       }
       stateManager.notify();
   }
 
-  // Wird aufgerufen um DoT Schaden (Gift, Brennen) abzuwickeln
   static processTurnEffects(entity, isPlayer) {
       if (!entity.statusEffects || entity.statusEffects.length === 0) return false;
       
@@ -331,20 +330,22 @@ static executeAttack(source, sourceIndex = null, skill = null) {
       for (let i = entity.statusEffects.length - 1; i >= 0; i--) {
           const effect = entity.statusEffects[i];
 
-          // Damage over Time
           if (effect.type === "dot") {
+              // --- SCHADENS-LOGIK: Basis + Stacks ---
+              const dmg = effect.baseDamage + effect.stacks;
+
               if (isPlayer) {
-                  stateManager.modifyPlayerHp(-effect.value);
+                  stateManager.modifyPlayerHp(-dmg);
               } else {
-                  entity.hp -= effect.value;
+                  entity.hp -= dmg;
               }
               const name = isPlayer ? "Du erleidest" : `${entity.name} erleidet`;
-              this.log(`${name} ${effect.value} Schaden durch ${effect.name}.`, "neutral");
+              this.log(`🧪 ${name} ${dmg} Schaden durch ${effect.name}.`, "neutral");
           }
 
-          // Dauer abziehen
-          effect.duration--;
-          if (effect.duration <= 0) {
+          // --- ABKLING-LOGIK: 1 Stack pro Runde abziehen ---
+          effect.stacks--;
+          if (effect.stacks <= 0) {
               const name = isPlayer ? "Dir" : entity.name;
               this.log(`${effect.name} auf ${name} ist abgeklungen.`, "neutral");
               entity.statusEffects.splice(i, 1);

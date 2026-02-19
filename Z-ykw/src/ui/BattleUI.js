@@ -89,7 +89,6 @@ export class BattleUI {
     });
   }
 
-  // --- FENSTER 1: GEGNER ---
   updateEnemyWindow(state) {
     const enemiesHTML = state.combat.enemies
       .map((enemy, index) => {
@@ -97,21 +96,27 @@ export class BattleUI {
         const isSelected = index === state.combat.targetIndex;
         const hpPercent = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
 
-        let style =
-          "padding: 10px; margin-bottom: 8px; background: #111; border: 2px solid #444; cursor: pointer;";
-        if (isDead)
-          style += " opacity: 0.4; filter: grayscale(1); cursor: default;";
-        else if (isSelected)
-          style += " border-color: #fbbf24; background: #222;";
+        let style = "padding: 10px; margin-bottom: 8px; background: #111; border: 2px solid #444; cursor: pointer;";
+        if (isDead) style += " opacity: 0.4; filter: grayscale(1); cursor: default;";
+        else if (isSelected) style += " border-color: #fbbf24; background: #222;";
 
-        const onClick = isDead
-          ? ""
-          : `onclick="window.gameAPI.setTarget(${index})"`;
+        const onClick = isDead ? "" : `onclick="window.gameAPI.setTarget(${index})"`;
+
+        // --- NEU: STATUS-EFFEKTE (BADGES) GENERIEREN ---
+        let statusHTML = "";
+        if (enemy.statusEffects && enemy.statusEffects.length > 0) {
+            statusHTML = enemy.statusEffects.map(se => 
+                `<span style="background: #7c3aed; color: white; font-size: 10px; padding: 2px 5px; border-radius: 3px; margin-left: 5px; vertical-align: middle;">${se.name} x${se.stacks}</span>`
+            ).join('');
+        }
 
         return `
             <div class="enemy-card" style="${style}" ${onClick}>
-                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                    <strong style="color:${isSelected ? "#fbbf24" : "#fff"}">${isDead ? "💀 " : ""}${enemy.name}</strong>
+                <div style="display:flex; justify-content:space-between; margin-bottom:5px; align-items:center;">
+                    <div>
+                        <strong style="color:${isSelected ? "#fbbf24" : "#fff"}">${isDead ? "💀 " : ""}${enemy.name}</strong>
+                        ${statusHTML}
+                    </div>
                     <span>${enemy.hp}/${enemy.maxHp}</span>
                 </div>
                 <div style="width:100%; height:4px; background:#000;"><div style="width:${hpPercent}%; height:100%; background:#ff6b6b;"></div></div>
@@ -158,11 +163,21 @@ export class BattleUI {
     );
   }
 
-  // --- FENSTER 3: STATUS ---
   updateControlWindow(state) {
     const hpPercent = (state.player.hp / state.player.maxHp) * 100;
+    
+    let playerStatusHTML = "";
+    if (state.player.statusEffects && state.player.statusEffects.length > 0) {
+        playerStatusHTML = `<div style="margin-bottom: 10px; display: flex; gap: 5px;">` + 
+            state.player.statusEffects.map(se => 
+                `<span style="background: #7c3aed; color: white; font-size: 11px; padding: 2px 6px; border-radius: 3px;">${se.name} x${se.stacks}</span>`
+            ).join('') + 
+        `</div>`;
+    }
+
     const content = `
         <div style="padding:15px;">
+            ${playerStatusHTML}
             <div style="margin-bottom:10px;">
                 <div style="display:flex; justify-content:space-between; font-size:14px; font-weight:bold;"><span>HP</span><span>${state.player.hp}/${state.player.maxHp}</span></div>
                 <div style="width:100%; height:12px; background:#000; border:1px solid #444;"><div style="width:${hpPercent}%; height:100%; background:#dc2626;"></div></div>

@@ -50,7 +50,7 @@ export const Definitions = {
       type: "ritual",
       description: "Die pure Kraft der Natur.",
       ritualValue: 3, // Mittlerer Wert
-      modifierType: "poison",
+      modifierType: "lifesteal",
     },
     ritual_stone: {
       id: "ritual_stone",
@@ -58,7 +58,7 @@ export const Definitions = {
       type: "ritual",
       description: "Ein schwerer Stein mit Gravuren.",
       ritualValue: 8, // Sehr hoher Wert
-      modifierType: "defense",
+      modifierType: "poison",
     },
   },
 
@@ -104,41 +104,34 @@ export const Definitions = {
     },
   },
 
-effects: {
+  effects: {
     sharpness: {
       id: "sharpness",
       name: "Schärfe",
       description: "Erhöht den Schaden.",
       type: "stat_boost", // Passiv: Erhöht einfach einen Wert
       stat: "damage",
-      value: 3, 
+      value: 3,
     },
     poison: {
       id: "poison",
       name: "Gift",
-      description: "Verursacht Schaden über Zeit.",
-      type: "on_hit", // Aktiv: Passiert, wenn man jemanden trifft
-      trigger: "apply_status", // Generischer Auslöser
-      statusId: "poison_dot",  // Wie der Status intern heißt
-      statusType: "dot",       // dot = Damage over Time
-      value: 2, // 2 Schaden pro Runde
-      duration: 3 // Dauer: 3 Runden
+      description: "Verursacht Giftschaden, der sich hochstapelt.",
+      type: "on_hit",
+      trigger: "apply_status",
+      statusId: "poison_dot",
+      statusType: "dot",
+      baseDamage: 1,
+      stacksToApply: 2,
+      applyChance: 0.6
     },
     lifesteal: {
       id: "lifesteal",
       name: "Vampirismus",
       description: "Heilt dich bei jedem Treffer.",
       type: "on_hit",
-      trigger: "heal_attacker", 
+      trigger: "heal_attacker",
       value: 0.2, // 20% des verursachten Schadens als Heilung
-    },
-    defense: {
-      id: "defense",
-      name: "Härte",
-      description: "Erhöht die Verteidigung beim Tragen.",
-      type: "stat_boost",
-      stat: "defense",
-      value: 2,
     },
   },
 
@@ -147,7 +140,7 @@ effects: {
       id: "normal_attack",
       name: "Angriff",
       type: "attack",
-      damageMult: 1.0, // 100% Schaden
+      damageMult: 1.0,
       text: "greift an",
       apCost: 1,
     },
@@ -190,7 +183,7 @@ effects: {
       strength: 5,
       defense: 1,
       xp: 25,
-      lootTable: [{ itemId: "goblin_ear", chance: 0.1 }], // Platzhalter Loot
+      lootTable: [{ itemId: "goblin_ear", chance: 0.1 }],
     },
   },
 
