@@ -104,30 +104,33 @@ export const Definitions = {
     },
   },
 
-  effects: {
+effects: {
     sharpness: {
       id: "sharpness",
       name: "Schärfe",
       description: "Erhöht den Schaden.",
-      type: "stat_boost",
+      type: "stat_boost", // Passiv: Erhöht einfach einen Wert
       stat: "damage",
-      value: 3, // +3 Schaden pro Stack
+      value: 3, 
     },
     poison: {
       id: "poison",
       name: "Gift",
       description: "Verursacht Schaden über Zeit.",
-      type: "on_hit",
-      trigger: "apply_poison",
-      value: 2, // 2 Giftschaden pro Runde
+      type: "on_hit", // Aktiv: Passiert, wenn man jemanden trifft
+      trigger: "apply_status", // Generischer Auslöser
+      statusId: "poison_dot",  // Wie der Status intern heißt
+      statusType: "dot",       // dot = Damage over Time
+      value: 2, // 2 Schaden pro Runde
+      duration: 3 // Dauer: 3 Runden
     },
     lifesteal: {
       id: "lifesteal",
       name: "Vampirismus",
       description: "Heilt dich bei jedem Treffer.",
       type: "on_hit",
-      trigger: "heal_attacker",
-      value: 0.2, // 20% des Schadens als Heilung
+      trigger: "heal_attacker", 
+      value: 0.2, // 20% des verursachten Schadens als Heilung
     },
     defense: {
       id: "defense",

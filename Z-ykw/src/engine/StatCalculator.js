@@ -1,79 +1,87 @@
 // src/engine/StatCalculator.js
+import { Definitions } from "../data/definitions.js";
 
 export class StatCalculator {
 
-    /**
-     * Berechnet den finalen Angriffswert eines Entitys
-     * unter Berücksichtigung von Basis-Stats, Ausrüstung und Skills.
-     */
     static calculateAttack(attacker, skill) {
-        // 1. Basis-Werte sammeln
         const stats = attacker.stats || {};
-        const weapon = attacker.equipped ? attacker.equipped.weapon : null; // Player hat equipped, Gegner oft direkt weapon stats
+        const weapon = attacker.equipped ? attacker.equipped.weapon : attacker.weapon; 
         
-        // Fallback für Gegner (die haben oft keine stats-Objekte wie der Player)
         const baseStr = stats.strength || attacker.strength || 0;
-        const weaponDmg = weapon ? (weapon.damage || 0) : 0;
+        let weaponDmg = weapon ? (weapon.damage || 0) : 0;
+        let activeEffects = []; // Hier sammeln wir "on_hit" Effekte für später
         
-        // 2. Rohschaden berechnen
+        // --- 1. PASSIVE WAFFENEFFEKTE BERECHNEN ---
+        if (weapon && weapon.effects) {
+            weapon.effects.forEach(effectId => {
+                const effectDef = Definitions.effects[effectId];
+                if (!effectDef) return;
+
+                // Wenn es ein Stat-Boost ist, direkt draufrechnen
+                if (effectDef.type === "stat_boost" && effectDef.stat === "damage") {
+                    weaponDmg += (effectDef.value || 0);
+                } 
+                // Wenn es ein Treffer-Effekt ist, für die ActionEngine speichern
+                else if (effectDef.type === "on_hit") {
+                    activeEffects.push(effectId);
+                }
+            });
+        }
+
+        // 2. Rohschaden
         let totalDamage = baseStr + weaponDmg;
 
-        // 3. Skill-Modifikator anwenden (z.B. Heavy Strike = 1.5x)
+        // 3. Skill-Multiplikator
         const skillMult = skill ? (skill.damageMult || 1.0) : 1.0;
         totalDamage = Math.floor(totalDamage * skillMult);
 
-        // 4. PIPELINE: "OnAttack" Effekte
-        // Hier prüfen wir auf Crit. Später können hier Gift, Feuer etc. dazu kommen.
-        
+        // 4. Crit-Berechnung
         const critResult = this.calculateCrit(attacker, weapon, totalDamage);
-        totalDamage = critResult.damage;
         
         return {
-            damage: totalDamage,
+            damage: critResult.damage,
             isCrit: critResult.isCrit,
-            // Hier können wir später Flags wie 'isPoisoned' zurückgeben
+            activeEffects: activeEffects // Wird an ActionEngine gereicht
         };
     }
 
-    /**
-     * Berechnet die Verteidigung (Incoming Damage)
-     */
     static calculateDefense(defender, rawDamage) {
-        // Stats beim Player vs. Gegner unterscheiden
         const stats = defender.stats || defender; 
-        const baseDef = stats.defense || 0;
+        let baseDef = stats.defense || 0;
         
         const armor = defender.equipped ? defender.equipped.armor : null;
-        const armorDef = armor ? (armor.defense || 0) : 0;
+        let armorDef = armor ? (armor.defense || 0) : 0;
+
+        // --- 1. PASSIVE RÜSTUNGSEFFEKTE ---
+        // Funktioniert später automatisch, wenn Rüstungen Effekte haben
+        if (armor && armor.effects) {
+            armor.effects.forEach(effectId => {
+                const effectDef = Definitions.effects[effectId];
+                if (effectDef && effectDef.type === "stat_boost" && effectDef.stat === "defense") {
+                    armorDef += (effectDef.value || 0);
+                }
+            });
+        }
 
         const totalDef = baseDef + armorDef;
-        
-        // Schaden reduzieren (nicht unter 0, aber min 1, falls getroffen wurde?)
-        // Design-Entscheidung: Verteidigung kann Schaden auf 0 reduzieren.
         let finalDamage = Math.max(0, rawDamage - totalDef);
 
         return {
             damage: finalDamage,
-            blocked: totalDef // Info für Logs
+            blocked: totalDef
         };
     }
 
-    // --- INTERNE EFFEKT-LOGIK ---
-
     static calculateCrit(attacker, weapon, currentDamage) {
-        const stats = attacker.stats || attacker; // Fallback
-        
-        // Werte aggregieren (Basis + Waffe)
+        const stats = attacker.stats || attacker;
         const baseCrit = stats.critChance || 0;
         const weaponCrit = weapon ? (weapon.critChance || 0) : 0;
         const totalChance = baseCrit + weaponCrit;
 
-        const baseMult = stats.critMultiplier || 1.5; // Standard 1.5x
-        // Waffe könnte auch critMultiplier haben, addieren wir hier optional:
+        const baseMult = stats.critMultiplier || 1.5;
         const weaponMult = weapon ? (weapon.critMultiplier || 0) : 0;
         const totalMult = baseMult + weaponMult;
 
-        // Würfeln
         const isCrit = (Math.random() * 100) < totalChance;
 
         if (isCrit) {

@@ -262,6 +262,24 @@ class StateManager {
     this.saveGame();
   }
 
+  equipWeapon(weaponId) {
+    const weapon = this.state.player.weapons.find(w => w.id === weaponId);
+    if (weapon) {
+      this.state.player.equipped.weapon = weapon;
+      this.notify();
+      this.saveGame();
+      return true;
+    }
+    return false;
+  }
+
+  unequipWeapon() {
+    this.state.player.equipped.weapon = null;
+    this.notify();
+    this.saveGame();
+    return true;
+  }
+
   subscribe(callback) {
     this.listeners.push(callback);
   }

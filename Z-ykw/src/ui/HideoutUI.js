@@ -92,22 +92,39 @@ export class HideoutUI {
                         </div>
                     </div>`;
         break;
-      case "inventory":
-        const itemsHTML = p.inventory
-          .map(
-            (item) => `
-                    <div class="static-inv-item">
-                        <span>${item.name}</span>
-                        <button class="small-btn" onclick="window.gameAPI.useItem('${item.id}')">Nutzen</button>
+case "inventory":
+        const allLoot = [
+            ...(p.inventory || []),
+            ...(p.weapons || [])
+        ];
+
+        const itemsHTML = allLoot.length > 0 
+          ? allLoot.map(item => {
+              // Prüfen ob ausgerüstet (Waffe oder Rüstung)
+              const isEquipped = (p.equipped.weapon?.id === item.id || p.equipped.armor?.id === item.id);
+              const accentColor = isEquipped ? '#fbbf24' : '#fff';
+              
+              // Anzeige-Typ
+              let typeDisplay = item.damage ? "WAFFE" : (item.type ? item.type.toUpperCase() : "ITEM");
+
+              return `
+                <div class="static-inv-item" style="border-left: 3px solid ${isEquipped ? '#fbbf24' : '#444'}">
+                    <div style="display:flex; flex-direction:column">
+                        <span style="font-weight:bold; color:${accentColor}">${item.name}</span>
+                        <span style="font-size:10px; color:#666">${typeDisplay}</span>
                     </div>
-                `,
-          )
-          .join("");
+                    <button class="small-btn" onclick="window.gameAPI.useItem('${item.id}')">
+                        ${isEquipped ? 'Ablegen' : (item.damage ? 'Ausrüsten' : 'Nutzen')}
+                    </button>
+                </div>`;
+            }).join("")
+          : "<p style='text-align:center; color:#444'>Leer.</p>";
+
         this.sceneContent.innerHTML = `
-                    <div class="static-screen-overlay">
-                        <h2>Inventar</h2>
-                        <div class="static-inventory-grid">${itemsHTML || "Leer"}</div>
-                    </div>`;
+            <div class="static-screen-overlay">
+                <h2>Inventar</h2>
+                <div class="static-inventory-grid">${itemsHTML}</div>
+            </div>`;
         break;
       case "ritual":
         const ritualItems = state.ritual.selectedItems;
@@ -115,40 +132,56 @@ export class HideoutUI {
           (i) => i.type === "ritual",
         );
 
+        const canPerform = ritualItems.length === 6;
+        const buttonStyle = canPerform
+          ? "margin-top: 25px;"
+          : "margin-top: 25px; opacity: 0.3; pointer-events: none;";
+
         this.sceneContent.innerHTML = `
-            <div class="static-screen-overlay">
-                <h2>Das Alchemie-Ritual</h2>
+            <div class="static-screen-overlay" style="width: 98%; max-width: 2500px; height: 95%;">
+                <h2>Ritual</h2>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                     <div>
-                        <p style="font-size: 12px; color: #888;">Wähle 6 Ritual-Komponenten</p>
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px;">
+                        <p style="font-size: 12px; color: #888; margin-bottom: 10px;">Wähle 6 Ritual-Komponenten</p>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
                             ${[0, 1, 2, 3, 4, 5]
                               .map((idx) => {
                                 const item = ritualItems[idx];
                                 return `
                                     <div onclick="window.gameAPI.removeFromRitual(${idx})" 
-                                         style="width: 60px; height: 60px; border: 2px dashed #444; background: #000; cursor: pointer;">
-                                        ${item ? `<span>✨</span>` : ""}
+                                         style="width: 60px; height: 60px; border: 2px dashed #444; background: #000; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                                        ${item ? `✨` : ""}
                                     </div>`;
                               })
                               .join("")}
                         </div>
-                        </div>
+
+                        <button class="game-button" 
+                                id="btn-perform-ritual"
+                                style="${buttonStyle}"
+                                onclick="window.gameAPI.doRitual()">
+                            Ritual vollziehen
+                        </button>
+                    </div>
 
                     <div style="border-left: 1px solid #333; padding-left: 20px; max-height: 300px; overflow-y: auto;">
-                        <p style="font-size: 12px; color: #888;">Verfügbare Ritual-Zutaten:</p>
+                        <p style="font-size: 12px; color: #888; margin-bottom: 10px;">Verfügbare Zutaten:</p>
                         ${
                           availableRitualItems.length > 0
                             ? availableRitualItems
                                 .map(
                                   (item) => `
                                 <div class="static-inv-item" style="margin-bottom: 5px; padding: 5px;">
-                                    <span style="font-size: 13px;">${item.name}</span>
+                                    <div style="display:flex; flex-direction:column">
+                                        <span style="font-size: 13px; color: var(--accent-color);">${item.name}</span>
+                                        <span style="font-size: 10px; color: #666;">Kraft: ${item.ritualValue || 0}</span>
+                                    </div>
                                     <button class="small-btn" onclick="window.gameAPI.addToRitual('${item.id}')">+</button>
                                 </div>`,
                                 )
                                 .join("")
-                            : "<p style='font-size:11px; color:#555'>Keine Ritualgegenstände im Inventar.</p>"
+                            : "<p style='font-size:11px; color:#555; text-align:center; margin-top:20px;'>Keine Ritualzutaten im Inventar.</p>"
                         }
                     </div>
                 </div>
