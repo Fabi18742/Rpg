@@ -474,16 +474,18 @@ export class HideoutUI {
         `;
         break;
 
-      case "weapon_selection":
-        const weapons = p.weapons || [];
+case "weapon_selection":
+        const invWeapons = (p.inventory || []).filter(i => i.type === "weapon" || i.damage !== undefined);
+        const allWeapons = [...(p.weapons || []), ...invWeapons];
+        
         const currentWeaponId = p.equipped.weapon ? p.equipped.weapon.id : null;
 
         let weaponsHTML = "";
-        if (weapons.length === 0) {
+        if (allWeapons.length === 0) {
           weaponsHTML =
-            '<div class="no-items" style="text-align:center; color:#888; font-size: 18px; margin-top: 40px;">Keine Waffen verfügbar. Stelle eine im Ritual her!</div>';
+            '<div class="no-items" style="text-align:center; color:#888; font-size: 18px; margin-top: 40px;">Keine Waffen verfügbar. Stelle eine im Ritual her oder finde eine!</div>';
         } else {
-          weaponsHTML = weapons
+          weaponsHTML = allWeapons
             .map((w) => {
               const isEquipped = w.id === currentWeaponId;
 
