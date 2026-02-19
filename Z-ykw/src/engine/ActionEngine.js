@@ -130,8 +130,6 @@ export class ActionEngine {
     stateManager.modifyPlayerAp(-cost);
 
     if (skill.type === "attack") {
-      // FIX: Übergabe von null als sourceIndex, da der Spieler angreift
-      // Signatur ist: executeAttack(source, sourceIndex, skill)
       this.executeAttack("player", null, skill);
     } else if (skill.type === "heal") {
       stateManager.modifyPlayerHp(skill.value);
@@ -150,8 +148,9 @@ export class ActionEngine {
     const enemies = state.combat.enemies;
     this.log("--- Gegner Zug ---", "neutral");
 
-    // 1. Gegner Aktionen & Status Effekte
-    enemies.forEach((enemy, index) => {
+    // 1. Gegner Aktionen & Status Effekte (als klassischer Loop, um abbrechen zu können)
+    for (let index = 0; index < enemies.length; index++) {
+      const enemy = enemies[index];
       if (enemy.hp > 0) {
         // DoT auf Gegner anwenden
         const diedFromDot = this.processTurnEffects(enemy, false);
@@ -162,25 +161,28 @@ export class ActionEngine {
         } else {
           // Nur angreifen, wenn er nicht durch Gift gestorben ist
           this.executeAttack("enemy", index);
+
+          // SOFORTIGER TODES-CHECK: Falls der Spieler durch diesen Hit stirbt, stoppe die weiteren Gegner!
+          if (stateManager.getState().player.hp <= 0) {
+            break;
+          }
         }
       }
-    });
+    }
 
     // 2. Prüfen ob Spieler durch die Angriffe gestorben ist
     if (stateManager.getState().player.hp <= 0) {
-      this.log("Du wurdest besiegt...", "enemy");
-      stateManager.saveGame();
+      this.loseCombat();
       return;
     }
 
-    // 3. Status Effekte auf dem Spieler (Start seines Zuges)
+    // 3. Status Effekte auf dem Spieler (Gift am Start seines Zuges)
     const playerDied = this.processTurnEffects(
       stateManager.getState().player,
       true,
     );
     if (playerDied) {
-      this.log("Du bist an deinen Wunden erlegen...", "enemy");
-      stateManager.saveGame();
+      this.loseCombat();
       return;
     }
 
@@ -192,6 +194,15 @@ export class ActionEngine {
       stateManager.resetPlayerAp();
       this.log("Du bist am Zug.", "neutral");
     }
+  }
+
+  // NEU: Handhabt den Tod des Spielers
+  static loseCombat() {
+    this.log("Du wurdest besiegt...", "enemy");
+    const messages = [
+      "Die Dunkelheit umfängt dich...",
+    ];
+    stateManager.setResult("DU BIST GESTORBEN", messages, "combat_loss");
   }
 
   static executeAttack(source, sourceIndex = null, skill = null) {

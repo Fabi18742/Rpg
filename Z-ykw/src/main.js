@@ -105,7 +105,7 @@ window.gameAPI = {
       ActionEngine.log("Das Ritual benötigt genau 6 Zutaten.", "neutral");
     }
   },
-  
+
   clearRitual: () => {
     stateManager.clearRitual();
   },
@@ -131,13 +131,14 @@ window.gameAPI = {
 
   closeResult: () => {
     const context = stateManager.clearResult();
-
-    // Nach dem Kampf: Gegner plündern & zurück in den Dungeon-Leerlauf
     if (context === "combat_win") {
       stateManager.endCombat();
-    }
-    // Nach dem Ritual: In den Ausrüstungs-Screen wechseln
-    else if (context === "ritual") {
+    } else if (context === "combat_loss") {
+      stateManager.state.player.hp = stateManager.state.player.maxHp;
+      stateManager.endCombat();
+      stateManager.returnToHideout();
+      window.gameAPI.switchHideoutScreen("main");
+    } else if (context === "ritual") {
       window.gameAPI.switchHideoutScreen("ritual");
     }
   },
