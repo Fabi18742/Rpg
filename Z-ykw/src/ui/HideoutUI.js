@@ -81,16 +81,26 @@ export class HideoutUI {
         break;
       case "stats":
         this.sceneContent.innerHTML = `
-                    <div class="static-screen-overlay">
-                        <h2>Charakterbogen</h2>
-                        <div class="stat-grid-large">
-                            <div class="stat-entry"><span>Stufe:</span> <span>${p.level}</span></div>
-                            <div class="stat-entry"><span>XP:</span> <span>${p.xp}</span></div>
-                            <div class="stat-entry"><span>HP:</span> <span>${p.hp} / ${p.maxHp}</span></div>
-                            <div class="stat-entry"><span>Stärke:</span> <span>${p.stats.strength}</span></div>
-                            <div class="stat-entry"><span>Abwehr:</span> <span>${p.stats.defense}</span></div>
-                        </div>
-                    </div>`;
+            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <h2 style="color: var(--accent-color); margin-bottom: 40px; margin-top: 0;">Charakterbogen</h2>
+                <div class="stat-grid-large" style="width: 100%; max-width: 500px; background: rgba(0,0,0,0.5); border: 2px solid #444; padding: 30px; font-size: 18px;">
+                    <div class="stat-entry" style="margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px;">
+                        <span>Stufe:</span> <span style="color: var(--accent-color); font-weight: bold;">${p.level}</span>
+                    </div>
+                    <div class="stat-entry" style="margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px;">
+                        <span>XP:</span> <span>${p.xp}</span>
+                    </div>
+                    <div class="stat-entry" style="margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px;">
+                        <span>HP:</span> <span style="color: #ff6b6b; font-weight: bold;">${p.hp} / ${p.maxHp}</span>
+                    </div>
+                    <div class="stat-entry" style="margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px;">
+                        <span>Stärke:</span> <span>${p.stats.strength}</span>
+                    </div>
+                    <div class="stat-entry" style="padding-bottom: 5px;">
+                        <span>Abwehr:</span> <span>${p.stats.defense}</span>
+                    </div>
+                </div>
+            </div>`;
         break;
 
       case "equipment":
@@ -341,6 +351,7 @@ export class HideoutUI {
             </div>
         `;
         break;
+
       case "inventory":
         const allLoot = [...(p.inventory || []), ...(p.weapons || [])];
 
@@ -352,7 +363,9 @@ export class HideoutUI {
                   const isEquipped =
                     p.equipped.weapon?.id === item.id ||
                     p.equipped.armor?.id === item.id;
-                  const accentColor = isEquipped ? "#fbbf24" : "#fff";
+                  const accentColor = isEquipped
+                    ? "var(--accent-color)"
+                    : "#fff";
 
                   // Anzeige-Typ
                   let typeDisplay = item.damage
@@ -362,25 +375,28 @@ export class HideoutUI {
                       : "ITEM";
 
                   return `
-                <div class="static-inv-item" style="border-left: 3px solid ${isEquipped ? "#fbbf24" : "#444"}">
-                    <div style="display:flex; flex-direction:column">
-                        <span style="font-weight:bold; color:${accentColor}">${item.name}</span>
-                        <span style="font-size:10px; color:#666">${typeDisplay}</span>
+                <div class="static-inv-item" style="background: rgba(0,0,0,0.5); border: 1px solid #444; border-left: 4px solid ${isEquipped ? "var(--accent-color)" : "#444"}; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display:flex; flex-direction:column; gap: 5px;">
+                        <span style="font-weight:bold; font-size: 18px; color:${accentColor}">${item.name}</span>
+                        <span style="font-size:12px; color:#888">${typeDisplay}</span>
                     </div>
-                    <button class="small-btn" onclick="window.gameAPI.useItem('${item.id}')">
+                    <button class="game-button" onclick="window.gameAPI.useItem('${item.id}')" style="min-height: 40px; padding: 5px 20px; font-size: 14px; width: auto;">
                         ${isEquipped ? "Ablegen" : item.damage ? "Ausrüsten" : "Nutzen"}
                     </button>
                 </div>`;
                 })
                 .join("")
-            : "<p style='text-align:center; color:#444'>Leer.</p>";
+            : "<p style='text-align:center; color:#888; font-size: 18px; grid-column: span 2; margin-top: 40px;'>Dein Inventar ist leer.</p>";
 
         this.sceneContent.innerHTML = `
-            <div class="static-screen-overlay">
-                <h2>Inventar</h2>
-                <div class="static-inventory-grid">${itemsHTML}</div>
+            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 10; display: flex; flex-direction: column; align-items: center; padding-top: 50px;">
+                <h2 style="color: var(--accent-color); margin-bottom: 30px; margin-top: 0;">Inventar</h2>
+                <div class="static-inventory-grid" style="width: 100%; max-width: 1000px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; overflow-y: auto; padding-right: 15px; margin-bottom: 20px;">
+                    ${itemsHTML}
+                </div>
             </div>`;
         break;
+
       case "ritual":
         const ritualItems = state.ritual.selectedItems;
         const availableRitualItems = state.player.inventory.filter(
@@ -389,23 +405,25 @@ export class HideoutUI {
 
         const canPerform = ritualItems.length === 6;
         const buttonStyle = canPerform
-          ? "margin-top: 25px;"
-          : "margin-top: 25px; opacity: 0.3; pointer-events: none;";
+          ? "margin-top: 30px;"
+          : "margin-top: 30px; opacity: 0.3; pointer-events: none;";
 
         this.sceneContent.innerHTML = `
-            <div class="static-screen-overlay" style="width: 98%; max-width: 2500px; height: 95%;">
-                <h2>Ritual</h2>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                    <div>
-                        <p style="font-size: 12px; color: #888; margin-bottom: 10px;">Wähle 6 Ritual-Komponenten</p>
+            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <h2 style="color: var(--accent-color); margin-bottom: 30px; margin-top: 0;">Das Ritual</h2>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; width: 100%; max-width: 1000px; background: rgba(0,0,0,0.5); border: 2px solid #444; padding: 40px;">
+                    
+                    <div style="display: flex; flex-direction: column; align-items: center;">
+                        <p style="font-size: 16px; color: #aaa; margin-bottom: 25px;">Wähle 6 Ritual-Komponenten</p>
                         
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
                             ${[0, 1, 2, 3, 4, 5]
                               .map((idx) => {
                                 const item = ritualItems[idx];
                                 return `
                                     <div onclick="window.gameAPI.removeFromRitual(${idx})" 
-                                         style="width: 60px; height: 60px; border: 2px dashed #444; background: #000; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                                         style="width: 80px; height: 80px; border: 2px dashed ${item ? "var(--accent-color)" : "#666"}; background: ${item ? "rgba(251,191,36,0.1)" : "#111"}; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 28px; transition: all 0.2s;">
                                         ${item ? `✨` : ""}
                                     </div>`;
                               })
@@ -414,31 +432,34 @@ export class HideoutUI {
 
                         <button class="game-button" 
                                 id="btn-perform-ritual"
-                                style="${buttonStyle}"
+                                style="${buttonStyle} width: 100%;"
                                 onclick="window.gameAPI.doRitual()">
                             Ritual vollziehen
                         </button>
                     </div>
 
-                    <div style="border-left: 1px solid #333; padding-left: 20px; max-height: 300px; overflow-y: auto;">
-                        <p style="font-size: 12px; color: #888; margin-bottom: 10px;">Verfügbare Zutaten:</p>
+                    <div style="border-left: 2px solid #333; padding-left: 40px; display: flex; flex-direction: column; max-height: 400px;">
+                        <p style="font-size: 16px; color: #aaa; margin-bottom: 25px;">Verfügbare Zutaten:</p>
+                        <div style="overflow-y: auto; padding-right: 15px; display: flex; flex-direction: column; gap: 10px;">
                         ${
                           availableRitualItems.length > 0
                             ? availableRitualItems
                                 .map(
                                   (item) => `
-                                <div class="static-inv-item" style="margin-bottom: 5px; padding: 5px;">
-                                    <div style="display:flex; flex-direction:column">
-                                        <span style="font-size: 13px; color: var(--accent-color);">${item.name}</span>
-                                        <span style="font-size: 10px; color: #666;">Kraft: ${item.ritualValue || 0}</span>
+                                <div class="static-inv-item" style="background: #111; border: 1px solid #444; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
+                                    <div style="display:flex; flex-direction:column; gap: 4px;">
+                                        <span style="font-size: 16px; color: var(--accent-color); font-weight: bold;">${item.name}</span>
+                                        <span style="font-size: 12px; color: #888;">Kraft: ${item.ritualValue || 0}</span>
                                     </div>
-                                    <button class="small-btn" onclick="window.gameAPI.addToRitual('${item.id}')">+</button>
+                                    <button class="game-button" onclick="window.gameAPI.addToRitual('${item.id}')" style="min-height: 40px; width: 40px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 20px;">+</button>
                                 </div>`,
                                 )
                                 .join("")
-                            : "<p style='font-size:11px; color:#555; text-align:center; margin-top:20px;'>Keine Ritualzutaten im Inventar.</p>"
+                            : "<p style='font-size:14px; color:#666; text-align:center; margin-top:20px; font-style: italic;'>Keine Ritualzutaten im Inventar.</p>"
                         }
+                        </div>
                     </div>
+
                 </div>
             </div>`;
         break;
