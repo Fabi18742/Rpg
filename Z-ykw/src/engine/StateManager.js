@@ -146,8 +146,9 @@ class StateManager {
   }
 
   addDefeatedBoss(bossId) {
-    if (!this.state.player.defeatedBosses) this.state.player.defeatedBosses = []; // Fallback für alte Saves
-    
+    if (!this.state.player.defeatedBosses)
+      this.state.player.defeatedBosses = []; // Fallback für alte Saves
+
     if (!this.state.player.defeatedBosses.includes(bossId)) {
       this.state.player.defeatedBosses.push(bossId);
       this.saveGame();
@@ -269,10 +270,16 @@ class StateManager {
   }
 
   equipItem(itemId) {
-    const item = this.state.player.inventory.find((i) => i.id === itemId);
+    let item = this.state.player.inventory.find((i) => i.id === itemId);
+    if (!item) {
+      item = this.state.player.weapons.find((w) => w.id === itemId);
+    }
+
     if (item) {
-      if (item.type === "weapon") this.state.player.equipped.weapon = item;
-      if (item.type === "armor") this.state.player.equipped.armor = item;
+      if (item.type === "weapon" || item.damage !== undefined)
+        this.state.player.equipped.weapon = item;
+      if (item.type === "armor" || item.defense !== undefined)
+        this.state.player.equipped.armor = item;
       this.notify();
       this.saveGame();
     }
@@ -354,7 +361,11 @@ class StateManager {
   }
 
   equipWeapon(weaponId) {
-    const weapon = this.state.player.weapons.find((w) => w.id === weaponId);
+    let weapon = this.state.player.weapons.find((w) => w.id === weaponId);
+    if (!weapon) {
+      weapon = this.state.player.inventory.find((w) => w.id === weaponId);
+    }
+
     if (weapon) {
       this.state.player.equipped.weapon = weapon;
       this.notify();

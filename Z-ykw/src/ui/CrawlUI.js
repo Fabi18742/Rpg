@@ -3,8 +3,11 @@ import { stateManager } from '../engine/StateManager.js';
 export class CrawlUI {
     constructor(elementId) {
         this.container = document.getElementById(elementId);
-        this.sceneContent = document.getElementById('scene-content'); // Greift auf die obere Bildhälfte zu
+        this.sceneContent = document.getElementById('scene-content'); 
         this.wasRenderingEvent = false;
+        
+        // --- NEU: Schalter für das Crawl-Inventar ---
+        this.showingInventory = false; 
         
         window.gameAPI._internalSelectOption = (index) => {
             import('../engine/CrawlEngine.js').then(module => {
@@ -12,15 +15,28 @@ export class CrawlUI {
             });
         };
 
+        // --- NEU: API-Befehle für das Vollbild-Inventar ---
+        window.gameAPI.showCrawlInventory = () => {
+            this.showingInventory = true;
+            this.render(stateManager.getState());
+        };
+
+        window.gameAPI.hideCrawlInventory = () => {
+            this.showingInventory = false;
+            this.render(stateManager.getState());
+        };
+
         stateManager.subscribe((state) => {
             this.render(state);
         });
     }
 
-render(state) {
+    render(state) {
         if (!this.container) return;
 
+        // Wenn wir nicht im Dungeon sind, alles unsichtbar machen
         if (state.location !== "dungeon") {
+            this.showingInventory = false; // Sicherstellen, dass es beim nächsten Mal zu ist
             this.container.style.display = 'none';
             if (this.sceneContent && this.wasRenderingEvent) {
                 this.sceneContent.innerHTML = '';
@@ -29,25 +45,35 @@ render(state) {
             return;
         }
 
+        // --- NEU: GIBT ES DAS VOLLBILD-INVENTAR? ---
+        if (this.showingInventory) {
+            this.renderInventoryScreen(state);
+            return;
+        }
+
+        // 1. GIBT ES EIN AKTIVES TEXT-EVENT? -> Dann zeige die Geschichte!
         if (state.crawl.activeEvent) {
             this.renderEventScreen(state.crawl.activeEvent);
             return;
         }
 
+        // Clean-Up für vorherige Events
         if (this.sceneContent && this.wasRenderingEvent) {
             this.sceneContent.innerHTML = '';
             this.wasRenderingEvent = false;
         }
 
+        // 2. NORMALER CRAWL (Karten ziehen)
         if (state.crawl.active && !state.combat.active && state.crawl.choices) {
             
             if (this.sceneContent) {
                 this.sceneContent.innerHTML = this.buildChoicesHTML(state.crawl.choices);
             }
 
+            // --- ÄNDERUNG: Ruft nun showCrawlInventory() anstatt toggleInventory() auf ---
             this.container.innerHTML = `
                 <div class="button-grid single-button" style="display: flex; justify-content: center; width: 100%;">
-                    <button class="game-button" onclick="window.gameAPI.toggleInventory()">Inventar öffnen</button>
+                    <button class="game-button" onclick="window.gameAPI.showCrawlInventory()">Inventar öffnen</button>
                 </div>
             `;
             this.container.style.display = 'block';
@@ -55,6 +81,50 @@ render(state) {
             this.container.innerHTML = '';
             this.container.style.display = 'none';
         }
+    }
+
+    // --- NEU: Rendert das Vollbild-Inventar (Identisch zum Hideout) ---
+    renderInventoryScreen(state) {
+        this.container.style.display = 'block';
+        this.wasRenderingEvent = true; // Markieren, damit die Bildfläche nach dem Schließen aufgeräumt wird
+
+        const p = state.player;
+        const allLoot = [...(p.inventory || []), ...(p.weapons || [])];
+
+        const itemsHTML = allLoot.length > 0 ? allLoot.map((item) => {
+            const isEquipped = p.equipped.weapon?.id === item.id || p.equipped.armor?.id === item.id;
+            const accentColor = isEquipped ? "var(--accent-color)" : "#fff";
+            let typeDisplay = item.damage ? "WAFFE" : (item.type ? item.type.toUpperCase() : "ITEM");
+
+            return `
+            <div class="static-inv-item" style="background: rgba(0,0,0,0.5); border: 1px solid #444; border-left: 4px solid ${isEquipped ? "var(--accent-color)" : "#444"}; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display:flex; flex-direction:column; gap: 5px;">
+                    <span style="font-weight:bold; font-size: 18px; color:${accentColor}">${item.name}${item.quantity > 1 ? ` <span style="color: #fbbf24; font-size: 14px;">x${item.quantity}</span>` : ""}</span>
+                    <span style="font-size:12px; color:#888">${typeDisplay}</span>
+                </div>
+                <button class="game-button" onclick="window.gameAPI.useItem('${item.id}')" style="min-height: 40px; padding: 5px 20px; font-size: 14px; width: auto;">
+                    ${isEquipped ? "Ablegen" : (item.damage ? "Ausrüsten" : "Nutzen")}
+                </button>
+            </div>`;
+        }).join("") : "<p style='text-align:center; color:#888; font-size: 18px; grid-column: span 2; margin-top: 40px;'>Dein Inventar ist leer.</p>";
+
+        // Szene oben überschreiben
+        if (this.sceneContent) {
+            this.sceneContent.innerHTML = `
+            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 10; display: flex; flex-direction: column; align-items: center; padding-top: 50px;">
+                <h2 style="color: var(--accent-color); margin-bottom: 30px; margin-top: 0;">Inventar</h2>
+                <div class="static-inventory-grid" style="width: 100%; max-width: 1000px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; overflow-y: auto; padding-right: 15px; margin-bottom: 20px;">
+                    ${itemsHTML}
+                </div>
+            </div>`;
+        }
+
+        // Action-Area unten (Zurück-Button)
+        this.container.innerHTML = `
+            <div class="button-grid single-button" style="display: flex; justify-content: center; width: 100%;">
+                <button class="game-button" onclick="window.gameAPI.hideCrawlInventory()">Zurück</button>
+            </div>
+        `;
     }
 
     renderEventScreen(event) {
@@ -85,7 +155,7 @@ render(state) {
         `;
     }
 
-buildChoicesHTML(choices) {
+    buildChoicesHTML(choices) {
         return `
             <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center;">
                 <h2 style="color: var(--accent-color); margin-bottom: 40px; font-size: 32px; text-transform: uppercase; letter-spacing: 2px;">Wähle deinen Weg</h2>

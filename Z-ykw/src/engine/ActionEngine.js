@@ -6,29 +6,18 @@ import { Definitions } from "../data/definitions.js";
 export class ActionEngine {
   // --- ITEM INTERAKTION ---
 
-  static useItem(itemId) {
+static useItem(itemId) {
     const state = stateManager.getState();
 
-    // 1. Suche im Inventar (Tränke/Mats)
+    // 1. Suche in beiden Listen, egal wo das Item liegt
     let item = state.player.inventory.find((i) => i.id === itemId);
-    let isWeapon = false;
-
-    // 2. Wenn nicht gefunden, suche in den Waffen
     if (!item) {
       item = state.player.weapons.find((w) => w.id === itemId);
-      isWeapon = true;
     }
-
-    // 3. Fallback für Basis-Items (falls noch nicht gecraftet/gefunden)
+    
+    // Fallback für Basis-Items
     if (!item) {
       item = Definitions.items[itemId] || Definitions.weapons[itemId];
-      // Check ob es laut Definition eine Waffe ist
-      if (
-        item &&
-        (item.ritualValue !== undefined || Definitions.weapons[itemId])
-      ) {
-        isWeapon = true;
-      }
     }
 
     if (!item) {
@@ -36,15 +25,21 @@ export class ActionEngine {
       return;
     }
 
+    // 2. Wir erkennen den Typ an den Eigenschaften, NICHT am Array!
+    const isWeapon = item.type === "weapon" || item.damage !== undefined;
+    const isArmor = item.type === "armor" || item.defense !== undefined;
+
+    // 3. Entsprechende Aktion auslösen
     if (isWeapon) {
       this.toggleEquipWeapon(item);
+    } else if (isArmor) {
+      this.toggleEquipItem(item);
     } else if (item.type === "consumable") {
       this.consumeItem(item);
     } else {
       this.log(`Du betrachtest ${item.name}.`, "neutral");
     }
   }
-
   static consumeItem(itemDef) {
     if (itemDef.effect === "heal") {
       const player = stateManager.getState().player;
@@ -76,17 +71,15 @@ export class ActionEngine {
     }
   }
 
-  static toggleEquipItem(itemDef) {
+static toggleEquipItem(itemDef) {
     const player = stateManager.getState().player;
-    const currentEquip =
-      itemDef.type === "weapon"
-        ? player.equipped.weapon
-        : player.equipped.armor;
+    const isWeapon = itemDef.type === "weapon" || itemDef.damage !== undefined;
+    const currentEquip = isWeapon ? player.equipped.weapon : player.equipped.armor;
 
     // Ist genau dieses Item schon ausgerüstet?
     if (currentEquip && currentEquip.id === itemDef.id) {
       // Ja -> Ablegen
-      stateManager.unequipItem(itemDef.type);
+      stateManager.unequipItem(isWeapon ? "weapon" : "armor");
       this.log(`${itemDef.name} abgelegt.`, "neutral");
     } else {
       // Nein -> Anziehen
