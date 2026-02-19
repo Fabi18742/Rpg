@@ -227,6 +227,11 @@ window.gameAPI = {
       window.gameAPI.switchHideoutScreen("shop");
     }
   },
+
+  cheatXp: (amount) => {
+    stateManager.addXp(amount);
+    console.log(`${amount} XP herbeigezaubert!`);
+  },
   cheatGold: (amount) => {
     stateManager.modifyGold(amount);
     console.log(`${amount} Gold herbeigezaubert!`);

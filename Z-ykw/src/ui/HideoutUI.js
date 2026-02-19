@@ -57,9 +57,7 @@ export class HideoutUI {
     if (this.activeScreen === "main") {
       const tokens = state.player.tokens || 0;
       const tokenBadge =
-        tokens > 0
-          ? ' <span style="color:#fbbf24; text-shadow: 0 0 5px #fbbf24;">(↑)</span>'
-          : "";
+        tokens > 0 ? ' <span style="color:#fbbf24;">(↑)</span>' : "";
 
       this.container.innerHTML = `
                 <div class="button-grid hideout-grid">
@@ -226,61 +224,76 @@ export class HideoutUI {
       case "stats":
         const tokens = p.tokens || 0;
         const nextXp = p.level * 100;
+        const xpPercent = Math.min(100, (p.xp / nextXp) * 100);
+
+        // Feste Platzhalter für die Token-Nachricht
         const tokenMsg =
           tokens > 0
-            ? `<div style="text-align: center; color: #fbbf24; margin-bottom: 20px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; animation: pulse 2s infinite;">Level Up! ${tokens} Token verfügbar</div>`
-            : "";
+            ? `<div style="color: #fbbf24; font-weight: bold; text-transform: uppercase; letter-spacing: 2px;">Level Up! ${tokens} Token verfügbar</div>`
+            : `<div style="visibility: hidden; font-weight: bold; text-transform: uppercase; letter-spacing: 2px;">Platzhalter</div>`;
 
-        const btnStr =
-          tokens > 0
-            ? `<button class="game-button" onclick="window.gameAPI.investToken('strength')" style="min-height: 30px; padding: 0 15px; font-size: 14px; width: auto; margin-left: 15px;">+1</button>`
-            : "";
-        const btnDef =
-          tokens > 0
-            ? `<button class="game-button" onclick="window.gameAPI.investToken('defense')" style="min-height: 30px; padding: 0 15px; font-size: 14px; width: auto; margin-left: 15px;">+1</button>`
-            : "";
-        const btnHp =
-          tokens > 0
-            ? `<button class="game-button" onclick="window.gameAPI.investToken('maxHp')" style="min-height: 30px; padding: 0 15px; font-size: 14px; width: auto; margin-left: 15px;">+10</button>`
-            : "";
+        // Die Buttons (Schwebend rechts am Rand positioniert, mit gelbem Text, Rahmen und transparentem gelben Hintergrund)
+        const btnStr = `<button class="game-button" onclick="window.gameAPI.investToken('strength')" style="min-height: 30px; height: 30px; padding: 0; width: 45px; font-size: 14px; position: absolute; right: -60px; color: #fbbf24; border-color: #fbbf24; background-color: rgba(251, 191, 36, 0.15); ${tokens > 0 ? "" : "display: none;"}">+1</button>`;
+        const btnDef = `<button class="game-button" onclick="window.gameAPI.investToken('defense')" style="min-height: 30px; height: 30px; padding: 0; width: 45px; font-size: 14px; position: absolute; right: -60px; color: #fbbf24; border-color: #fbbf24; background-color: rgba(251, 191, 36, 0.15); ${tokens > 0 ? "" : "display: none;"}">+1</button>`;
+        const btnHp = `<button class="game-button" onclick="window.gameAPI.investToken('maxHp')" style="min-height: 30px; height: 30px; padding: 0; width: 45px; font-size: 14px; position: absolute; right: -60px; color: #fbbf24; border-color: #fbbf24; background-color: rgba(251, 191, 36, 0.15); ${tokens > 0 ? "" : "display: none;"}">+10</button>`;
 
         this.sceneContent.innerHTML = `
-            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                <h2 style="color: var(--accent-color); margin-bottom: 20px; margin-top: 0;">Charakterbogen</h2>
-                ${tokenMsg}
-                <div class="stat-grid-large" style="width: 100%; max-width: 500px; background: rgba(0,0,0,0.5); border: 2px solid #444; padding: 30px; font-size: 18px;">
-                    <div class="stat-entry" style="margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px;">
-                        <span>Stufe:</span> <span style="color: var(--accent-color); font-weight: bold;">${p.level}</span>
-                    </div>
-                    <div class="stat-entry" style="margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px;">
-                        <span>XP:</span> <span>${p.xp} / ${nextXp}</span>
-                    </div>
-                    <div class="stat-entry" style="margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
-                        <span>HP:</span> 
-                        <div style="display: flex; align-items: center;"><span style="color: #ff6b6b; font-weight: bold;">${p.hp} / ${p.maxHp}</span>${btnHp}</div>
-                    </div>
-                    <div class="stat-entry" style="margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
-                        <span>Stärke:</span> 
-                        <div style="display: flex; align-items: center;"><span>${p.stats.strength}</span>${btnStr}</div>
-                    </div>
-                    <div class="stat-entry" style="margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
-                        <span>Abwehr:</span> 
-                        <div style="display: flex; align-items: center;"><span>${p.stats.defense || 0}</span>${btnDef}</div>
-                    </div>
-                    <div class="stat-entry" style="padding-top: 5px;">
-                        <span>Gold:</span> <span>${p.gold || 0}</span>
-                    </div>
+            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;">
+                
+                <h2 style="color: var(--accent-color); font-size: 28px; margin-top: 0; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 2px; text-align: center;">Charakterbogen</h2>
+                
+                <div style="height: 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; font-size: 14px;">
+                    ${tokenMsg}
                 </div>
-            </div>
-            <style>
-                @keyframes pulse {
-                    0% { opacity: 1; text-shadow: 0 0 10px rgba(251, 191, 36, 0.5); }
-                    50% { opacity: 0.7; text-shadow: 0 0 20px rgba(251, 191, 36, 1); }
-                    100% { opacity: 1; text-shadow: 0 0 10px rgba(251, 191, 36, 0.5); }
-                }
-            </style>`;
-        break;
 
+                <div style="width: 100%; max-width: 450px; display: flex; flex-direction: column; gap: 15px;">
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 10px 0; border-bottom: 1px solid #444;">
+                        <div style="display: flex; justify-content: center; align-items: center; font-size: 18px;">
+                            <span style="color: #aaa; margin-right: 10px;">Stufe:</span> 
+                            <span style="color: var(--accent-color); font-weight: bold;">${p.level}</span>
+                        </div>
+                        <div style="display: flex; justify-content: center; align-items: center; font-size: 18px;">
+                            <span style="color: #aaa; margin-right: 10px;">Gold:</span> 
+                            <span style="color: #fbbf24; font-weight: bold;">${p.gold || 0} G</span>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; width: 100%;">
+                        
+                        <div style="position: relative; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding: 10px 0;">
+                            <span style="color: #aaa; font-size: 16px;">Leben (HP):</span>
+                            <span style="color: #ff6b6b; font-weight: bold; font-size: 18px;">${p.hp} / ${p.maxHp}</span>
+                            ${btnHp}
+                        </div>
+
+                        <div style="position: relative; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding: 10px 0;">
+                            <span style="color: #aaa; font-size: 16px;">Stärke:</span>
+                            <span style="color: #fff; font-weight: bold; font-size: 18px;">${p.stats.strength}</span>
+                            ${btnStr}
+                        </div>
+
+                        <div style="position: relative; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding: 10px 0;">
+                            <span style="color: #aaa; font-size: 16px;">Abwehr:</span>
+                            <span style="color: #fff; font-weight: bold; font-size: 18px;">${p.stats.defense || 0}</span>
+                            ${btnDef}
+                        </div>
+
+                    </div>
+
+                    <div style="width: 100%; margin-top: 15px;">
+                        <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px; color: #aaa;">
+                            <span style="text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">Erfahrung</span> 
+                            <span>${p.xp} / ${nextXp} XP</span>
+                        </div>
+                        <div style="width: 100%; height: 16px; background: #111; border: 1px solid #333; position: relative; box-shadow: inset 0 2px 5px rgba(0,0,0,0.8);">
+                            <div style="height: 100%; background: linear-gradient(90deg, #7c3aed, #a855f7); width: ${xpPercent}%; transition: width 0.3s;"></div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>`;
+        break;
       case "shop":
         const pShop = state.player;
         const merchant = Definitions.merchants.traveling_merchant;

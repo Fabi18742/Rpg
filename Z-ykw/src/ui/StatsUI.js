@@ -75,7 +75,7 @@ export class StatsUI {
     const tokens = p.tokens || 0;
     const tokenAlert =
       tokens > 0
-        ? `<div style="color: #fbbf24; font-weight: bold; margin-top: 8px; animation: pulse 2s infinite;">Level Up! (${tokens} Token)</div>`
+        ? `<div style="color: #fbbf24; font-weight: bold; margin-top: 8px;">Level Up! (${tokens} Token)</div>`
         : "";
     const nextXp = p.level * 100;
 
@@ -125,13 +125,6 @@ export class StatsUI {
                 <strong style="display:block; margin-bottom: 5px; color: #aaa;">Fähigkeiten:</strong>
                 <div style="font-size: 0.9em; line-height: 1.4;">${skillNames}</div>
             </div>
-            <style>
-                @keyframes pulse {
-                    0% { opacity: 1; text-shadow: 0 0 5px rgba(251, 191, 36, 0.5); }
-                    50% { opacity: 0.7; text-shadow: 0 0 15px rgba(251, 191, 36, 1); }
-                    100% { opacity: 1; text-shadow: 0 0 5px rgba(251, 191, 36, 0.5); }
-                }
-            </style>
         `;
   }
 
