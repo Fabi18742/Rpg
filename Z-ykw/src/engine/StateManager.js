@@ -36,7 +36,7 @@ class StateManager {
         choices: null,
       },
       ritual: {
-        selectedItems: []
+        selectedItems: [],
       },
     };
     this.listeners = [];
@@ -60,7 +60,7 @@ class StateManager {
       this.state.crawl.active = false;
       this.state.crawl.choices = null;
       if (!this.state.ritual) {
-          this.state.ritual = { selectedItems: [] };
+        this.state.ritual = { selectedItems: [] };
       }
     } else {
       console.log("✨ Kein Spielstand. Neues Spiel gestartet.");
@@ -74,6 +74,13 @@ class StateManager {
       this.state.location = "hideout";
       this.state.player.maxAp = Definitions.player.baseActionPoints;
       this.state.player.currentAp = Definitions.player.baseActionPoints;
+      if (!this.state.player.unlockedSkills) {
+        this.state.player.unlockedSkills = [
+          "normal_attack",
+          "heavy_strike",
+          "quick_heal",
+        ];
+      }
     }
 
     if (!this.state.player.maxAp) {
@@ -263,7 +270,7 @@ class StateManager {
   }
 
   equipWeapon(weaponId) {
-    const weapon = this.state.player.weapons.find(w => w.id === weaponId);
+    const weapon = this.state.player.weapons.find((w) => w.id === weaponId);
     if (weapon) {
       this.state.player.equipped.weapon = weapon;
       this.notify();
@@ -278,6 +285,32 @@ class StateManager {
     this.notify();
     this.saveGame();
     return true;
+  }
+
+  equipSkill(slotIndex, skillId) {
+    // 1. Sicherstellen, dass das Array 4 Slots hat
+    while (this.state.player.skills.length < 4) {
+      this.state.player.skills.push(null);
+    }
+
+    // 2. Keine Duplikate: Ist die Fähigkeit schon in einem anderen Slot? Dann dort löschen!
+    const existingIndex = this.state.player.skills.indexOf(skillId);
+    if (existingIndex !== -1 && existingIndex !== slotIndex) {
+      this.state.player.skills[existingIndex] = null;
+    }
+
+    // 3. Fähigkeit in den gewünschten Slot packen
+    this.state.player.skills[slotIndex] = skillId;
+    this.saveGame();
+    this.notify();
+  }
+
+  unequipSkill(slotIndex) {
+    if (this.state.player.skills.length > slotIndex) {
+      this.state.player.skills[slotIndex] = null;
+      this.saveGame();
+      this.notify();
+    }
   }
 
   subscribe(callback) {
@@ -358,23 +391,25 @@ class StateManager {
     }
   }
 
-performRitual() {
+  performRitual() {
     if (this.state.ritual.selectedItems.length !== 6) return null;
 
-    const result = RitualEngine.calculateResult(this.state.ritual.selectedItems);
-    
+    const result = RitualEngine.calculateResult(
+      this.state.ritual.selectedItems,
+    );
+
     if (result) {
-        this.state.ritual.selectedItems = [];
-        
-        // ÄNDERUNG: In die Waffen-Liste pushen!
-        // Wir stellen sicher, dass das Array existiert (für alte Savegames)
-        if (!this.state.player.weapons) this.state.player.weapons = [];
-        
-        this.state.player.weapons.push(result);
-        
-        this.notify();
-        this.saveGame();
-        return result;
+      this.state.ritual.selectedItems = [];
+
+      // ÄNDERUNG: In die Waffen-Liste pushen!
+      // Wir stellen sicher, dass das Array existiert (für alte Savegames)
+      if (!this.state.player.weapons) this.state.player.weapons = [];
+
+      this.state.player.weapons.push(result);
+
+      this.notify();
+      this.saveGame();
+      return result;
     }
     return null;
   }

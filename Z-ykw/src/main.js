@@ -64,6 +64,22 @@ window.gameAPI = {
     }
   },
 
+  openAbilitySelection: (slotIndex) => {
+    // Merkt sich temporär, auf welchen Slot wir geklickt haben
+    window.currentSkillSlot = slotIndex; 
+    window.gameAPI.switchHideoutScreen('ability_selection');
+  },
+
+  equipSkill: (skillId) => {
+    stateManager.equipSkill(window.currentSkillSlot, skillId);
+    window.gameAPI.switchHideoutScreen('equipment');
+  },
+
+  unequipSkill: (slotIndex) => {
+    stateManager.unequipSkill(slotIndex);
+    window.gameAPI.switchHideoutScreen('equipment');
+  },
+
   addToRitual: (itemId) => {
     const success = stateManager.addItemToRitual(itemId);
     if (!success) {
@@ -91,6 +107,17 @@ window.gameAPI = {
     } else {
       ActionEngine.log("Das Ritual benötigt genau 6 Zutaten.", "neutral");
     }
+  },
+
+  equipWeapon: (weaponId) => {
+    stateManager.equipWeapon(weaponId);
+    // Nach dem Ausrüsten direkt zurück zur Übersicht springen:
+    window.gameAPI.switchHideoutScreen('equipment');
+  },
+  
+  unequipWeapon: () => {
+    stateManager.unequipWeapon();
+    window.gameAPI.switchHideoutScreen('equipment');
   },
 
   addItem: (itemId) => {

@@ -96,18 +96,26 @@ export class BattleUI {
         const isSelected = index === state.combat.targetIndex;
         const hpPercent = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
 
-        let style = "padding: 10px; margin-bottom: 8px; background: #111; border: 2px solid #444; cursor: pointer;";
-        if (isDead) style += " opacity: 0.4; filter: grayscale(1); cursor: default;";
-        else if (isSelected) style += " border-color: #fbbf24; background: #222;";
+        let style =
+          "padding: 10px; margin-bottom: 8px; background: #111; border: 2px solid #444; cursor: pointer;";
+        if (isDead)
+          style += " opacity: 0.4; filter: grayscale(1); cursor: default;";
+        else if (isSelected)
+          style += " border-color: #fbbf24; background: #222;";
 
-        const onClick = isDead ? "" : `onclick="window.gameAPI.setTarget(${index})"`;
+        const onClick = isDead
+          ? ""
+          : `onclick="window.gameAPI.setTarget(${index})"`;
 
         // --- NEU: STATUS-EFFEKTE (BADGES) GENERIEREN ---
         let statusHTML = "";
         if (enemy.statusEffects && enemy.statusEffects.length > 0) {
-            statusHTML = enemy.statusEffects.map(se => 
-                `<span style="background: #7c3aed; color: white; font-size: 10px; padding: 2px 5px; border-radius: 3px; margin-left: 5px; vertical-align: middle;">${se.name} x${se.stacks}</span>`
-            ).join('');
+          statusHTML = enemy.statusEffects
+            .map(
+              (se) =>
+                `<span style="background: #7c3aed; color: white; font-size: 10px; padding: 2px 5px; border-radius: 3px; margin-left: 5px; vertical-align: middle;">${se.name} x${se.stacks}</span>`,
+            )
+            .join("");
         }
 
         return `
@@ -136,6 +144,7 @@ export class BattleUI {
   updateAbilityWindow(state) {
     const buttonsHTML = state.player.skills
       .map((skillId) => {
+        if (!skillId) return "";
         const skill = Definitions.abilities[skillId];
         const cost = skill.apCost || 0;
         const canAfford = state.player.currentAp >= cost;
@@ -158,20 +167,24 @@ export class BattleUI {
     this.ensureWindow(
       "ability-window",
       "Fähigkeiten",
-      `<div style="display:flex; flex-wrap:wrap; justify-content:center;">${buttonsHTML}</div>`,
-      { width: "420px", left: "400px", top: "50px" },
+      `<div style="display:flex; flex-direction:column; align-items:center; gap:5px; padding:10px;">${buttonsHTML}</div>`,
+      { width: "230px", left: "400px", top: "50px" },
     );
   }
 
   updateControlWindow(state) {
     const hpPercent = (state.player.hp / state.player.maxHp) * 100;
-    
+
     let playerStatusHTML = "";
     if (state.player.statusEffects && state.player.statusEffects.length > 0) {
-        playerStatusHTML = `<div style="margin-bottom: 10px; display: flex; gap: 5px;">` + 
-            state.player.statusEffects.map(se => 
-                `<span style="background: #7c3aed; color: white; font-size: 11px; padding: 2px 6px; border-radius: 3px;">${se.name} x${se.stacks}</span>`
-            ).join('') + 
+      playerStatusHTML =
+        `<div style="margin-bottom: 10px; display: flex; gap: 5px;">` +
+        state.player.statusEffects
+          .map(
+            (se) =>
+              `<span style="background: #7c3aed; color: white; font-size: 11px; padding: 2px 6px; border-radius: 3px;">${se.name} x${se.stacks}</span>`,
+          )
+          .join("") +
         `</div>`;
     }
 

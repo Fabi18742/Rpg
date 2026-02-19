@@ -12,6 +12,10 @@
     --hp-color: #dc2626;
 }
 
+* {
+    box-sizing: border-box;
+}
+
 body {
     background-color: var(--bg-color);
     color: var(--text-color);
@@ -490,4 +494,187 @@ body {
     background-color: #2d5a27;
     border-color: #69db7c;
     color: #69db7c;
+}
+
+/* ===== EQUIPMENT SYSTEM (AUSRÜSTUNG) ===== */
+.equipment-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 40px;
+    overflow: hidden;
+}
+
+.equipment-slots-wrapper {
+    display: flex;
+    flex-direction: row;
+    gap: 60px;
+    align-items: flex-start;
+    overflow: visible;
+}
+
+.weapon-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.equipment-slot {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #000000;
+    border: 2px solid var(--border-color);
+    padding: 12px 15px;
+    height: 90px;
+    width: 350px;
+    cursor: pointer;
+    transition: background-color 0.1s ease;
+    position: relative;
+    overflow: visible;
+}
+
+.equipment-slot.empty {
+    border-style: solid;
+    opacity: 0.7;
+    background: #050505;
+}
+
+.equipment-slot.filled {
+    background: #111111;
+    border-color: var(--border-color);
+}
+
+.equipment-slot:hover {
+    border-color: var(--accent-color);
+    background: #222222;
+}
+
+.item-icon-placeholder {
+    width: 50px;
+    height: 50px;
+    background: var(--border-color);
+    border: 1px solid var(--text-color);
+    flex-shrink: 0;
+}
+
+.equipment-slot .item-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.equipment-slot .item-name {
+    font-size: 15px;
+    color: var(--accent-color);
+    font-weight: bold;
+    line-height: 1.2;
+}
+
+.equipment-slot .slot-label {
+    color: var(--placeholder-color);
+    font-style: italic;
+    font-weight: normal;
+}
+
+.equipment-slot .item-stats {
+    font-size: 11px;
+    color: var(--placeholder-color);
+    line-height: 1.2;
+}
+
+/* === TOOLTIP === */
+.equipment-tooltip {
+    position: absolute;
+    top: 50%;
+    left: calc(100% + 15px);
+    transform: translateY(-50%);
+    background: #0a0a0a;
+    border: 2px solid var(--accent-color);
+    padding: 15px;
+    min-width: 250px;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 1000;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.9);
+    text-align: left;
+}
+
+.equipment-slot:hover .equipment-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transition-delay: 0.3s;
+}
+
+.equipment-tooltip .tooltip-title {
+    font-size: 16px;
+    font-weight: bold;
+    color: var(--accent-color);
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 6px;
+}
+
+.equipment-tooltip .tooltip-stat {
+    font-size: 12px;
+    color: #4a90e2;
+    margin-bottom: 8px;
+}
+
+.equipment-tooltip .tooltip-effects {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-color);
+}
+
+.equipment-tooltip .tooltip-effect {
+    font-size: 11px;
+    color: var(--text-color);
+    line-height: 1.4;
+    margin-bottom: 6px;
+}
+
+.equipment-tooltip .tooltip-effect strong {
+    color: #e74c3c;
+}
+
+/* === EFFEKT BADGES === */
+.effect-badge {
+    display: inline-block;
+    background: #000000;
+    color: var(--text-color);
+    padding: 2px 6px;
+    font-size: 10px !important;
+    font-weight: bold;
+    margin-left: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    vertical-align: middle;
+}
+
+/* === WAFFENKAMMER LISTE === */
+.equipment-modal-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.equipment-modal-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 12px 15px;
+    min-height: 70px;
+    cursor: pointer;
+    transition: background-color 0.1s ease;
+}
+
+.equipment-modal-item:hover {
+    background: #222 !important;
 }
