@@ -422,39 +422,58 @@ export class ActionEngine {
     let totalXp = 0;
     let totalGold = 0;
 
+    //Ein Sammelbecken für alle Item-Drops in diesem Kampf
+    const gatheredLoot = new Map();
+
     enemies.forEach((enemy) => {
       totalXp += enemy.xp || 0;
       totalGold += enemy.gold || 5;
 
-if (enemy.lootTable) {
-  enemy.lootTable.forEach((loot) => {
-    if (Math.random() < loot.chance) {
-      stateManager.addItem(loot.itemId);
-      const itemDef = Definitions.items[loot.itemId] || Definitions.weapons[loot.itemId];
-      const itemName = itemDef ? itemDef.name : loot.itemId;
-      messages.push(`<span style="color: #fff;">1x ${itemName}</span>`);
-    }
-  });
-}
+      if (enemy.lootTable) {
+        enemy.lootTable.forEach((loot) => {
+          if (Math.random() < loot.chance) {
+            stateManager.addItem(loot.itemId);
+
+            // NEU: Im Sammelbecken hochzählen statt sofort eine Nachricht zu pushen
+            const currentAmount = gatheredLoot.get(loot.itemId) || 0;
+            gatheredLoot.set(loot.itemId, currentAmount + 1);
+          }
+        });
+      }
     });
 
+    // 1. XP Nachricht
     if (totalXp > 0) {
       stateManager.addXp(totalXp);
-      messages.unshift(
+      messages.push(
         `<span style="color: #a855f7; font-weight: bold;">+${totalXp} Erfahrung</span>`,
       );
     }
 
+    // 2. Gold Nachricht
     if (totalGold > 0) {
       stateManager.modifyGold(totalGold);
-      messages.unshift(
+      messages.push(
         `<span style="color: #fbbf24; font-weight: bold;">+${totalGold} Gold</span>`,
       );
+    }
+
+    // 3. NEU: Alle gesammelten Items konsolidiert ausgeben
+    if (gatheredLoot.size > 0) {
+      gatheredLoot.forEach((amount, itemId) => {
+        const itemDef =
+          Definitions.items[itemId] || Definitions.weapons[itemId];
+        const itemName = itemDef ? itemDef.name : itemId;
+        messages.push(
+          `<span style="color: #fff;">${amount}x ${itemName}</span>`,
+        );
+      });
     }
 
     if (messages.length === 0)
       messages.push("Die Monster hatten nichts von Wert bei sich.");
 
+    // BOSS-CHECK & DUNGEON-ENDE (unverändert)
     if (state.crawl && state.crawl.active && state.crawl.security <= 0) {
       const loot = state.crawl.lootTrack;
       const bossMessages = [
@@ -491,7 +510,6 @@ if (enemy.lootTable) {
         "boss_win",
       );
     } else {
-      // Normaler Kampf
       stateManager.setResult("KAMPF GEWONNEN!", messages, "combat_win");
     }
   }
