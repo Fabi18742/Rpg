@@ -123,7 +123,7 @@ export const Definitions = {
       statusType: "dot",
       baseDamage: 1,
       stacksToApply: 2,
-      applyChance: 0.6
+      applyChance: 0.6,
     },
     lifesteal: {
       id: "lifesteal",
@@ -221,6 +221,18 @@ export const Definitions = {
       choices: [
         { text: "Beten (+10 HP)", effect: "heal_10" },
         { text: "Ignorieren", effect: "none" },
+      ],
+    },
+  },
+  
+  merchants: {
+    traveling_merchant: {
+      id: "traveling_merchant",
+      name: "Der zwielichtige Händler",
+      offers: [
+        { id: "potion_small", price: 10 },
+        { id: "rusty_sword", price: 25 },
+        { id: "ritual_stone", price: 80 },
       ],
     },
   },

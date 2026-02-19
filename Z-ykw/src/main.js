@@ -6,9 +6,10 @@ import { HUD } from "./ui/HUD.js";
 import { BattleUI } from "./ui/BattleUI.js";
 import { CrawlUI } from "./ui/CrawlUI.js";
 import { HideoutUI } from "./ui/HideoutUI.js";
-import { InventoryUI } from "./ui/InventoryUI.js"; // Für das draggable Inventar im Kampf
-import { StatsUI } from "./ui/StatsUI.js"; // Für die draggable Stats im Kampf
+import { InventoryUI } from "./ui/InventoryUI.js";
+import { StatsUI } from "./ui/StatsUI.js";
 import { windowManager } from "./ui/WindowManager.js";
+import { Definitions } from "./data/definitions.js";
 
 console.log("RPG Engine v2.0 starting...");
 
@@ -66,18 +67,18 @@ window.gameAPI = {
 
   openAbilitySelection: (slotIndex) => {
     // Merkt sich temporär, auf welchen Slot wir geklickt haben
-    window.currentSkillSlot = slotIndex; 
-    window.gameAPI.switchHideoutScreen('ability_selection');
+    window.currentSkillSlot = slotIndex;
+    window.gameAPI.switchHideoutScreen("ability_selection");
   },
 
   equipSkill: (skillId) => {
     stateManager.equipSkill(window.currentSkillSlot, skillId);
-    window.gameAPI.switchHideoutScreen('equipment');
+    window.gameAPI.switchHideoutScreen("equipment");
   },
 
   unequipSkill: (slotIndex) => {
     stateManager.unequipSkill(slotIndex);
-    window.gameAPI.switchHideoutScreen('equipment');
+    window.gameAPI.switchHideoutScreen("equipment");
   },
 
   addToRitual: (itemId) => {
@@ -100,9 +101,6 @@ window.gameAPI = {
         "player",
       );
 
-      // Da wir jetzt Waffen vom Inventar getrennt haben,
-      // leiten wir den Spieler zum "Equipment"-Screen (Ausrüstung),
-      // damit er die neue Waffe sehen/ausrüsten kann.
       window.gameAPI.switchHideoutScreen("equipment");
     } else {
       ActionEngine.log("Das Ritual benötigt genau 6 Zutaten.", "neutral");
@@ -112,12 +110,12 @@ window.gameAPI = {
   equipWeapon: (weaponId) => {
     stateManager.equipWeapon(weaponId);
     // Nach dem Ausrüsten direkt zurück zur Übersicht springen:
-    window.gameAPI.switchHideoutScreen('equipment');
+    window.gameAPI.switchHideoutScreen("equipment");
   },
-  
+
   unequipWeapon: () => {
     stateManager.unequipWeapon();
-    window.gameAPI.switchHideoutScreen('equipment');
+    window.gameAPI.switchHideoutScreen("equipment");
   },
 
   addItem: (itemId) => {
@@ -126,6 +124,81 @@ window.gameAPI = {
 
   reset: () => {
     if (confirm("Spielstand wirklich löschen?")) stateManager.resetGame();
+  },
+
+  selectShopItem: (side, index) => {
+    // Speichert im UI-Modul, was gerade angeklickt ist
+    window.hideoutInstance.shopSelection = { side, index, qty: 1 };
+    stateManager.notify(); // UI neu zeichnen
+  },
+
+  changeShopQty: (baseDelta, event) => {
+    let multiplier = 1;
+
+    if (event) {
+      if (event.ctrlKey) multiplier = 10;
+      else if (event.shiftKey) multiplier = 5;
+    }
+
+    window.hideoutInstance.shopSelection.qty += baseDelta * multiplier;
+    stateManager.notify();
+  },
+
+  sellItem: (type, originalIndex, totalPrice, qty) => {
+    if (type === "inventory") {
+      const item = stateManager.state.player.inventory[originalIndex];
+      // KORREKTUR: Abziehen, wenn wir MEHR haben, als wir gerade verkaufen wollen
+      if (item && item.quantity > qty) {
+        item.quantity -= qty;
+      } else {
+        stateManager.state.player.inventory.splice(originalIndex, 1);
+        // Zurücksetzen der Auswahl, damit das nächste Item angewählt wird
+        window.hideoutInstance.shopSelection = {
+          side: "sell",
+          index: 0,
+          qty: 1,
+        };
+      }
+    } else if (type === "weapon") {
+      stateManager.state.player.weapons.splice(originalIndex, 1);
+      window.hideoutInstance.shopSelection = { side: "sell", index: 0, qty: 1 };
+    }
+
+    stateManager.modifyGold(totalPrice);
+    window.gameAPI.switchHideoutScreen("shop");
+  },
+
+  buyItem: (itemId, totalPrice, type, qty) => {
+    if (stateManager.state.player.gold >= totalPrice) {
+      stateManager.modifyGold(-totalPrice);
+
+      if (type === "weapon") {
+        const weaponDef = Definitions.weapons[itemId];
+        for (let i = 0; i < qty; i++) {
+          stateManager.state.player.weapons.push({
+            ...weaponDef,
+            id: `${itemId}_${Date.now()}_${i}`,
+          });
+        }
+        stateManager.saveGame();
+        stateManager.notify();
+      } else {
+        for (let i = 0; i < qty; i++) {
+          stateManager.addItem(itemId);
+        }
+      }
+
+      ActionEngine.log(
+        `Gekauft: ${qty}x ${Definitions.items[itemId]?.name || Definitions.weapons[itemId]?.name}`,
+        "neutral",
+      );
+      window.hideoutInstance.shopSelection.qty = 1; // Menge zurücksetzen
+      window.gameAPI.switchHideoutScreen("shop");
+    }
+  },
+  cheatGold: (amount) => {
+    stateManager.modifyGold(amount);
+    console.log(`${amount} Gold herbeigezaubert!`);
   },
 };
 

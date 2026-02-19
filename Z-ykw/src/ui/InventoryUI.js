@@ -52,29 +52,25 @@ export class InventoryUI {
     render(state) {
         if (!this.container) return;
 
-        const inventory = state.player.inventory;
-        const equipped = state.player.equipped;
+        // 1. Wir filtern das Inventar: Nur nutzbare Items (Tränke) werden im Kampf angezeigt!
+        const consumables = state.player.inventory.filter(item => item.type === 'consumable');
 
-        if (inventory.length === 0) {
-            this.container.innerHTML = '<div style="grid-column: span 2; padding: 20px; text-align: center; color: #666;">Leer</div>';
+        if (consumables.length === 0) {
+            this.container.innerHTML = '<div style="grid-column: span 2; padding: 20px; text-align: center; color: #666;">Keine nutzbaren Items</div>';
             return;
         }
 
-        this.container.innerHTML = inventory.map(item => {
-            // Prüfen ob ausgerüstet
-            const isWeapon = equipped.weapon && equipped.weapon.id === item.id;
-            const isArmor = equipped.armor && equipped.armor.id === item.id;
-            const isEquipped = isWeapon || isArmor;
-            
-            const equipClass = isEquipped ? 'item-equipped' : '';
-            const typeLabel = isEquipped ? 'AUSGERÜSTET' : item.type.toUpperCase();
+        this.container.innerHTML = consumables.map(item => {
+            // Menge (Quantity) anzeigen
+            const qtyBadge = item.quantity && item.quantity > 1 ? ` <span style="color: #fbbf24; font-size: 12px; margin-left: 5px;">x${item.quantity}</span>` : '';
 
+            // 2. Wir lassen die Rüstungs-Abfragen und das "typeLabel" komplett weg, 
+            // da hier ohnehin nur noch Tränke liegen.
             return `
-                <div class="inventory-item ${equipClass}" onclick="window.gameAPI.useItem('${item.id}')">
+                <div class="inventory-item" onclick="window.gameAPI.useItem('${item.id}')">
                     <div class="item-icon"></div>
-                    <div class="item-details">
-                        <div class="item-name">${item.name}</div>
-                        <div class="item-type">${typeLabel}</div>
+                    <div class="item-details" style="display: flex; align-items: center; height: 100%;">
+                        <div class="item-name" style="margin: 0;">${item.name}${qtyBadge}</div>
                     </div>
                 </div>
             `;

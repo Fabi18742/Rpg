@@ -189,26 +189,44 @@ class StateManager {
     }
   }
 
-  addItem(itemId) {
+  addItem(itemId, amount = 1) {
     const itemDef = Definitions.items[itemId];
     if (itemDef) {
-      this.state.player.inventory.push({ ...itemDef });
+      // Prüfen, ob das Item schon im Inventar existiert
+      const existingItem = this.state.player.inventory.find(i => i.id === itemId);
+      
+      if (existingItem) {
+        // Wenn ja, Menge erhöhen
+        existingItem.quantity = (existingItem.quantity || 1) + amount;
+      } else {
+        // Wenn nein, neu hinzufügen mit Menge
+        this.state.player.inventory.push({ ...itemDef, quantity: amount });
+      }
+      
       this.notify();
       this.saveGame();
     }
   }
 
-  removeItem(itemId) {
+  removeItem(itemId, amount = 1) {
     const inventory = this.state.player.inventory;
     const itemIndex = inventory.findIndex((i) => i.id === itemId);
 
     if (itemIndex !== -1) {
-      inventory.splice(itemIndex, 1); // Item löschen
+      const item = inventory[itemIndex];
+      
+      // Prüfen, ob wir mehr als die geforderte Menge haben
+      if (item.quantity && item.quantity > amount) {
+        item.quantity -= amount;
+      } else {
+        // Falls nicht, Item komplett aus Array löschen
+        inventory.splice(itemIndex, 1); 
+      }
+      
       this.notify();
       this.saveGame();
       return true;
     }
-    console.warn(`StateManager: Item ${itemId} nicht im Inventar gefunden!`);
     return false;
   }
 

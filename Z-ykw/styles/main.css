@@ -244,9 +244,8 @@ body {
     font-size: 13px;
     font-weight: bold;
     color: #e0e0e0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    word-wrap: break-word;
 }
 
 .item-type {
@@ -263,7 +262,6 @@ body {
     color: var(--accent-color);
 }
 
-/* Button-Leiste für Menüs (unten rechts oder so) */
 .menubar {
     position: absolute;
     bottom: 10px;

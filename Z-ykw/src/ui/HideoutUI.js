@@ -8,8 +8,9 @@ export class HideoutUI {
     this.visualArea = document.querySelector(".visual-area");
     this.sceneContent = document.getElementById("scene-content");
 
-    // Interner Zustand für den aktuellen Sub-Screen im Hideout
-    this.activeScreen = "main"; // 'main', 'stats', 'inventory', 'equipment', 'ritual'
+    this.shopSelection = { side: "buy", index: 0, qty: 1 };
+
+    this.activeScreen = "main";
 
     // API für die Buttons registrieren
     window.gameAPI.switchHideoutScreen = (screen) => this.setScreen(screen);
@@ -46,7 +47,6 @@ export class HideoutUI {
     this.renderVisualArea(state);
   }
 
-  // UNTEN: Das klassische 3x2 Grid oder der "Zurück" Button
   renderActionArea(state) {
     if (this.activeScreen === "main") {
       this.container.innerHTML = `
@@ -59,6 +59,132 @@ export class HideoutUI {
                     <button class="game-button adventure-btn" onclick="window.gameAPI.startAdventure()">Boss-Kämpfe</button>
                 </div>
             `;
+    } else if (this.activeScreen === "shop") {
+      const p = state.player;
+      const merchant = Definitions.merchants.traveling_merchant;
+      const sel = this.shopSelection;
+
+      let itemDef = null;
+      let price = 0;
+      let maxQty = 1;
+      let name = "";
+      let desc = "";
+      let isWeapon = false;
+      let sellType = null;
+      let sellOriginalIndex = null;
+
+      // Die gleiche Liste wie oben im Visual Screen generieren, um das Item zu finden
+      const sellableList = [];
+      (p.weapons || []).forEach((w, idx) => {
+        if (p.equipped.weapon && p.equipped.weapon.id === w.id) return;
+        sellableList.push({
+          type: "weapon",
+          originalIndex: idx,
+          item: w,
+          price: w.goldValue || w.value || 5,
+          maxQty: 1,
+        });
+      });
+      (p.inventory || []).forEach((i, idx) => {
+        const priceVal = i.goldValue || i.value || 1;
+        sellableList.push({
+          type: "inventory",
+          originalIndex: idx,
+          item: i,
+          price: priceVal,
+          maxQty: i.quantity || 1,
+        });
+      });
+
+      if (sel.side === "buy") {
+        const offer = merchant.offers[sel.index];
+        if (offer) {
+          itemDef =
+            Definitions.items[offer.id] || Definitions.weapons[offer.id];
+          price = offer.price;
+          name = itemDef ? itemDef.name : "Unbekannt";
+          desc = itemDef
+            ? itemDef.description || "Ein nützlicher Gegenstand."
+            : "";
+          maxQty = 9999;
+          if (maxQty < 1) maxQty = 1;
+        }
+      } else {
+        const entry = sellableList[sel.index];
+        if (entry) {
+          itemDef = entry.item;
+          price = entry.price;
+          name = itemDef.name;
+          desc = itemDef.description || "Ein Gegenstand aus deinem Inventar.";
+          maxQty = entry.maxQty;
+          isWeapon = entry.type === "weapon";
+          sellType = entry.type;
+          sellOriginalIndex = entry.originalIndex;
+        }
+      }
+
+      // Mengen-Limit (Clamp)
+      if (sel.qty > maxQty && maxQty > 0) sel.qty = maxQty;
+      if (sel.qty < 1) sel.qty = 1;
+
+      const totalPrice = price * sel.qty;
+      let btnDisabled = false;
+      let actionBtnHTML = "";
+
+      if (!itemDef) {
+        actionBtnHTML = ``;
+      } else if (sel.side === "buy") {
+        btnDisabled = (p.gold || 0) < totalPrice;
+        actionBtnHTML = `
+              <button class="game-button" style="padding: 5px 20px; font-size: 16px; min-height: 40px; margin-left: auto; ${btnDisabled ? "opacity:0.3; filter:grayscale(1); pointer-events:none;" : ""}" 
+                      onclick="window.gameAPI.buyItem('${merchant.offers[sel.index].id}', ${totalPrice}, '${Definitions.weapons[merchant.offers[sel.index].id] ? "weapon" : "inventory"}', ${sel.qty})">
+                  Kaufen
+              </button>`;
+      } else {
+        actionBtnHTML = `
+              <button class="game-button" style="padding: 5px 20px; font-size: 16px; min-height: 40px; margin-left: auto;" 
+                      onclick="window.gameAPI.sellItem('${sellType}', ${sellOriginalIndex}, ${totalPrice}, ${sel.qty})">
+                  Verkaufen
+              </button>`;
+      }
+
+      const qtyControls =
+        isWeapon || !itemDef
+          ? ""
+          : `
+          <div style="display: flex; align-items: center; gap: 10px;">
+              <button class="game-button" style="min-height: 30px; width: 30px; padding: 0;" onclick="window.gameAPI.changeShopQty(-1, event)">-</button>
+              <span style="font-size: 18px; font-weight: bold; width: 30px; text-align: center;">${sel.qty}</span>
+              <button class="game-button" style="min-height: 30px; width: 30px; padding: 0;" onclick="window.gameAPI.changeShopQty(1, event)">+</button>
+          </div>
+      `;
+
+      this.container.innerHTML = `
+          <div style="display: grid; grid-template-columns: 200px 1fr; gap: 20px; width: 100%; height: 100%;">
+              <button class="game-button" onclick="window.gameAPI.switchHideoutScreen('main')" style="height: 100%;">Zurück</button>
+              
+              ${
+                itemDef
+                  ? `
+              <div style="background: #000; border: 2px solid #444; padding: 15px; display: flex; flex-direction: column; justify-content: space-between;">
+                  <div style="display: flex; gap: 15px;">
+                      <div style="width: 50px; height: 50px; background: rgba(0,0,0,0.5); border: 1px solid #444;"></div>
+                      <div>
+                          <div style="font-size: 18px; font-weight: bold; color: var(--accent-color); margin-bottom: 5px;">${name}</div>
+                          <div style="font-size: 14px; color: #888;">${desc}</div>
+                      </div>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 20px; background: rgba(0,0,0,0.3); padding: 10px; margin-top: 10px;">
+                      <div style="font-size: 20px; font-weight: bold; color: #fbbf24; min-width: 100px;">${totalPrice} G</div>
+                      ${qtyControls}
+                      ${actionBtnHTML}
+                  </div>
+              </div>
+              `
+                  : '<div style="background: #000; border: 2px solid #444; display: flex; justify-content:center; align-items:center; color:#888;">Bitte wähle links oder rechts ein Item aus.</div>'
+              }
+          </div>
+      `;
     } else {
       this.container.innerHTML = `
                 <div class="button-grid single-button">
@@ -102,6 +228,111 @@ export class HideoutUI {
                     <div class="stat-entry" style="padding-top: 5px;">
                         <span>Gold:</span> <span>${p.gold || 0}</span>
                     </div>
+                </div>
+            </div>`;
+        break;
+
+      case "shop":
+        const pShop = state.player;
+        const merchant = Definitions.merchants.traveling_merchant;
+        const sel = this.shopSelection;
+
+        // --- LISTEN AUFBEREITEN ---
+        const sellableList = [];
+        (pShop.weapons || []).forEach((w, idx) => {
+          if (pShop.equipped.weapon && pShop.equipped.weapon.id === w.id)
+            return;
+          sellableList.push({
+            type: "weapon",
+            originalIndex: idx,
+            item: w,
+            price: w.goldValue || w.value || 5,
+            maxQty: 1,
+          });
+        });
+        (pShop.inventory || []).forEach((i, idx) => {
+          const priceVal = i.goldValue || i.value || 1;
+          sellableList.push({
+            type: "inventory",
+            originalIndex: idx,
+            item: i,
+            price: priceVal,
+            maxQty: i.quantity || 1,
+          });
+        });
+
+        // --- LINKE SEITE (Verkaufen) ---
+        let sellHTML = "";
+        sellableList.forEach((entry, index) => {
+          const isSelected = sel.side === "sell" && sel.index === index;
+          const qtyBadge =
+            entry.type === "inventory" && entry.maxQty > 1
+              ? `<span style="color: #fbbf24; margin-left: 10px;">x${entry.maxQty}</span>`
+              : "";
+          const bgClass = isSelected
+            ? "background: #222; border-color: var(--accent-color);"
+            : "background: rgba(0,0,0,0.5); border-color: #444;";
+
+          sellHTML += `
+                <div style="${bgClass} border-width: 2px; border-style: solid; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all 0.2s;"
+                     onclick="window.gameAPI.selectShopItem('sell', ${index})">
+                    <div style="display:flex; flex-direction:column; gap: 4px;">
+                        <span style="font-size: 16px; color: ${isSelected ? "var(--accent-color)" : "#fff"}; font-weight: bold;">${entry.item.name}${qtyBadge}</span>
+                        <span style="font-size: 12px; color: #fbbf24;">Wert: ${entry.price} G</span>
+                    </div>
+                </div>
+            `;
+        });
+        if (!sellHTML)
+          sellHTML =
+            "<p style='color: #666; font-style: italic; text-align: center; margin-top: 20px;'>Nichts zu verkaufen.</p>";
+
+        // --- RECHTE SEITE (Kaufen) ---
+        let buyHTML = "";
+        merchant.offers.forEach((offer, index) => {
+          const isSelected = sel.side === "buy" && sel.index === index;
+          const itemDef =
+            Definitions.items[offer.id] || Definitions.weapons[offer.id];
+          if (!itemDef) return;
+          const bgClass = isSelected
+            ? "background: #222; border-color: var(--accent-color);"
+            : "background: rgba(0,0,0,0.5); border-color: #444;";
+
+          buyHTML += `
+                <div style="${bgClass} border-width: 2px; border-style: solid; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all 0.2s;"
+                     onclick="window.gameAPI.selectShopItem('buy', ${index})">
+                    <div style="display:flex; flex-direction:column; gap: 4px;">
+                        <span style="font-size: 16px; color: ${isSelected ? "var(--accent-color)" : "#fff"}; font-weight: bold;">${itemDef.name}</span>
+                        <span style="font-size: 12px; color: #fbbf24;">Preis: ${offer.price} G</span>
+                    </div>
+                </div>
+            `;
+        });
+
+        this.sceneContent.innerHTML = `
+            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 10; display: flex; flex-direction: column; align-items: center; padding-top: 40px; padding-bottom: 20px;">
+                
+                <div style="display: flex; justify-content: space-between; width: 100%; max-width: 1100px; margin-bottom: 20px; align-items: flex-end;">
+                    <h2 style="color: var(--accent-color); margin: 0;">${merchant.name}</h2>
+                    <div style="font-size: 24px; color: #fbbf24; font-weight: bold;">🪙 ${pShop.gold || 0} Gold</div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; width: 100%; max-width: 1100px; flex: 1; min-height: 0;">
+                    
+                    <div style="background: rgba(0,0,0,0.5); border: 2px solid #444; display: flex; flex-direction: column; min-height: 0;">
+                        <h3 style="color: #aaa; margin: 0; padding: 15px; border-bottom: 2px solid #333; text-align: center; background: rgba(0,0,0,0.8); flex-shrink: 0;">Dein Inventar (Verkaufen)</h3>
+                        <div style="overflow-y: auto; flex: 1; padding: 15px;">
+                            ${sellHTML}
+                        </div>
+                    </div>
+
+                    <div style="background: rgba(0,0,0,0.5); border: 2px solid #444; display: flex; flex-direction: column; min-height: 0;">
+                        <h3 style="color: #aaa; margin: 0; padding: 15px; border-bottom: 2px solid #333; text-align: center; background: rgba(0,0,0,0.8); flex-shrink: 0;">Angebot (Kaufen)</h3>
+                        <div style="overflow-y: auto; flex: 1; padding: 15px;">
+                            ${buyHTML}
+                        </div>
+                    </div>
+
                 </div>
             </div>`;
         break;
@@ -380,7 +611,7 @@ export class HideoutUI {
                   return `
                 <div class="static-inv-item" style="background: rgba(0,0,0,0.5); border: 1px solid #444; border-left: 4px solid ${isEquipped ? "var(--accent-color)" : "#444"}; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
                     <div style="display:flex; flex-direction:column; gap: 5px;">
-                        <span style="font-weight:bold; font-size: 18px; color:${accentColor}">${item.name}</span>
+                        <span style="font-weight:bold; font-size: 18px; color:${accentColor}">${item.name}${item.quantity > 1 ? ` <span style="color: #fbbf24; font-size: 14px;">x${item.quantity}</span>` : ""}</span>
                         <span style="font-size:12px; color:#888">${typeDisplay}</span>
                     </div>
                     <button class="game-button" onclick="window.gameAPI.useItem('${item.id}')" style="min-height: 40px; padding: 5px 20px; font-size: 14px; width: auto;">
