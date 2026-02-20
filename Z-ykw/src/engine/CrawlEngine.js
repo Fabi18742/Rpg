@@ -15,6 +15,7 @@ export class CrawlEngine {
 
     const worldDef = Definitions.worlds[state.crawl.worldId];
 
+    // --- 1. SICHERHEITS-CHECK ---
     if (state.crawl.security <= 0) {
       if (worldDef.type !== "story") {
         const bossId = worldDef.bossId;
@@ -24,23 +25,69 @@ export class CrawlEngine {
         );
         ActionEngine.startCombat([bossId], true);
       } else {
-        // Story-Welt: Keine Bosse, man wird einfach rausgeworfen!
+        // Story-Welt: Sicherer Aufruf über die Klasse
         ActionEngine.log(
           "Die Sicherheit ist auf 0 gefallen... Du musstest fliehen!",
           "enemy",
         );
-        this.processDungeonFail(state);
+        CrawlEngine.processDungeonFail(state);
       }
       return;
     }
 
-    // Karten aus dem dynamischen Pool ziehen
-    const pool = state.crawl.eventPool;
-    const shuffled = [...pool].sort(() => 0.5 - Math.random());
+    // --- 2. CHAOS-FILTER ---
+    const currentChaos = state.crawl.chaos || 0;
+
+    const validPoolIds = state.crawl.eventPool.filter((eventId) => {
+      const eventDef = Definitions.events[eventId];
+      if (!eventDef) return false;
+
+      const min = eventDef.minChaos || 0;
+      const max =
+        eventDef.maxChaos !== undefined ? eventDef.maxChaos : Infinity;
+
+      return currentChaos >= min && currentChaos <= max;
+    });
+
+    // --- 3. KARTEN ZIEHEN ---
+    const shuffled = [...validPoolIds].sort(() => 0.5 - Math.random());
     const selectedIds = shuffled.slice(0, 3);
     const choices = selectedIds.map((id) => Definitions.events[id]);
 
     stateManager.setCrawlChoices(choices);
+  }
+
+  static processDungeonFail(state) {
+    // Sicherstellen, dass das Auslesen nicht abstürzt, falls das Array mal leer ist
+    const loot = state.crawl.lootTrack || { xp: 0, gold: 0, items: [] };
+
+    const exitMessages = [
+      `<div style="font-size: 1.1em; margin-bottom: 20px; color: #ff6b6b;">Es wurde zu gefährlich! Du musstest dich zurückziehen.</div>`,
+      `<div style="border-top: 1px solid #444; margin-bottom: 10px;"></div>`,
+    ];
+
+    if (loot.xp > 0) {
+      exitMessages.push(
+        `<span style="color: #a855f7;">Erfahrung: +${loot.xp} XP</span>`,
+      );
+    }
+    if (loot.gold > 0) {
+      exitMessages.push(
+        `<span style="color: #fbbf24;">Gold: +${loot.gold} G</span>`,
+      );
+    }
+
+    if (loot.items && loot.items.length > 0) {
+      loot.items.forEach((i) => {
+        const def = Definitions.items[i.id] || Definitions.weapons[i.id];
+        exitMessages.push(
+          `<span style="color: #fff;">${i.amount}x ${def ? def.name : i.id}</span>`,
+        );
+      });
+    }
+
+    // Löst garantiert den Result-Screen aus
+    stateManager.setResult("RÜCKZUG", exitMessages, "story_exit");
   }
 
   static selectOption(index) {
@@ -57,12 +104,14 @@ export class CrawlEngine {
     this.handleEvent(eventDef);
   }
 
-static handleEvent(eventDef) {
+  static handleEvent(eventDef) {
     let isStoryChoice = false;
     if (eventDef.type === "choice" && eventDef.choices) {
-      isStoryChoice = eventDef.choices.some(c => c.nextEvent || c.effect === "exit");
+      isStoryChoice = eventDef.choices.some(
+        (c) => c.nextEvent || c.effect === "exit",
+      );
     }
-    
+
     const isStoryCombat = eventDef.type === "combat" && eventDef.onWinEvent;
 
     if (isStoryChoice || isStoryCombat) {
@@ -71,10 +120,10 @@ static handleEvent(eventDef) {
 
     if (eventDef.type === "combat") {
       ActionEngine.log(eventDef.text, "neutral");
-      let enemyList = eventDef.enemies || (eventDef.enemyId ? [eventDef.enemyId] : []);
-      
+      let enemyList =
+        eventDef.enemies || (eventDef.enemyId ? [eventDef.enemyId] : []);
+
       ActionEngine.startCombat(enemyList, false, eventDef.onWinEvent);
-      
     } else if (eventDef.type === "choice") {
       ActionEngine.log(`Event: ${eventDef.name}`, "neutral");
       stateManager.setActiveEvent(eventDef);
