@@ -635,7 +635,6 @@ export class HideoutUI {
         const currentWeaponId = p.equipped.weapon ? p.equipped.weapon.id : null;
 
         let weaponsHTML = "";
-        // FEHLER BEHOBEN: Hier darf keine w.effects Logik stehen, sondern nur der Fallback-Text!
         if (allWeapons.length === 0) {
           weaponsHTML =
             '<div class="no-items" style="text-align:center; color:#888; font-size: 18px; margin-top: 40px;">Keine Waffen verfügbar. Stelle eine im Ritual her oder finde eine!</div>';
@@ -649,15 +648,13 @@ export class HideoutUI {
                 w.effects.forEach((effectId) => {
                   const effect = Definitions.effects[effectId];
                   if (effect) {
-                    // Der Trick: position: relative; top: -2px; (KEIN Flexbox-Container drumherum!)
                     effectsHTML += `<span class="effect-badge" style="color: #ff9a8a; border: 1px solid #e74c3c; font-size: 10px; padding: 1px 4px; margin-left: 8px; position: relative; top: -2px;">${effect.name}</span>`;
                   }
                 });
               }
 
               return `
-      <div class="equipment-modal-item ${isEquipped ? "equipped" : ""}" style="background: #111; border: 2px solid ${isEquipped ? "var(--accent-color)" : "#444"}; margin-bottom: 10px; flex-shrink: 0;" 
-           onclick="${isEquipped ? "window.gameAPI.unequipWeapon()" : `window.gameAPI.equipWeapon('${w.id}')`}">
+      <div class="equipment-modal-item ${isEquipped ? "equipped" : ""}" style="background: #111; border: 2px solid ${isEquipped ? "var(--accent-color)" : "#444"}; margin-bottom: 10px; flex-shrink: 0; cursor: default;">
           <div class="item-icon-placeholder"></div>
           <div class="item-details" style="flex: 1;">
               <div class="item-name" style="font-size: 18px; color: ${isEquipped ? "var(--accent-color)" : "#fff"};">${w.name}</div>
@@ -666,11 +663,10 @@ export class HideoutUI {
                   <span class="item-stats" style="font-size: 14px; color: #aaa; vertical-align: middle;">Schaden: ${w.damage}</span>
                   ${effectsHTML}
               </div>
-              
           </div>
-          <div style="align-self: center; font-weight: bold; color: ${isEquipped ? "var(--accent-color)" : "#888"};">
-              ${isEquipped ? "ABLEGEN" : "AUSRÜSTEN"}
-          </div>
+          <button class="game-button" onclick="${isEquipped ? "window.gameAPI.unequipWeapon()" : `window.gameAPI.equipWeapon('${w.id}')`}" style="min-height: 40px; padding: 5px 20px; font-size: 14px; width: auto; align-self: center;">
+              ${isEquipped ? "Ablegen" : "Ausrüsten"}
+          </button>
       </div>
   `;
             })
@@ -680,7 +676,7 @@ export class HideoutUI {
         this.sceneContent.innerHTML = `
             <div class="equipment-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 10; display: flex; flex-direction: column; align-items: center; padding-top: 50px;">
                 <h2 style="color: var(--accent-color); margin-bottom: 10px;">Waffenkammer</h2>
-                <p style="color: #888; margin-bottom: 20px; text-align: center;">Klicke auf eine Waffe, um sie auszurüsten.</p>
+                <p style="color: #888; margin-bottom: 20px; text-align: center;">Klicke auf einen Button, um eine Waffe auszurüsten.</p>
                 <div class="equipment-modal-list" style="width: 100%; max-width: 800px; flex: 1; overflow-y: auto; padding-right: 15px; margin-bottom: 20px;">
                     ${weaponsHTML}
                 </div>
@@ -720,8 +716,7 @@ export class HideoutUI {
               }
 
               return `
-      <div class="equipment-modal-item ${isEquipped ? "equipped" : ""}" style="background: #111; border: 2px solid ${isEquipped ? "var(--accent-color)" : "#444"}; margin-bottom: 10px; flex-shrink: 0;" 
-           onclick="window.gameAPI.useItem('${a.id}'); window.gameAPI.switchHideoutScreen('equipment');">
+      <div class="equipment-modal-item ${isEquipped ? "equipped" : ""}" style="background: #111; border: 2px solid ${isEquipped ? "var(--accent-color)" : "#444"}; margin-bottom: 10px; flex-shrink: 0; cursor: default;">
           <div class="item-icon-placeholder"></div>
           <div class="item-details" style="flex: 1;">
               <div class="item-name" style="font-size: 18px; color: ${isEquipped ? "var(--accent-color)" : "#fff"};">${a.name}</div>
@@ -730,11 +725,10 @@ export class HideoutUI {
                   <span class="item-stats" style="font-size: 14px; color: #aaa; vertical-align: middle;">Abwehr: ${a.defense || 0}</span>
                   ${effectsHTML}
               </div>
-
           </div>
-          <div style="align-self: center; font-weight: bold; color: ${isEquipped ? "var(--accent-color)" : "#888"};">
-              ${isEquipped ? "ABLEGEN" : "ANZIEHEN"}
-          </div>
+          <button class="game-button" onclick="window.gameAPI.useItem('${a.id}'); window.gameAPI.switchHideoutScreen('equipment');" style="min-height: 40px; padding: 5px 20px; font-size: 14px; width: auto; align-self: center;">
+              ${isEquipped ? "Ablegen" : "Anziehen"}
+          </button>
       </div>
   `;
             })
@@ -744,7 +738,7 @@ export class HideoutUI {
         this.sceneContent.innerHTML = `
             <div class="equipment-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 10; display: flex; flex-direction: column; align-items: center; padding-top: 50px;">
                 <h2 style="color: var(--accent-color); margin-bottom: 10px;">Garderobe</h2>
-                <p style="color: #888; margin-bottom: 20px; text-align: center;">Klicke auf eine Rüstung, um sie anzulegen.</p>
+                <p style="color: #888; margin-bottom: 20px; text-align: center;">Klicke auf einen Button, um eine Rüstung anzulegen.</p>
                 <div class="equipment-modal-list" style="width: 100%; max-width: 800px; flex: 1; overflow-y: auto; padding-right: 15px; margin-bottom: 20px;">
                     ${armorsHTML}
                 </div>
@@ -764,8 +758,7 @@ export class HideoutUI {
           p.unlockedSkills || Object.keys(Definitions.abilities);
 
         let abilitiesListHTML = `
-            <div class="equipment-modal-item" style="background: #111; border: 2px solid #444; margin-bottom: 10px; flex-shrink: 0;" 
-                onclick="window.gameAPI.unequipSkill(${slotIndex})">
+            <div class="equipment-modal-item" style="background: #111; border: 2px solid #444; margin-bottom: 10px; flex-shrink: 0; cursor: default;">
                 <div class="item-icon-placeholder" style="opacity: 0.2;"></div>
                 <div class="item-details" style="flex: 1;">
                     <div class="item-name" style="font-size: 18px; color: #888;">Nichts</div>
@@ -773,6 +766,9 @@ export class HideoutUI {
                         <span class="item-stats" style="font-size: 14px; color: #aaa;">Diesen Slot leeren</span>
                     </div>
                 </div>
+                <button class="game-button" onclick="window.gameAPI.unequipSkill(${slotIndex})" style="min-height: 40px; padding: 5px 20px; font-size: 14px; width: auto; align-self: center;">
+                    Leeren
+                </button>
             </div>
         `;
 
@@ -784,8 +780,7 @@ export class HideoutUI {
 
           abilitiesListHTML += `
                 <div class="equipment-modal-item ${isEquipped ? "equipped" : ""}" 
-                    style="background: #111; border: 2px solid ${isEquipped ? "#555" : "#444"}; margin-bottom: 10px; flex-shrink: 0; ${isEquipped ? "opacity: 0.5; cursor: default;" : ""}" 
-                    onclick="${isEquipped ? "" : `window.gameAPI.equipSkill('${skillId}')`}">
+                    style="background: #111; border: 2px solid ${isEquipped ? "#555" : "#444"}; margin-bottom: 10px; flex-shrink: 0; cursor: default; ${isEquipped ? "opacity: 0.5;" : ""}">
                     <div class="item-icon-placeholder"></div>
                     <div class="item-details" style="flex: 1;">
                         <div class="item-name" style="font-size: 18px; color: #fff;">${ability.name}</div>
@@ -793,9 +788,9 @@ export class HideoutUI {
                             <span class="item-stats" style="font-size: 14px; color: #aaa;">${ability.apCost} AP | Schaden: ${Math.round((ability.damageMult || 1) * 100)}%</span>
                         </div>
                     </div>
-                    <div style="align-self: center; font-weight: bold; color: #888;">
-                        ${isEquipped ? "Belegt" : "AUSRÜSTEN"}
-                    </div>
+                    <button class="game-button" onclick="${isEquipped ? "" : `window.gameAPI.equipSkill('${skillId}')`}" style="min-height: 40px; padding: 5px 20px; font-size: 14px; width: auto; align-self: center; ${isEquipped ? "pointer-events: none;" : ""}">
+                        ${isEquipped ? "Belegt" : "Ausrüsten"}
+                    </button>
                 </div>
             `;
         });
