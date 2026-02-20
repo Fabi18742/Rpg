@@ -175,27 +175,31 @@ window.gameAPI = {
     stateManager.notify();
   },
 
-  sellItem: (type, originalIndex, totalPrice, qty) => {
+sellItem: (type, originalIndex, totalPrice, qty) => {
+    // 1. Merke dir den aktuell ausgewählten Index
+    const currentShopIndex = window.hideoutInstance.shopSelection.index;
+
+    // 2. Item abziehen
     if (type === "inventory") {
       const item = stateManager.state.player.inventory[originalIndex];
-      // KORREKTUR: Abziehen, wenn wir MEHR haben, als wir gerade verkaufen wollen
       if (item && item.quantity > qty) {
         item.quantity -= qty;
       } else {
         stateManager.state.player.inventory.splice(originalIndex, 1);
-        // Zurücksetzen der Auswahl, damit das nächste Item angewählt wird
-        window.hideoutInstance.shopSelection = {
-          side: "sell",
-          index: 0,
-          qty: 1,
-        };
       }
     } else if (type === "weapon") {
       stateManager.state.player.weapons.splice(originalIndex, 1);
-      window.hideoutInstance.shopSelection = { side: "sell", index: 0, qty: 1 };
     }
 
     stateManager.modifyGold(totalPrice);
+
+    // 3. NEU: Wir beenden den Verkauf, behalten aber den Index bei!
+    window.hideoutInstance.shopSelection = {
+      side: "sell",
+      index: currentShopIndex, // Bleibt genau da, wo er war
+      qty: 1, // Stückzahl für das nächste Item wieder auf 1 resetten
+    };
+
     window.gameAPI.switchHideoutScreen("shop");
   },
 

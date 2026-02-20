@@ -243,8 +243,7 @@ addItem(itemId, amount = 1) {
         if (!this.state.player.weapons) this.state.player.weapons = [];
         for (let i = 0; i < amount; i++) {
           this.state.player.weapons.push({ 
-              ...itemDef, 
-              // Generiert z.B. "rusty_sword_16781293_452"
+              ...itemDef,
               id: `${itemId}_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
               baseId: itemId,
               quantity: 1 

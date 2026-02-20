@@ -106,6 +106,10 @@ export class HideoutUI {
         });
       });
 
+      if (sel.side === "sell" && sel.index >= sellableList.length && sellableList.length > 0) {
+          sel.index = sellableList.length - 1;
+      }
+
       if (sel.side === "buy") {
         const offer = merchant.offers[sel.index];
         if (offer) {
@@ -309,6 +313,16 @@ export class HideoutUI {
         const pShop = state.player;
         const merchant = Definitions.merchants.traveling_merchant;
         const sel = this.shopSelection;
+        let leftScrollPos = 0;
+        let rightScrollPos = 0;
+
+        // Wir suchen die beiden Scroll-Container VOR dem Neuschreiben des HTML
+        if (this.sceneContent) {
+          const leftList = this.sceneContent.querySelector(".shop-left-list");
+          const rightList = this.sceneContent.querySelector(".shop-right-list");
+          if (leftList) leftScrollPos = leftList.scrollTop;
+          if (rightList) rightScrollPos = rightList.scrollTop;
+        }
 
         // --- LISTEN AUFBEREITEN ---
         const sellableList = [];
@@ -333,6 +347,10 @@ export class HideoutUI {
             maxQty: i.quantity || 1,
           });
         });
+
+        if (sel.side === "sell" && sel.index >= sellableList.length && sellableList.length > 0) {
+            sel.index = sellableList.length - 1;
+        }
 
         // --- LINKE SEITE (Verkaufen) ---
         let sellHTML = "";
@@ -387,27 +405,35 @@ export class HideoutUI {
                 
                 <div style="display: flex; justify-content: space-between; width: 100%; max-width: 1100px; margin-bottom: 20px; align-items: flex-end;">
                     <h2 style="color: var(--accent-color); margin: 0;">${merchant.name}</h2>
-                    <div style="font-size: 24px; color: #fbbf24; font-weight: bold;">🪙 ${pShop.gold || 0} Gold</div>
+                    <div style="font-size: 24px; color: #fbbf24; font-weight: bold;">${pShop.gold || 0} Gold</div>
                 </div>
                 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; width: 100%; max-width: 1100px; flex: 1; min-height: 0;">
                     
                     <div style="background: rgba(0,0,0,0.5); border: 2px solid #444; display: flex; flex-direction: column; min-height: 0;">
                         <h3 style="color: #aaa; margin: 0; padding: 15px; border-bottom: 2px solid #333; text-align: center; background: rgba(0,0,0,0.8); flex-shrink: 0;">Dein Inventar (Verkaufen)</h3>
-                        <div style="overflow-y: auto; flex: 1; padding: 15px;">
+                        <div class="shop-left-list" style="overflow-y: auto; flex: 1; padding: 15px;">
                             ${sellHTML}
                         </div>
                     </div>
 
                     <div style="background: rgba(0,0,0,0.5); border: 2px solid #444; display: flex; flex-direction: column; min-height: 0;">
                         <h3 style="color: #aaa; margin: 0; padding: 15px; border-bottom: 2px solid #333; text-align: center; background: rgba(0,0,0,0.8); flex-shrink: 0;">Angebot (Kaufen)</h3>
-                        <div style="overflow-y: auto; flex: 1; padding: 15px;">
+                        <div class="shop-right-list" style="overflow-y: auto; flex: 1; padding: 15px;">
                             ${buyHTML}
                         </div>
                     </div>
 
                 </div>
             </div>`;
+
+        requestAnimationFrame(() => {
+          const leftList = this.sceneContent.querySelector(".shop-left-list");
+          const rightList = this.sceneContent.querySelector(".shop-right-list");
+          if (leftList && leftScrollPos > 0) leftList.scrollTop = leftScrollPos;
+          if (rightList && rightScrollPos > 0)
+            rightList.scrollTop = rightScrollPos;
+        });
         break;
 
       case "equipment":
