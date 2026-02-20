@@ -29,6 +29,11 @@ window.gameAPI = {
     CrawlEngine.startExploration(worldId);
   },
 
+  selectWorld: (worldId) => {
+    window.hideoutInstance.selectedWorldId = worldId;
+    window.gameAPI.switchHideoutScreen("world_confirm");
+  },
+
   _internalSelectOption: (index) => {
     CrawlEngine.selectOption(index);
   },
@@ -97,25 +102,25 @@ window.gameAPI = {
     stateManager.removeItemFromRitual(index);
   },
 
-doRitual: () => {
+  doRitual: () => {
     const result = stateManager.performRitual();
     if (result) {
       let effectText = `<span style="color: #888; font-size: 0.9em; font-style: italic;">Kein besonderer Zusatzeffekt</span>`;
-      
+
       if (result.effects && result.effects.length > 0) {
-          const effectId = result.effects[0];
-          const effectDef = Definitions.effects[effectId];
-          
-          if (effectDef) {
-              effectText = `<span style="color: #ff9a8a; font-size: 1em;">Effekt: <strong>${effectDef.name}</strong></span>`;
-          }
+        const effectId = result.effects[0];
+        const effectDef = Definitions.effects[effectId];
+
+        if (effectDef) {
+          effectText = `<span style="color: #ff9a8a; font-size: 1em;">Effekt: <strong>${effectDef.name}</strong></span>`;
+        }
       }
 
       const messages = [
         `Waffe erschaffen: <strong style="color: var(--accent-color); font-size: 1.2em;">${result.name}</strong>`,
-        effectText
+        effectText,
       ];
-      
+
       stateManager.setResult("Ritual Vollendet!", messages, "ritual");
     } else {
       ActionEngine.log("Das Ritual benötigt genau 6 Zutaten.", "neutral");
@@ -148,7 +153,11 @@ doRitual: () => {
   closeResult: () => {
     const context = stateManager.clearResult();
 
-    if (context === "combat_win") {
+    if (context === "story_exit") {
+      stateManager.endCrawl();
+      stateManager.returnToHideout();
+      window.gameAPI.switchHideoutScreen("main");
+    } else if (context === "combat_win") {
       stateManager.endCombat();
       CrawlEngine.generateOptions();
     } else if (context === "combat_loss") {
@@ -186,7 +195,7 @@ doRitual: () => {
     stateManager.notify();
   },
 
-sellItem: (type, originalIndex, totalPrice, qty) => {
+  sellItem: (type, originalIndex, totalPrice, qty) => {
     // 1. Merke dir den aktuell ausgewählten Index
     const currentShopIndex = window.hideoutInstance.shopSelection.index;
 

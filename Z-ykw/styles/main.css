@@ -58,7 +58,7 @@ body {
     border: 2px solid var(--border-color);
     padding: 15px;
     min-width: 200px;
-    z-index: 10;
+    z-index: 20;
 }
 
 .stat-row {

@@ -229,6 +229,15 @@ export const Definitions = {
       requiredBoss: "boss_forest",
       events: ["combat_goblin", "combat_wolf", "event_shrine"],
     },
+    village_story: {
+      id: "village_story",
+      type: "story",
+      name: "Verlassenes Dorf",
+      description: "Folge den Spuren des alten Kults.",
+      baseSecurity: 20,
+      bossId: null,
+      events: ["story_village_start", "combat_goblin", "event_shrine"],
+    }
   },
 
   events: {
@@ -253,9 +262,65 @@ export const Definitions = {
       text: "Du findest einen alten Schrein. Er leuchtet schwach.",
       securityCost: 1,
       choices: [
-        { text: "Beten (+10 HP)", effect: "heal_10" },
+        { text: "Beten", effect: "heal_10" },
         { text: "Ignorieren", effect: "none" },
       ],
+    },
+
+
+    // Story Village
+    story_village_start: {
+      id: "story_village_start",
+      type: "choice",
+      name: "Die alte Taverne",
+      text: "Du betrittst eine zerstörte Taverne. Im Schatten sitzt eine vermummte Gestalt.",
+      securityCost: 0,
+      choices: [
+        { 
+          text: "Mit ihm sprechen", 
+          effect: "none", 
+          nextEvent: "story_village_talk" // Mischt Teil 2 in den Kartenstapel!
+        },
+        { 
+          text: "Sofort angreifen!", 
+          effect: "none", 
+          nextEvent: "combat_village_stranger" // Startet Story-Kampf
+        }
+      ]
+    },
+
+    //TEIL 2
+    story_village_talk: {
+      id: "story_village_talk",
+      type: "choice",
+      name: "Der Kultist",
+      text: "Er lacht: 'Du kommst zu spät!' und verschwindet in einer Rauchwolke. Er lässt etwas fallen.",
+      securityCost: 0,
+      choices: [
+        { text: "Aufheben und gehen", effect: "loot_ritual_shard", nextEvent: "story_village_exit" }
+      ]
+    },
+
+    //(Kampf)
+    combat_village_stranger: {
+      id: "combat_village_stranger",
+      type: "combat",
+      enemies: ["wolf"], // Nehmen wir als Platzhalter einen Wolf
+      securityCost: 0,
+      text: "Die Gestalt wirft ihren Mantel ab - es ist ein Werwolf!",
+      onWinEvent: "story_village_exit" // Nach dem Sieg kommt das Exit-Event in den Pool!
+    },
+
+    //ENDE
+    story_village_exit: {
+      id: "story_village_exit",
+      type: "choice",
+      name: "Der geheime Ausgang",
+      text: "Du hast gefunden, wonach du gesucht hast. Ein Pfad führt zurück.",
+      securityCost: 0,
+      choices: [
+        { text: "Dungeon verlassen", effect: "exit" } // Neues Keyword!
+      ]
     },
   },
 

@@ -157,7 +157,7 @@ export class CrawlUI {
     const buttonsHTML = event.choices
       .map(
         (choice, index) => `
-            <button class="game-button" style="min-height: 70px; font-size: 18px;" onclick="window.gameAPI.selectChoice(${index})">
+            <button class="game-button" style="height: auto; min-height: 60px; width: 100%; max-width: 500px; font-size: 18px;" onclick="window.gameAPI.selectChoice(${index})">
                 ${choice.text}
             </button>
         `,
@@ -165,7 +165,7 @@ export class CrawlUI {
       .join("");
 
     this.container.innerHTML = `
-            <div class="button-grid" style="display: flex; flex-direction: column; align-items: center; gap: 15px; max-width: 600px; margin: 0 auto;">
+            <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 15px; width: 100%; height: 100%;">
                 ${buttonsHTML}
             </div>
         `;
@@ -187,8 +187,8 @@ export class CrawlUI {
                                 <div style="color: var(--accent-color); font-weight: bold; font-size: 18px; margin-bottom: 15px;">${event.name || "Ereignis"}</div>
                                 <div style="color: #aaa; font-size: 14px; line-height: 1.5;">${event.text.substring(0, 80)}...</div>
                             </div>
-                            <div style="font-size: 12px; color: #ff6b6b; border-top: 1px solid #333; padding-top: 15px; margin-top: 15px; font-weight: bold;">
-                                Verlust: -${event.securityCost || 0}% Sicherheit
+                            <div style="font-size: 12px; color: #ff6b6b; border-top: 1px solid #333; padding-top: 15px; margin-top: 15px; font-weight: bold; ${event.securityCost ? "" : "display:none;"}">
+                               Verlust: -${event.securityCost || 0}% Sicherheit
                             </div>
                         </div>
                     `,

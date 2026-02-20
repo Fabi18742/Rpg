@@ -220,7 +220,7 @@ export class HideoutUI {
             </button>
             </div>
     `;
-    } else if (this.activeScreen === "world_selection") {
+    } else if (this.activeScreen === "world_selection"|| this.activeScreen === "world_confirm") {
       this.container.innerHTML = `
                 <div class="button-grid single-button">
                     <button class="game-button" onclick="window.gameAPI.switchHideoutScreen('main')">Zurück</button>
@@ -959,31 +959,41 @@ export class HideoutUI {
         Object.values(Definitions.worlds).forEach((world) => {
           const isUnlocked =
             !world.requiredBoss || defeated.includes(world.requiredBoss);
-          const bossDef = Definitions.enemies[world.bossId];
-          const bossName = bossDef ? bossDef.name : "Unbekannt";
+
+          let footerHTML = "";
+          if (world.type === "story") {
+            footerHTML = `<div style="border-top: 1px solid #333; padding-top: 10px; font-size: 12px; color: #aaa; font-weight: bold;">
+                Story: ${world.name}
+            </div>`;
+          } else {
+            const bossDef = Definitions.enemies[world.bossId];
+            const bossName = bossDef ? bossDef.name : "Unbekannt";
+            footerHTML = `<div style="border-top: 1px solid #333; padding-top: 10px; font-size: 12px; color: #888; font-weight: bold;">
+                Boss: ${bossName}
+            </div>`;
+          }
 
           if (isUnlocked) {
             worldsHTML += `
-                    <div style="background: rgba(0,0,0,0.7); border: 2px solid var(--accent-color); padding: 20px; text-align: center; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; justify-content: space-between;"
-                         onclick="window.gameAPI.startWorldCrawl('${world.id}')"
-                         onmouseover="this.style.background='rgba(40,40,40,0.9)'" onmouseout="this.style.background='rgba(0,0,0,0.7)'">
+                    <div style="background: rgba(0,0,0,0.8); border: 2px solid #444; padding: 20px; text-align: center; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; justify-content: space-between;"
+                         onclick="window.gameAPI.selectWorld('${world.id}')"
+                         onmouseover="this.style.background='#1a1a1a'; this.style.borderColor='#777'" 
+                         onmouseout="this.style.background='rgba(0,0,0,0.8)'; this.style.borderColor='#444'">
                         <div>
-                            <h3 style="color: var(--accent-color); margin: 0 0 10px 0; font-size: 24px;">${world.name}</h3>
-                            <p style="color: #aaa; font-size: 14px; margin-bottom: 15px;">${world.description}</p>
+                            <h3 style="color: #eee; margin: 0 0 10px 0; font-size: 24px;">${world.name}</h3>
+                            <p style="color: #888; font-size: 14px; margin-bottom: 15px;">${world.description}</p>
                         </div>
-                        <div style="border-top: 1px solid #444; padding-top: 10px; font-size: 12px; color: #ff6b6b; font-weight: bold;">
-                            Boss: ${bossName}
-                        </div>
+                        ${footerHTML}
                     </div>
                 `;
           } else {
             worldsHTML += `
-                    <div style="background: rgba(0,0,0,0.5); border: 2px solid #444; padding: 20px; text-align: center; opacity: 0.5; filter: grayscale(1); display: flex; flex-direction: column; justify-content: space-between;">
+                    <div style="background: rgba(0,0,0,0.4); border: 2px solid #222; padding: 20px; text-align: center; opacity: 0.6; display: flex; flex-direction: column; justify-content: space-between;">
                         <div>
-                            <h3 style="color: #666; margin: 0 0 10px 0; font-size: 24px;">???</h3>
+                            <h3 style="color: #555; margin: 0 0 10px 0; font-size: 24px;">???</h3>
                             <p style="color: #444; font-size: 14px; margin-bottom: 15px;">Diese Welt ist noch gesperrt.</p>
                         </div>
-                        <div style="border-top: 1px solid #333; padding-top: 10px; font-size: 12px; color: #666;">
+                        <div style="border-top: 1px solid #222; padding-top: 10px; font-size: 12px; color: #555;">
                             Besiege den Boss der vorherigen Welt.
                         </div>
                     </div>
@@ -993,11 +1003,29 @@ export class HideoutUI {
 
         this.sceneContent.innerHTML = `
             <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 10; display: flex; flex-direction: column; align-items: center; padding-top: 50px;">
-                <h2 style="color: var(--accent-color); margin-bottom: 30px; font-size: 32px; text-transform: uppercase; letter-spacing: 2px;">Wähle dein Ziel</h2>
+                <h2 style="color: #eee; margin-bottom: 30px; font-size: 32px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 2px 2px 4px #000;">Wähle dein Ziel</h2>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; width: 100%; max-width: 1000px; padding: 20px;">
                     ${worldsHTML}
                 </div>
             </div>`;
+        break;
+        case "world_confirm":
+        const worldId = this.selectedWorldId;
+        const worldDef = Definitions.worlds[worldId];
+        if (!worldDef) return;
+
+        this.sceneContent.innerHTML = `
+            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <div style="background: rgba(0,0,0,0.8); border: 2px solid #444; padding: 40px; text-align: center; max-width: 500px; box-shadow: 0 0 30px rgba(0,0,0,0.9);">
+                    <h2 style="color: #eee; margin-top: 0; margin-bottom: 20px; font-size: 28px;">${worldDef.name} betreten?</h2>
+                    <p style="color: #aaa; margin-bottom: 30px; font-size: 16px; line-height: 1.5;">Bist du sicher, dass du bereit bist? Sobald du diesen Ort betrittst, gibt es kein Zurück mehr, bis du entkommst oder besiegt wirst.</p>
+                    <div style="display: flex; gap: 20px; justify-content: center;">
+                        <button class="game-button" onclick="window.gameAPI.switchHideoutScreen('world_selection')" style="width: 150px; min-height: 50px;">Abbrechen</button>
+                        <button class="game-button" onclick="window.gameAPI.startWorldCrawl('${worldId}')" style="width: 150px; min-height: 50px;">Betreten</button>
+                    </div>
+                </div>
+            </div>
+        `;
         break;
 
       default:

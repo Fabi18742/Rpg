@@ -6,7 +6,7 @@ import { Definitions } from "../data/definitions.js";
 export class ActionEngine {
   // --- ITEM INTERAKTION ---
 
-static useItem(itemId) {
+  static useItem(itemId) {
     const state = stateManager.getState();
 
     // 1. Suche in beiden Listen, egal wo das Item liegt
@@ -14,7 +14,7 @@ static useItem(itemId) {
     if (!item) {
       item = state.player.weapons.find((w) => w.id === itemId);
     }
-    
+
     // Fallback für Basis-Items
     if (!item) {
       item = Definitions.items[itemId] || Definitions.weapons[itemId];
@@ -71,10 +71,12 @@ static useItem(itemId) {
     }
   }
 
-static toggleEquipItem(itemDef) {
+  static toggleEquipItem(itemDef) {
     const player = stateManager.getState().player;
     const isWeapon = itemDef.type === "weapon" || itemDef.damage !== undefined;
-    const currentEquip = isWeapon ? player.equipped.weapon : player.equipped.armor;
+    const currentEquip = isWeapon
+      ? player.equipped.weapon
+      : player.equipped.armor;
 
     // Ist genau dieses Item schon ausgerüstet?
     if (currentEquip && currentEquip.id === itemDef.id) {
@@ -90,7 +92,7 @@ static toggleEquipItem(itemDef) {
 
   // --- KAMPF LOGIK ---
 
-  static startCombat(enemyIds, isBoss = false) {
+  static startCombat(enemyIds, isBoss = false, onWinEvent = null) {
     const enemies = enemyIds
       .map((id) => Definitions.enemies[id])
       .filter((e) => e);
@@ -98,7 +100,8 @@ static toggleEquipItem(itemDef) {
     if (enemies.length === 0) return;
 
     stateManager.resetPlayerAp();
-    stateManager.startCombat(enemies, isBoss);
+
+    stateManager.startCombat(enemies, isBoss, onWinEvent);
 
     const names = enemies.map((e) => e.name).join(" & ");
     this.log(`Kampf gestartet gegen: ${names}!`, "neutral");
@@ -463,6 +466,13 @@ static toggleEquipItem(itemDef) {
 
     if (messages.length === 0)
       messages.push("Die Monster hatten nichts von Wert bei sich.");
+
+    if (state.combat.onWinEvent) {
+      stateManager.addEventToPool(state.combat.onWinEvent);
+      messages.push(
+        `<span style="color: #fbbf24; font-weight:bold; margin-top:10px; display:block;">Die Geschichte geht weiter...</span>`,
+      );
+    }
 
     // BOSS-CHECK & DUNGEON-ENDE
     if (state.crawl && state.crawl.active && state.combat.isBoss) {

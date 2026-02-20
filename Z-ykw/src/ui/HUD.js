@@ -1,11 +1,9 @@
-// src/ui/HUD.js
 import { stateManager } from '../engine/StateManager.js';
 
 export class HUD {
     constructor(elementId) {
         this.container = document.getElementById(elementId);
         
-        // Abonniere State-Updates
         stateManager.subscribe((state) => {
             this.render(state);
         });
@@ -16,38 +14,34 @@ export class HUD {
         this.render(state);
     }
 
-// src/ui/HUD.js
+    render(state) {
+        if (!this.container) return;
 
-render(state) {
-  if (!this.container) return;
+        let html = "";
 
-  let html = "";
+        if (state.crawl && state.crawl.active && (!state.combat || !state.combat.active)) {
+            const chaos = state.crawl.chaos || 0;
+            const sec = state.crawl.security || 0;
+            
+            // Chaos und Sicherheit werden jetzt IMMER angezeigt
+            html += `
+                <div class="crawl-stats" style="margin-top: 0; border-top: none;">
+                    <div class="stat-row">
+                        <span class="stat-label" style="color:#d6bcfa">Chaos</span>
+                        <span class="stat-value chaos-value">${chaos}</span>
+                    </div>
+                    <div class="bar-label">
+                        <span>Sicherheit</span>
+                        <span>${sec}%</span>
+                    </div>
+                    <div class="bar-container">
+                        <div class="security-fill" style="width: ${sec}%"></div>
+                    </div>
+                </div>
+            `;
+        }
 
-  if (state.crawl && state.crawl.active && (!state.combat || !state.combat.active)) {
-    const sec = state.crawl.security;
-    const chaos = state.crawl.chaos;
-
-    html = `
-              <div class="crawl-stats" style="margin-top: 0; border-top: none;">
-                  <div class="stat-row">
-                      <span class="stat-label" style="color:#d6bcfa">Chaos</span>
-                      <span class="stat-value chaos-value">${chaos}</span>
-                  </div>
-
-                  <div class="bar-label">
-                      <span>Sicherheit</span>
-                      <span>${sec}%</span>
-                  </div>
-                  <div class="bar-container">
-                      <div class="security-fill" style="width: ${sec}%"></div>
-                  </div>
-              </div>
-          `;
-  }
-
-  this.container.innerHTML = html;
-  
-  // Container komplett verstecken, wenn kein Inhalt da ist
-  this.container.style.display = html ? "block" : "none";
-}
+        this.container.innerHTML = html;
+        this.container.style.display = html ? "block" : "none";
+    }
 }

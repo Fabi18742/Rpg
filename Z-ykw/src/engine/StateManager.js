@@ -167,9 +167,10 @@ class StateManager {
   }
   // -------------------
 
-  startCombat(enemyIds, isBoss = false) {
+startCombat(enemyIds, isBoss = false, onWinEvent = null) {
     this.state.combat.active = true;
     this.state.combat.isBoss = isBoss;
+    this.state.combat.onWinEvent = onWinEvent;
     this.state.combat.enemies = enemyIds.map((def) => ({
       ...def,
       maxHp: def.hp,
@@ -486,6 +487,7 @@ addItem(itemId, amount = 1) {
       choices: null,
       activeEvent: null,
       lootTrack: { xp: 0, gold: 0, items: [] },
+      eventPool: [...world.events],
     };
     this.notify();
   }
@@ -500,6 +502,18 @@ addItem(itemId, amount = 1) {
     if (!this.state.crawl.active) return;
     this.state.crawl.choices = null;
     this.notify();
+  }
+
+  addEventToPool(eventId) {
+    if (!this.state.crawl.active) return;
+    if (!this.state.crawl.eventPool.includes(eventId)) {
+        this.state.crawl.eventPool.push(eventId);
+    }
+  }
+
+  removeEventFromPool(eventId) {
+    if (!this.state.crawl.active) return;
+    this.state.crawl.eventPool = this.state.crawl.eventPool.filter(id => id !== eventId);
   }
 
   updateCrawlStats(securityChange, chaosChange) {
