@@ -106,8 +106,12 @@ export class HideoutUI {
         });
       });
 
-      if (sel.side === "sell" && sel.index >= sellableList.length && sellableList.length > 0) {
-          sel.index = sellableList.length - 1;
+      if (
+        sel.side === "sell" &&
+        sel.index >= sellableList.length &&
+        sellableList.length > 0
+      ) {
+        sel.index = sellableList.length - 1;
       }
 
       if (sel.side === "buy") {
@@ -174,13 +178,13 @@ export class HideoutUI {
       `;
 
       this.container.innerHTML = `
-          <div style="display: grid; grid-template-columns: 200px 1fr; gap: 20px; width: 100%; height: 100%;">
-              <button class="game-button" onclick="window.gameAPI.switchHideoutScreen('main')" style="height: 100%;">Zurück</button>
+          <div class="button-grid hideout-grid">
+              <button class="game-button" onclick="window.gameAPI.switchHideoutScreen('main')">Zurück</button>
               
               ${
                 itemDef
                   ? `
-              <div style="background: #000; border: 2px solid #444; padding: 15px; display: flex; flex-direction: column; justify-content: space-between;">
+              <div style="background: #000; border: 2px solid #444; padding: 15px; display: flex; flex-direction: column; justify-content: space-between; grid-column: 2 / 4; grid-row: 1 / 3;">
                   <div style="display: flex; gap: 15px;">
                       <div style="width: 50px; height: 50px; background: rgba(0,0,0,0.5); border: 1px solid #444;"></div>
                       <div>
@@ -195,7 +199,7 @@ export class HideoutUI {
                   </div>
               </div>
               `
-                  : '<div style="background: #000; border: 2px solid #444; display: flex; justify-content:center; align-items:center; color:#888;">Bitte wähle links oder rechts ein Item aus.</div>'
+                  : '<div style="background: #000; border: 2px solid #444; display: flex; justify-content:center; align-items:center; color:#888; grid-column: 2 / 4; grid-row: 1 / 3;">Bitte wähle links oder rechts ein Item aus.</div>'
               }
           </div>
       `;
@@ -348,8 +352,12 @@ export class HideoutUI {
           });
         });
 
-        if (sel.side === "sell" && sel.index >= sellableList.length && sellableList.length > 0) {
-            sel.index = sellableList.length - 1;
+        if (
+          sel.side === "sell" &&
+          sel.index >= sellableList.length &&
+          sellableList.length > 0
+        ) {
+          sel.index = sellableList.length - 1;
         }
 
         // --- LINKE SEITE (Verkaufen) ---
