@@ -12,7 +12,7 @@ import { windowManager } from "./ui/WindowManager.js";
 import { Definitions } from "./data/definitions.js";
 import { ResultUI } from "./ui/ResultUI.js";
 
-console.log("RPG Engine v2.0 starting...");
+console.log("RPG Engine v2.0.1 starting...");
 
 // --- GLOBAL API ---
 window.gameAPI = {
