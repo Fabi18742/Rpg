@@ -1,30 +1,34 @@
-import { stateManager } from '../engine/StateManager.js';
+import { stateManager } from "../engine/StateManager.js";
 
 export class HUD {
-    constructor(elementId) {
-        this.container = document.getElementById(elementId);
-        
-        stateManager.subscribe((state) => {
-            this.render(state);
-        });
-    }
+  constructor(elementId) {
+    this.container = document.getElementById(elementId);
 
-    init() {
-        const state = stateManager.getState();
-        this.render(state);
-    }
+    stateManager.subscribe((state) => {
+      this.render(state);
+    });
+  }
 
-    render(state) {
-        if (!this.container) return;
+  init() {
+    const state = stateManager.getState();
+    this.render(state);
+  }
 
-        let html = "";
+  render(state) {
+    if (!this.container) return;
 
-        if (state.crawl && state.crawl.active && (!state.combat || !state.combat.active)) {
-            const chaos = state.crawl.chaos || 0;
-            const sec = state.crawl.security || 0;
-            
-            // Chaos und Sicherheit werden jetzt IMMER angezeigt
-            html += `
+    let html = "";
+
+    if (
+      state.crawl &&
+      state.crawl.active &&
+      (!state.combat || !state.combat.active) &&
+      !state.crawl.activeEvent
+    ) {
+      const chaos = state.crawl.chaos || 0;
+      const sec = state.crawl.security || 0;
+
+      html += `
                 <div class="crawl-stats" style="margin-top: 0; border-top: none;">
                     <div class="stat-row">
                         <span class="stat-label" style="color:#d6bcfa">Chaos</span>
@@ -39,9 +43,9 @@ export class HUD {
                     </div>
                 </div>
             `;
-        }
-
-        this.container.innerHTML = html;
-        this.container.style.display = html ? "block" : "none";
     }
+
+    this.container.innerHTML = html;
+    this.container.style.display = html ? "block" : "none";
+  }
 }

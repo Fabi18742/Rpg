@@ -237,7 +237,7 @@ export const Definitions = {
       baseSecurity: 20,
       bossId: null,
       events: ["story_village_start", "combat_goblin", "event_shrine"],
-    }
+    },
   },
 
   events: {
@@ -267,26 +267,25 @@ export const Definitions = {
       ],
     },
 
-
     // Story Village
     story_village_start: {
       id: "story_village_start",
       type: "choice",
       name: "Die alte Taverne",
-      text: "Du betrittst eine zerstörte Taverne. Im Schatten sitzt eine vermummte Gestalt.",
+      text: `Du betrittst eine zerstörte Taverne. Im Schatten sitzt eine vermummte Gestalt.`,
       securityCost: 0,
       choices: [
-        { 
-          text: "Mit ihm sprechen", 
-          effect: "none", 
-          nextEvent: "story_village_talk" // Mischt Teil 2 in den Kartenstapel!
+        {
+          text: "Mit ihm sprechen",
+          effect: "none",
+          nextEvent: "story_village_talk",
         },
-        { 
-          text: "Sofort angreifen!", 
-          effect: "none", 
-          nextEvent: "combat_village_stranger" // Startet Story-Kampf
-        }
-      ]
+        {
+          text: "Sofort angreifen!",
+          effect: "none",
+          nextEvent: "combat_village_stranger",
+        },
+      ],
     },
 
     //TEIL 2
@@ -297,8 +296,12 @@ export const Definitions = {
       text: "Er lacht: 'Du kommst zu spät!' und verschwindet in einer Rauchwolke. Er lässt etwas fallen.",
       securityCost: 0,
       choices: [
-        { text: "Aufheben und gehen", effect: "loot_ritual_shard", nextEvent: "story_village_exit" }
-      ]
+        {
+          text: "Aufheben und gehen",
+          effect: "loot_ritual_shard",
+          nextEvent: "story_village_exit",
+        },
+      ],
     },
 
     //(Kampf)
@@ -308,7 +311,7 @@ export const Definitions = {
       enemies: ["wolf"], // Nehmen wir als Platzhalter einen Wolf
       securityCost: 0,
       text: "Die Gestalt wirft ihren Mantel ab - es ist ein Werwolf!",
-      onWinEvent: "story_village_exit" // Nach dem Sieg kommt das Exit-Event in den Pool!
+      onWinEvent: "story_village_exit", // Nach dem Sieg kommt das Exit-Event in den Pool!
     },
 
     //ENDE
@@ -319,8 +322,8 @@ export const Definitions = {
       text: "Du hast gefunden, wonach du gesucht hast. Ein Pfad führt zurück.",
       securityCost: 0,
       choices: [
-        { text: "Dungeon verlassen", effect: "exit" } // Neues Keyword!
-      ]
+        { text: "Dungeon verlassen", effect: "exit" }, // Neues Keyword!
+      ],
     },
   },
 

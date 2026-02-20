@@ -145,19 +145,21 @@ export class CrawlUI {
 
     if (this.sceneContent) {
       this.sceneContent.innerHTML = `
-                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                    <div style="background: rgba(0,0,0,0.5); border: 2px solid var(--accent-color); padding: 40px; max-width: 800px; width: 90%; text-align: center; box-shadow: 0 0 30px rgba(0,0,0,0.8);">
-                        <h2 style="color: var(--accent-color); font-size: 32px; margin-top: 0; margin-bottom: 20px;">${event.name}</h2>
-                        <p style="color: #e0e0e0; font-size: 20px; line-height: 1.6;">${event.text}</p>
-                    </div>
+            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;">
+                
+                <div style="background: rgba(0,0,0,0.5); border: 2px solid var(--accent-color); padding: 30px; max-width: 800px; width: 90%; max-height: 90%; overflow-y: auto; text-align: left; box-shadow: 0 0 30px rgba(0,0,0,0.8);">
+                    <h2 style="color: var(--accent-color); font-size: 32px; margin-top: 0; margin-bottom: 20px; text-align: center;">${event.name}</h2>
+                    <p style="color: #e0e0e0; font-size: 18px; line-height: 1.6; margin: 0;">${event.text}</p>
                 </div>
-            `;
+
+            </div>
+        `;
     }
 
     const buttonsHTML = event.choices
       .map(
         (choice, index) => `
-            <button class="game-button" style="height: auto; min-height: 60px; width: 100%; max-width: 500px; font-size: 18px;" onclick="window.gameAPI.selectChoice(${index})">
+            <button class="game-button" style="height: auto; min-height: 60px; width: 100%; max-width: 400px; padding: 10px; font-size: 18px;" onclick="window.gameAPI.selectChoice(${index})">
                 ${choice.text}
             </button>
         `,
