@@ -14,12 +14,13 @@ export const Definitions = {
   },
 
   items: {
-    iron_shield: {
-      id: "iron_shield",
-      name: "Eisenschild",
+    lederwams: {
+      id: "lederwams",
+      name: "Lederwams",
       type: "armor",
-      defense: 3,
-      value: 15,
+      defense: 2,
+      value: 20,
+      description: "Bietet grundlegenden Schutz vor Schlägen.",
     },
     potion_small: {
       id: "potion_small",

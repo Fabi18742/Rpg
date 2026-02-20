@@ -456,12 +456,54 @@ export class HideoutUI {
         `;
 
         // --- RÜSTUNGS SLOT HTML ---
-        let armorSlotHTML = `
-            <div class="equipment-slot armor-slot empty">
-                <div class="item-icon-placeholder" style="opacity: 0.2;"></div>
-                <div class="item-info">
-                    <div class="item-name slot-label">Rüstung (Bald verfügbar)</div>
+        let armorEffectsHTML = "";
+        let armorTooltipHTML = "";
+
+        if (equippedArmor) {
+          if (equippedArmor.effects && equippedArmor.effects.length > 0) {
+            armorEffectsHTML =
+              '<span class="slot-effects" style="margin-left: 8px;">';
+            let tooltipArmorEffectsHTML = '<div class="tooltip-effects">';
+
+            equippedArmor.effects.forEach((effectId) => {
+              const effect = Definitions.effects[effectId];
+              if (effect) {
+                armorEffectsHTML += `<span class="effect-badge" style="color: #ff9a8a; border: 1px solid #e74c3c;">${effect.name}</span>`;
+                tooltipArmorEffectsHTML += `<div class="tooltip-effect"><strong>${effect.name}:</strong> ${effect.description}</div>`;
+              }
+            });
+            armorEffectsHTML += "</span>";
+            tooltipArmorEffectsHTML += "</div>";
+
+            armorTooltipHTML = `
+                <div class="equipment-tooltip">
+                    <div class="tooltip-title">${equippedArmor.name}</div>
+                    <div class="tooltip-stat">Abwehr: ${equippedArmor.defense || 0}</div>
+                    ${tooltipArmorEffectsHTML}
                 </div>
+            `;
+          } else {
+            armorTooltipHTML = `
+                <div class="equipment-tooltip">
+                    <div class="tooltip-title">${equippedArmor.name}</div>
+                    <div class="tooltip-stat">Abwehr: ${equippedArmor.defense || 0}</div>
+                </div>
+            `;
+          }
+        }
+
+        let armorSlotHTML = `
+            <div class="equipment-slot armor-slot ${equippedArmor ? "filled" : "empty"}" onclick="window.gameAPI.switchHideoutScreen('armor_selection')">
+                <div class="item-icon-placeholder"></div>
+                <div class="item-info">
+                    ${
+                      equippedArmor
+                        ? `<div class="item-name">${equippedArmor.name}</div>
+                           <div class="item-stats">Abwehr: ${equippedArmor.defense || 0}${armorEffectsHTML}</div>`
+                        : '<div class="item-name slot-label">Rüstung (Klicken zum Auswählen)</div>'
+                    }
+                </div>
+                ${equippedArmor ? armorTooltipHTML : ""}
             </div>
         `;
 
@@ -580,6 +622,74 @@ export class HideoutUI {
                 <p style="color: #888; margin-bottom: 20px; text-align: center;">Klicke auf eine Waffe, um sie auszurüsten.</p>
                 <div class="equipment-modal-list" style="width: 100%; max-width: 800px; flex: 1; overflow-y: auto; padding-right: 15px; margin-bottom: 20px;">
                     ${weaponsHTML}
+                </div>
+            </div>
+        `;
+
+        this.container.innerHTML = `
+            <div class="button-grid single-button">
+                <button class="game-button" onclick="window.gameAPI.switchHideoutScreen('equipment')">Zurück zur Ausrüstung</button>
+            </div>
+        `;
+        break;
+
+      case "armor_selection":
+        // Wir suchen im Inventar nach Rüstungen
+        const allArmors = (p.inventory || []).filter(
+          (i) => i.type === "armor" || i.defense !== undefined,
+        );
+        const currentArmorId = p.equipped.armor ? p.equipped.armor.id : null;
+
+        let armorsHTML = "";
+        if (allArmors.length === 0) {
+          armorsHTML =
+            '<div class="no-items" style="text-align:center; color:#888; font-size: 18px; margin-top: 40px;">Du besitzt keine Rüstung. Kaufe oder finde eine!</div>';
+        } else {
+          armorsHTML = allArmors
+            .map((a) => {
+              const isEquipped = a.id === currentArmorId;
+
+              // Für spätere Rüstungseffekte vorbereitet
+              let effectsHTML = "";
+              if (a.effects && a.effects.length > 0) {
+                effectsHTML =
+                  '<div class="weapon-effects" style="margin-top: 5px;">';
+                a.effects.forEach((effectId) => {
+                  const effect = Definitions.effects[effectId];
+                  if (effect) {
+                    effectsHTML += `<span class="effect-badge" style="color: #ff9a8a; border: 1px solid #e74c3c; font-size: 11px;">${effect.name}</span>`;
+                  }
+                });
+                effectsHTML += "</div>";
+              }
+
+              // Der ActionEngine.useItem Befehl funktioniert praktischerweise auch für das An-/Ablegen von Rüstungen!
+              return `
+                <div class="equipment-modal-item ${isEquipped ? "equipped" : ""}" style="background: #111; border: 2px solid ${isEquipped ? "var(--accent-color)" : "#444"}; margin-bottom: 10px;" 
+                     onclick="window.gameAPI.useItem('${a.id}'); window.gameAPI.switchHideoutScreen('equipment');">
+                    <div class="item-icon-placeholder"></div>
+                    <div class="item-details" style="flex: 1;">
+                        <div class="item-name" style="font-size: 18px; color: ${isEquipped ? "var(--accent-color)" : "#fff"};">${a.name}</div>
+                        <div class="item-stats-row">
+                            <span class="item-stats" style="font-size: 14px; color: #aaa;">Abwehr: ${a.defense || 0}</span>
+                        </div>
+                        ${effectsHTML}
+                    </div>
+                    <div style="align-self: center; font-weight: bold; color: ${isEquipped ? "var(--accent-color)" : "#888"};">
+                        ${isEquipped ? "ABLEGEN" : "ANZIEHEN"}
+                    </div>
+                </div>
+            `;
+            })
+            .join("");
+        }
+
+        this.sceneContent.innerHTML = `
+            <div class="equipment-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 10; display: flex; flex-direction: column; align-items: center; padding-top: 50px;">
+                <h2 style="color: var(--accent-color); margin-bottom: 10px;">Garderobe</h2>
+                <p style="color: #888; margin-bottom: 20px; text-align: center;">Klicke auf eine Rüstung, um sie anzulegen.</p>
+                <div class="equipment-modal-list" style="width: 100%; max-width: 800px; flex: 1; overflow-y: auto; padding-right: 15px; margin-bottom: 20px;">
+                    ${armorsHTML}
                 </div>
             </div>
         `;
