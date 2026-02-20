@@ -397,7 +397,6 @@ body {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  transition: background 0.5s ease-in-out;
 }
 
 /* Tab Styling für das Hideout */
