@@ -30,17 +30,17 @@ export class HUD {
       const chaos = state.crawl.chaos || 0;
       const curSec = state.crawl.security || 0;
       
-      // 1. Hole das Maximum für diese Welt aus den Definitions
+      // 1. Hole das Maximum für diese Welt
       const maxSec = Definitions.worlds[state.crawl.worldId].baseSecurity;
       
-      // 2. Echten Prozentwert für die Leisten-Breite ausrechnen
+      // 2. Prozentwert berechnen
       const secPercent = Math.max(0, (curSec / maxSec) * 100);
 
-      // 3. Zonen-Check: Teilt Prozente durch 10. Gerade Blöcke sind Safe-Zonen.
+      // 3. Zonen-Check (Gerade Blöcke = Safe)
       const isSafeZone = secPercent > 0 && Math.ceil(secPercent / 10) % 2 === 0;
       
-      // 4. Farbe bestimmen: Nutzen von RGBA für perfekte Transparenz (35% Deckkraft)
-      const barColor = isSafeZone ? "rgba(74, 222, 128, 0.35)" : "rgba(255, 69, 0, 0.35)";
+      // 4. NEU: Farbe jetzt für die Schrift (volle Deckkraft)
+      const textColor = isSafeZone ? "#4ade80" : "#ff6b6b";
 
       html += `
                 <div class="crawl-stats" style="margin-top: 0; border-top: none;">
@@ -48,12 +48,12 @@ export class HUD {
                         <span class="stat-label" style="color:#d6bcfa">Chaos</span>
                         <span class="stat-value chaos-value">${chaos}</span>
                     </div>
-                    <div class="bar-label">
+                    <div class="bar-label" style="color: ${textColor}; font-weight: bold; transition: color 0.3s ease;">
                         <span>Sicherheit</span>
                         <span>${curSec} / ${maxSec}</span>
                     </div>
                     <div class="bar-container">
-                        <div class="security-fill" style="width: ${secPercent}%; background-color: ${barColor};"></div>
+                        <div class="security-fill" style="width: ${secPercent}%; background-color: transparent;"></div>
                     </div>
                 </div>
             `;
