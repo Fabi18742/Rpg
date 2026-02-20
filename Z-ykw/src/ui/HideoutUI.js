@@ -185,15 +185,17 @@ export class HideoutUI {
                 itemDef
                   ? `
             <div style="background: var(--button-bg); border: 2px solid var(--border-color); padding: 15px; display: flex; flex-direction: column; justify-content: space-between; grid-column: 2 / 4; grid-row: 1 / 3;">
-                  <div style="display: flex; gap: 15px;">
-                      <div style="width: 50px; height: 50px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color);"></div>
+                  
+                  <div style="display: flex; gap: 15px; text-align: left;">
+                      <div style="width: 50px; height: 50px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); flex-shrink: 0;"></div>
                       <div>
                           <div style="font-size: 18px; font-weight: bold; color: var(--accent-color); margin-bottom: 5px;">${name}</div>
                           <div style="font-size: 14px; color: var(--text-color);">${desc}</div>
                       </div>
                   </div>
+
                   <div style="display: flex; align-items: center; gap: 20px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); padding: 10px; margin-top: 10px;">
-                      <div style="font-size: 20px; font-weight: bold; color: #fbbf24; min-width: 100px;">${totalPrice} G</div>
+                      <div style="font-size: 20px; font-weight: bold; color: #fbbf24; min-width: 100px; text-align: center;">${totalPrice} G</div>
                       ${qtyControls}
                       ${actionBtnHTML}
                   </div>
@@ -376,6 +378,7 @@ export class HideoutUI {
         }
 
         // --- LINKE SEITE (Verkaufen) ---
+        // --- LINKE SEITE (Verkaufen) ---
         let sellHTML = "";
         sellableList.forEach((entry, index) => {
           const isSelected = sel.side === "sell" && sel.index === index;
@@ -387,11 +390,21 @@ export class HideoutUI {
             ? "background: #222; border-color: var(--accent-color);"
             : "background: rgba(0,0,0,0.5); border-color: #444;";
 
+          let effectsHTML = "";
+          if (entry.item.effects && entry.item.effects.length > 0) {
+            entry.item.effects.forEach((effectId) => {
+              const effect = Definitions.effects[effectId];
+              if (effect) {
+                effectsHTML += `<span class="effect-badge" style="color: #ff9a8a; border: 1px solid #e74c3c; font-size: 10px; padding: 1px 4px; margin-left: 8px; position: relative; top: -2px;">${effect.name}</span>`;
+              }
+            });
+          }
+
           sellHTML += `
                 <div style="${bgClass} border-width: 2px; border-style: solid; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all 0.2s;"
                      onclick="window.gameAPI.selectShopItem('sell', ${index})">
                     <div style="display:flex; flex-direction:column; gap: 4px;">
-                        <span style="font-size: 16px; color: ${isSelected ? "var(--accent-color)" : "#fff"}; font-weight: bold;">${entry.item.name}${qtyBadge}</span>
+                        <span style="font-size: 16px; color: ${isSelected ? "var(--accent-color)" : "#fff"}; font-weight: bold;">${entry.item.name}${qtyBadge}${effectsHTML}</span>
                         <span style="font-size: 12px; color: #fbbf24;">Wert: ${entry.price} G</span>
                     </div>
                 </div>
@@ -412,11 +425,21 @@ export class HideoutUI {
             ? "background: #222; border-color: var(--accent-color);"
             : "background: rgba(0,0,0,0.5); border-color: #444;";
 
+          let effectsHTML = "";
+          if (itemDef.effects && itemDef.effects.length > 0) {
+            itemDef.effects.forEach((effectId) => {
+              const effect = Definitions.effects[effectId];
+              if (effect) {
+                effectsHTML += `<span class="effect-badge" style="color: #ff9a8a; border: 1px solid #e74c3c; font-size: 10px; padding: 1px 4px; margin-left: 8px; position: relative; top: -2px;">${effect.name}</span>`;
+              }
+            });
+          }
+
           buyHTML += `
                 <div style="${bgClass} border-width: 2px; border-style: solid; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all 0.2s;"
                      onclick="window.gameAPI.selectShopItem('buy', ${index})">
                     <div style="display:flex; flex-direction:column; gap: 4px;">
-                        <span style="font-size: 16px; color: ${isSelected ? "var(--accent-color)" : "#fff"}; font-weight: bold;">${itemDef.name}</span>
+                        <span style="font-size: 16px; color: ${isSelected ? "var(--accent-color)" : "#fff"}; font-weight: bold;">${itemDef.name}${effectsHTML}</span>
                         <span style="font-size: 12px; color: #fbbf24;">Preis: ${offer.price} G</span>
                     </div>
                 </div>
