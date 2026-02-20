@@ -97,14 +97,25 @@ window.gameAPI = {
     stateManager.removeItemFromRitual(index);
   },
 
-  doRitual: () => {
+doRitual: () => {
     const result = stateManager.performRitual();
     if (result) {
+      let effectText = `<span style="color: #888; font-size: 0.9em; font-style: italic;">Kein besonderer Zusatzeffekt</span>`;
+      
+      if (result.effects && result.effects.length > 0) {
+          const effectId = result.effects[0];
+          const effectDef = Definitions.effects[effectId];
+          
+          if (effectDef) {
+              effectText = `<span style="color: #ff9a8a; font-size: 1em;">Effekt: <strong>${effectDef.name}</strong></span>`;
+          }
+      }
+
       const messages = [
-        `Du spürst, wie dunkle Magie durch den Raum fließt...`,
         `Waffe erschaffen: <strong style="color: var(--accent-color); font-size: 1.2em;">${result.name}</strong>`,
-        `<span style="color: #aaa; font-size: 0.9em;">(Sieh sie dir in der Ausrüstung an)</span>`,
+        effectText
       ];
+      
       stateManager.setResult("Ritual Vollendet!", messages, "ritual");
     } else {
       ActionEngine.log("Das Ritual benötigt genau 6 Zutaten.", "neutral");

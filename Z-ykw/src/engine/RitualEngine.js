@@ -34,11 +34,11 @@ export class RitualEngine {
             return null;
         }
 
-        // 4. Item generieren (Strikt nach Base-Stats, KEIN Präfix mehr)
+        // 4. Item generieren
         const resultItem = {
             ...baseWeapon,
-            id: `${baseWeapon.id}_${Date.now()}`, // Unique ID
-            name: baseWeapon.name, // <-- Einfach nur der Originalname
+            id: `${baseWeapon.id}_${Date.now()}`,
+            name: baseWeapon.name,
             damage: baseWeapon.damage,
             effects: [] 
         };
