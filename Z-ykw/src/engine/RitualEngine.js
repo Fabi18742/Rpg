@@ -41,10 +41,10 @@ export class RitualEngine {
             return null;
         }
 
-        // 4. Item generieren
+        // 4. Item generieren //dafuq
         const resultItem = {
             ...baseWeapon,
-            id: `${baseWeapon.id}_${Date.now()}`, // Unique ID basierend auf Original-ID
+            id: `${baseWeapon.id}_${Date.now()}`,
             name: `${bestModifier !== 'none' ? getNamePrefix(bestModifier) + ' ' : ''}${baseWeapon.name}`,
             // Bonus-Schaden durch "Reinheit" des Rituals (viele gleiche Zutaten)
             damage: baseWeapon.damage + (maxCount > 3 ? maxCount : 0),

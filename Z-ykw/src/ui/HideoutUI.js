@@ -873,52 +873,70 @@ export class HideoutUI {
           (i) => i.type === "ritual",
         );
 
+        const canPerform = ritualItems.length === 6;
+        const buttonStyle = canPerform
+          ? "margin-top: 30px;"
+          : "margin-top: 30px; opacity: 0.3; pointer-events: none;";
+
         this.sceneContent.innerHTML = `
-        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-            <h2 style="color: var(--accent-color); margin-bottom: 30px; margin-top: 0;">Das Ritual</h2>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; width: 100%; max-width: 1000px; background: rgba(0,0,0,0.5); border: 2px solid #444; padding: 40px;">
+            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <h2 style="color: var(--accent-color); margin-bottom: 30px; margin-top: 0;">Das Ritual</h2>
                 
-                <div style="display: flex; flex-direction: column; align-items: center;">
-                    <p style="font-size: 16px; color: #aaa; margin-bottom: 25px;">Wähle 6 Ritual-Komponenten</p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; width: 100%; max-width: 1000px; background: rgba(0,0,0,0.5); border: 2px solid #444; padding: 40px;">
                     
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
-                        ${[0, 1, 2, 3, 4, 5]
-                          .map((idx) => {
-                            const item = ritualItems[idx];
-                            return `
-                                <div onclick="window.gameAPI.removeFromRitual(${idx})" 
-                                     style="width: 80px; height: 80px; border: 2px dashed ${item ? "var(--accent-color)" : "#666"}; background: ${item ? "rgba(251,191,36,0.1)" : "#111"}; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 28px; transition: all 0.2s;">
-                                    ${item ? `✨` : ""}
-                                </div>`;
-                          })
-                          .join("")}
-                    </div>
+                    <div style="display: flex; flex-direction: column; align-items: center;">
+                        <p style="font-size: 16px; color: #aaa; margin-bottom: 25px;">Wähle 6 Ritual-Komponenten</p>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%;">
+                            ${[0, 1, 2, 3, 4, 5]
+                              .map((idx) => {
+                                const item = ritualItems[idx];
+                                if (item) {
+                                  // Befüllter Slot
+                                  return `
+                                        <div onclick="window.gameAPI.removeFromRitual(${idx})" 
+                                             class="static-inv-item" 
+                                             style="background: rgba(251,191,36,0.1); border: 2px solid var(--accent-color); padding: 10px; cursor: pointer; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 65px; text-align: center; transition: all 0.2s;">
+                                            <span style="font-size: 14px; color: var(--accent-color); font-weight: bold;">${item.name}</span>
+                                            <span style="font-size: 11px; color: #888; margin-top: 4px;">Kraft: ${item.ritualValue || 0}</span>
+                                        </div>`;
+                                } else {
+                                  // Leerer Slot
+                                  return `
+                                        <div class="static-inv-item" 
+                                             style="background: #111; border: 2px dashed #555; padding: 10px; display: flex; justify-content: center; align-items: center; min-height: 65px; transition: all 0.2s;">
+                                            <span style="font-size: 12px; color: #555; font-style: italic;">Leerer Slot</span>
+                                        </div>`;
+                                }
+                              })
+                              .join("")}
+                        </div>
                     </div>
 
-                <div style="border-left: 2px solid #333; padding-left: 40px; display: flex; flex-direction: column; max-height: 400px;">
-                    <p style="font-size: 16px; color: #aaa; margin-bottom: 25px;">Verfügbare Zutaten:</p>
-                    <div style="overflow-y: auto; padding-right: 15px; display: flex; flex-direction: column; gap: 10px;">
-                    ${
-                      availableRitualItems.length > 0
-                        ? availableRitualItems
-                            .map(
-                              (item) => `
-                        <div class="static-inv-item" style="background: #111; border: 1px solid #444; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
-                            <div style="display:flex; flex-direction:column; gap: 4px;">
-                                <span style="font-size: 16px; color: var(--accent-color); font-weight: bold;">${item.name}${item.quantity > 1 ? ` <span style="color: #fbbf24; font-size: 12px; margin-left: 5px;">x${item.quantity}</span>` : ""}</span>
-                                <span style="font-size: 12px; color: #888;">Kraft: ${item.ritualValue || 0}</span>
-                            </div>
-                            <button class="game-button" onclick="window.gameAPI.addToRitual('${item.id}')" style="min-height: 40px; width: 40px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 20px;">+</button>
-                        </div>`,
-                            )
-                            .join("")
-                        : "<p style='font-size:14px; color:#666; text-align:center; margin-top:20px; font-style: italic;'>Keine Ritualzutaten im Inventar.</p>"
-                    }
+                    <div style="border-left: 2px solid #333; padding-left: 40px; display: flex; flex-direction: column; max-height: 400px;">
+                        <p style="font-size: 16px; color: #aaa; margin-bottom: 25px;">Verfügbare Zutaten:</p>
+                        <div style="overflow-y: auto; padding-right: 15px; display: flex; flex-direction: column; gap: 10px;">
+                        ${
+                          availableRitualItems.length > 0
+                            ? availableRitualItems
+                                .map(
+                                  (item) => `
+                                <div class="static-inv-item" style="background: #111; border: 1px solid #444; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
+                                    <div style="display:flex; flex-direction:column; gap: 4px;">
+                                        <span style="font-size: 16px; color: var(--accent-color); font-weight: bold;">${item.name}${item.quantity > 1 ? ` <span style="color: #fbbf24; font-size: 12px; margin-left: 5px;">x${item.quantity}</span>` : ""}</span>
+                                        <span style="font-size: 12px; color: #888;">Kraft: ${item.ritualValue || 0}</span>
+                                    </div>
+                                    <button class="game-button" onclick="window.gameAPI.addToRitual('${item.id}')" style="min-height: 40px; width: 40px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 20px;">+</button>
+                                </div>`,
+                                )
+                                .join("")
+                            : "<p style='font-size:14px; color:#666; text-align:center; margin-top:20px; font-style: italic;'>Keine Ritualzutaten im Inventar.</p>"
+                        }
+                        </div>
                     </div>
+
                 </div>
-            </div>
-        </div>`;
+            </div>`;
         break;
 
       case "world_selection":
