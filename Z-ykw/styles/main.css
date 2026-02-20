@@ -1,15 +1,18 @@
 /* styles/main.css - Basierend auf dem Original-Design */
 
 :root {
-  --bg-color: #000000;
-  --visual-bg: #111111;
-  --action-bg: #222222;
-  --button-bg: #333333;
-  --button-hover: #444444;
-  --text-color: #a0a0a0;
-  --accent-color: #fbbf24; /* Gold */
-  --border-color: #808080;
-  --hp-color: #dc2626;
+  --bg-color: #000000;        /* Der Hintergrund außerhalb des Spiels (Browser) */
+  --visual-bg: #000000;       /* Die obere Bildfläche: Komplett Schwarz (falls kein Bild lädt) */
+  --action-bg: #050505;       /* Die Action-Area unten: Fast 100% Schwarz (ersetzt das alte #222) */
+  
+  --button-bg: #0f0f0f;       /* Buttons: Sehr dunkles Schwarz (ersetzt das alte #333) */
+  --button-hover: #1a1a1a;    /* Buttons beim Drüberfahren: Minimal heller */
+  
+  --text-color: #d1d5db;      /* Textfarbe: Minimal heller gemacht für besseren Kontrast auf Schwarz */
+  --accent-color: #fbbf24;    /* Dein Goldton (bleibt) */
+  
+  --border-color: #262626;    /* WICHTIG: Die Rahmen sind jetzt sehr dunkel statt dem alten #808080 Hellgrau! */
+  --hp-color: #dc2626;        /* HP Rot (bleibt) */
 }
 
 * {
