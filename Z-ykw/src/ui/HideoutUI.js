@@ -154,13 +154,13 @@ export class HideoutUI {
       } else if (sel.side === "buy") {
         btnDisabled = (p.gold || 0) < totalPrice;
         actionBtnHTML = `
-              <button class="game-button" style="padding: 5px 20px; font-size: 16px; min-height: 40px; margin-left: auto; ${btnDisabled ? "opacity:0.3; filter:grayscale(1); pointer-events:none;" : ""}" 
+              <button class="game-button" style="${btnDisabled ? "opacity:0.3; filter:grayscale(1); pointer-events:none;" : ""}" 
                       onclick="window.gameAPI.buyItem('${merchant.offers[sel.index].id}', ${totalPrice}, '${Definitions.weapons[merchant.offers[sel.index].id] ? "weapon" : "inventory"}', ${sel.qty})">
                   Kaufen
               </button>`;
       } else {
         actionBtnHTML = `
-              <button class="game-button" style="padding: 5px 20px; font-size: 16px; min-height: 40px; margin-left: auto;" 
+              <button class="game-button" 
                       onclick="window.gameAPI.sellItem('${sellType}', ${sellOriginalIndex}, ${totalPrice}, ${sel.qty})">
                   Verkaufen
               </button>`;
@@ -184,15 +184,15 @@ export class HideoutUI {
               ${
                 itemDef
                   ? `
-              <div style="background: #000; border: 2px solid #444; padding: 15px; display: flex; flex-direction: column; justify-content: space-between; grid-column: 2 / 4; grid-row: 1 / 3;">
+            <div style="background: var(--button-bg); border: 2px solid var(--border-color); padding: 15px; display: flex; flex-direction: column; justify-content: space-between; grid-column: 2 / 4; grid-row: 1 / 3;">
                   <div style="display: flex; gap: 15px;">
-                      <div style="width: 50px; height: 50px; background: rgba(0,0,0,0.5); border: 1px solid #444;"></div>
+                      <div style="width: 50px; height: 50px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color);"></div>
                       <div>
                           <div style="font-size: 18px; font-weight: bold; color: var(--accent-color); margin-bottom: 5px;">${name}</div>
-                          <div style="font-size: 14px; color: #888;">${desc}</div>
+                          <div style="font-size: 14px; color: var(--text-color);">${desc}</div>
                       </div>
                   </div>
-                  <div style="display: flex; align-items: center; gap: 20px; background: rgba(0,0,0,0.3); padding: 10px; margin-top: 10px;">
+                  <div style="display: flex; align-items: center; gap: 20px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); padding: 10px; margin-top: 10px;">
                       <div style="font-size: 20px; font-weight: bold; color: #fbbf24; min-width: 100px;">${totalPrice} G</div>
                       ${qtyControls}
                       ${actionBtnHTML}
