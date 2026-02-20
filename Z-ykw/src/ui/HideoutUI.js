@@ -509,6 +509,7 @@ export class HideoutUI {
             weaponTooltipHTML = `
                 <div class="equipment-tooltip">
                     <div class="tooltip-title">${equippedWeapon.name}</div>
+                    <div class="tooltip-stat" style="color: #60a5fa;">Typ: ${equippedWeapon.damageType ? equippedWeapon.damageType.toUpperCase() : 'HIEB'}</div>
                     <div class="tooltip-stat">Schaden: ${equippedWeapon.damage}</div>
                     ${tooltipEffectsHTML}
                 </div>
@@ -517,6 +518,7 @@ export class HideoutUI {
             weaponTooltipHTML = `
                 <div class="equipment-tooltip">
                     <div class="tooltip-title">${equippedWeapon.name}</div>
+                    <div class="tooltip-stat" style="color: #60a5fa;">Typ: ${equippedWeapon.damageType ? equippedWeapon.damageType.toUpperCase() : 'HIEB'}</div>
                     <div class="tooltip-stat">Schaden: ${equippedWeapon.damage}</div>
                 </div>
             `;
