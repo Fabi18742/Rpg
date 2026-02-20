@@ -236,7 +236,7 @@ export const Definitions = {
       description: "Folge den Spuren des alten Kults.",
       baseSecurity: 20,
       bossId: null,
-      events: ["story_village_start", "combat_goblin", "event_shrine"],
+      events: ["story_village_start", "combat_goblin", "event_shrine", "combat_wolf_2"],
     },
   },
 
@@ -255,6 +255,15 @@ export const Definitions = {
       securityCost: 10,
       text: "Ein Wolf knurrt dich an.",
     },
+    combat_wolf_2: {
+      id: "combat_wolf_2",
+      type: "combat",
+      enemies: ["wolf", "wolf"],
+      securityCost: 10,
+      minChaos: 3,
+      maxChaos: 10,
+      text: "Ein Wolf knurrt dich an.",
+    },
     event_shrine: {
       id: "event_shrine",
       type: "choice",
@@ -267,7 +276,6 @@ export const Definitions = {
       ],
     },
 
-    // Story Village
     story_village_start: {
       id: "story_village_start",
       type: "choice",
@@ -308,10 +316,10 @@ export const Definitions = {
     combat_village_stranger: {
       id: "combat_village_stranger",
       type: "combat",
-      enemies: ["wolf"], // Nehmen wir als Platzhalter einen Wolf
+      enemies: ["wolf"],
       securityCost: 0,
       text: "Die Gestalt wirft ihren Mantel ab - es ist ein Werwolf!",
-      onWinEvent: "story_village_exit", // Nach dem Sieg kommt das Exit-Event in den Pool!
+      onWinEvent: "story_village_exit",
     },
 
     //ENDE
