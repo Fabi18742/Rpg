@@ -66,18 +66,25 @@ class StateManager {
       if (!this.state.ritual) {
         this.state.ritual = { selectedItems: [] };
       }
-    } else {
+} else {
       console.log("✨ Kein Spielstand. Neues Spiel gestartet.");
       this.state.player.maxHp = Definitions.player.baseHp;
       this.state.player.hp = Definitions.player.baseHp;
       this.state.player.stats = { ...Definitions.player.baseStats };
 
+      // Start-Items ins Inventar/Waffen-Array legen
       this.addItem("rusty_sword");
       this.addItem("potion_small");
+
+      const starterSword = this.state.player.weapons.find(w => w.baseId === "rusty_sword" || w.id.startsWith("rusty_sword"));
+      if (starterSword) {
+          this.state.player.equipped.weapon = starterSword;
+      }
 
       this.state.location = "hideout";
       this.state.player.maxAp = Definitions.player.baseActionPoints;
       this.state.player.currentAp = Definitions.player.baseActionPoints;
+      
       if (!this.state.player.unlockedSkills) {
         this.state.player.unlockedSkills = [
           "normal_attack",
