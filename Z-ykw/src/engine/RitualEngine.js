@@ -9,25 +9,18 @@ export class RitualEngine {
         // 1. Power berechnen
         const totalPower = items.reduce((sum, item) => sum + (item.ritualValue || 0), 0);
 
-        // 2. Effekt finden
+        // 2. Effekt zufällig basierend auf Wahrscheinlichkeit bestimmen
         const modifiers = items.map(i => i.modifierType).filter(m => m);
-        const counts = {};
-        modifiers.forEach(m => counts[m] = (counts[m] || 0) + 1);
         
-        let bestModifier = "none";
-        let maxCount = 0;
-        for (const [mod, count] of Object.entries(counts)) {
-            if (count > maxCount) {
-                maxCount = count;
-                bestModifier = mod;
-            }
+        let selectedModifier = "none";
+        if (modifiers.length > 0) {
+            const randomIndex = Math.floor(Math.random() * modifiers.length);
+            selectedModifier = modifiers[randomIndex];
         }
 
-        // 3. LOGIK-ÄNDERUNG: Suche in Definitions.weapons OHNE Prefix-Filter
-        // Wir nehmen alle Waffen, die einen ritualValue haben
+        // 3. Waffe in definitions.js finden, die am nächsten am totalPower liegt
         const possibleWeapons = Object.values(Definitions.weapons).filter(w => w.ritualValue !== undefined);
         
-        // Sortiere nach Abstand zum totalPower
         possibleWeapons.sort((a, b) => {
             const diffA = Math.abs(a.ritualValue - totalPower);
             const diffB = Math.abs(b.ritualValue - totalPower);
@@ -41,31 +34,23 @@ export class RitualEngine {
             return null;
         }
 
-        // 4. Item generieren //dafuq
+        // 4. Item generieren (Strikt nach Base-Stats, KEIN Präfix mehr)
         const resultItem = {
             ...baseWeapon,
-            id: `${baseWeapon.id}_${Date.now()}`,
-            name: `${bestModifier !== 'none' ? getNamePrefix(bestModifier) + ' ' : ''}${baseWeapon.name}`,
-            // Bonus-Schaden durch "Reinheit" des Rituals (viele gleiche Zutaten)
-            damage: baseWeapon.damage + (maxCount > 3 ? maxCount : 0),
+            id: `${baseWeapon.id}_${Date.now()}`, // Unique ID
+            name: baseWeapon.name, // <-- Einfach nur der Originalname
+            damage: baseWeapon.damage,
             effects: [] 
         };
 
-        if (bestModifier !== "none" && Definitions.effects[bestModifier]) {
-            resultItem.effects.push(bestModifier);
-            resultItem.description += ` Sie pulsiert vor ${Definitions.effects[bestModifier].name}-Energie.`;
+        if (selectedModifier !== "none" && Definitions.effects[selectedModifier]) {
+            resultItem.effects.push(selectedModifier);
+            const descAddition = ` Sie pulsiert vor ${Definitions.effects[selectedModifier].name}-Energie.`;
+            resultItem.description = resultItem.description 
+                ? resultItem.description + descAddition 
+                : descAddition.trim();
         }
 
         return resultItem;
     }
-}
-
-function getNamePrefix(modifier) {
-    const prefixes = {
-        sharpness: "Scharfes",
-        poison: "Giftiges",
-        defense: "Härtendes",
-        lifesteal: "Blutiges"
-    };
-    return prefixes[modifier] || "Magisches";
 }
