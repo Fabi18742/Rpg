@@ -235,11 +235,18 @@ export class ActionEngine {
     const defenseResult = StatCalculator.calculateDefense(
       defender,
       attackResult.damage,
+      attackResult.damageType,
     );
     const finalDamage = defenseResult.damage;
 
     // Logging
-    let logMsg = attackResult.isCrit ? " (KRITISCH!)" : "";
+let logMsg = attackResult.isCrit ? " <span style='color: #f87171; font-weight: bold;'>(KRITISCH!)</span>" : "";
+    
+    if (defenseResult.effectiveness === "super") {
+        logMsg += " <span style='color: #22c55e; font-weight: bold; text-shadow: 0 0 5px #052e16;'>[SEHR EFFEKTIV]</span>";
+    } else if (defenseResult.effectiveness === "resist") {
+        logMsg += " <span style='color: #fb923c; font-weight: bold; text-shadow: 0 0 5px #431407;'>[WIDERSTANDEN]</span>";
+    }
     const verb = source === "player" ? "triffst" : "trifft";
     const actionText = skill
       ? skill.text
@@ -261,7 +268,6 @@ export class ActionEngine {
       stateManager.modifyPlayerHp(-finalDamage);
     }
 
-    // --- NEU: AKTIVE EFFEKTE (On Hit) ANWENDEN ---
     // Passiert nur, wenn man auch Schaden gemacht hat (> 0)
     if (
       attackResult.activeEffects &&

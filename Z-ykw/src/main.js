@@ -310,7 +310,7 @@ window.addEventListener("combat-log", (e) => {
   if (logContainer) {
     const entry = document.createElement("div");
     entry.className = `log-entry ${e.detail.type}`;
-    entry.innerText = e.detail.message;
+    entry.innerHTML = e.detail.message;
     logContainer.appendChild(entry);
     logContainer.scrollTop = logContainer.scrollHeight;
   }

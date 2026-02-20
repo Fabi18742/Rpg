@@ -68,6 +68,7 @@ export const Definitions = {
       id: "rusty_sword",
       name: "Rostiges Schwert",
       type: "weapon",
+      damageType: "schlitz",
       damage: 5,
       critChance: 10,
       value: 10,
@@ -76,30 +77,29 @@ export const Definitions = {
       id: "dagger",
       name: "Ritual-Dolch",
       type: "weapon",
+      damageType: "stich",
       damage: 8,
-      critChance: 15, // Dolche sind schnell -> mehr Crit
+      critChance: 15,
       ritualValue: 12,
       description: "Eine leichte, schnelle Klinge aus dem Ritual.",
     },
-
-    // Tier 2 (Summe ~20-25)
     sword: {
       id: "sword",
       name: "Ritual-Schwert",
       type: "weapon",
+      damageType: "schlitz",
       damage: 12,
       critChance: 10,
       ritualValue: 22,
       description: "Eine ausgewogene Waffe, geschmiedet durch Magie.",
     },
-
-    // Tier 3 (Summe ~30+)
     axe: {
       id: "axe",
       name: "Ritual-Axt",
       type: "weapon",
+      damageType: "hieb",
       damage: 18,
-      critChance: 5, // Äxte sind wuchtig -> weniger Crit, mehr Damage
+      critChance: 5,
       ritualValue: 32,
       description: "Eine schwere Waffe voller roher Energie.",
     },
@@ -110,7 +110,7 @@ export const Definitions = {
       id: "sharpness",
       name: "Schärfe",
       description: "Erhöht den Schaden.",
-      type: "stat_boost", // Passiv: Erhöht einfach einen Wert
+      type: "stat_boost",
       stat: "damage",
       value: 3,
     },
@@ -164,7 +164,7 @@ export const Definitions = {
     },
   },
 
-  enemies: {
+enemies: {
     goblin: {
       id: "goblin",
       name: "Frecher Goblin",
@@ -172,6 +172,8 @@ export const Definitions = {
       strength: 3,
       defense: 0,
       xp: 15,
+      weaknesses: ["schlitz"],
+      resistances: ["hieb"],
       lootTable: [
         { itemId: "goblin_ear", chance: 0.8 },
         { itemId: "potion_small", chance: 0.2 },
@@ -184,6 +186,8 @@ export const Definitions = {
       strength: 5,
       defense: 1,
       xp: 25,
+      weaknesses: ["stich"],
+      resistances: ["schlitz"],
       lootTable: [{ itemId: "goblin_ear", chance: 0.1 }],
     },
 
@@ -236,7 +240,12 @@ export const Definitions = {
       description: "Folge den Spuren des alten Kults.",
       baseSecurity: 20,
       bossId: null,
-      events: ["story_village_start", "combat_goblin", "event_shrine", "combat_wolf_2"],
+      events: [
+        "story_village_start",
+        "combat_goblin",
+        "event_shrine",
+        "combat_wolf_2",
+      ],
     },
   },
 
