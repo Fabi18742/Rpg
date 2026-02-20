@@ -5,8 +5,6 @@ export class CrawlUI {
     this.container = document.getElementById(elementId);
     this.sceneContent = document.getElementById("scene-content");
     this.wasRenderingEvent = false;
-
-    // --- NEU: Schalter für das Crawl-Inventar ---
     this.showingInventory = false;
 
     window.gameAPI._internalSelectOption = (index) => {
@@ -15,15 +13,21 @@ export class CrawlUI {
       });
     };
 
-    // --- NEU: API-Befehle für das Vollbild-Inventar ---
+    // NEU: Speichert den Inventar-Status im globalen State, damit das kleine HUD-Fenster es merkt
     window.gameAPI.showCrawlInventory = () => {
       this.showingInventory = true;
-      this.render(stateManager.getState());
+      if (stateManager.getState().crawl) {
+          stateManager.getState().crawl.showingInventory = true;
+      }
+      stateManager.notify(); // Sagt allen UIs (auch dem HUD): Bitte neu zeichnen!
     };
 
     window.gameAPI.hideCrawlInventory = () => {
       this.showingInventory = false;
-      this.render(stateManager.getState());
+      if (stateManager.getState().crawl) {
+          stateManager.getState().crawl.showingInventory = false;
+      }
+      stateManager.notify(); 
     };
 
     stateManager.subscribe((state) => {
@@ -36,7 +40,8 @@ export class CrawlUI {
 
     // Wenn wir nicht im Dungeon sind, alles unsichtbar machen
     if (state.location !== "dungeon") {
-      this.showingInventory = false; // Sicherstellen, dass es beim nächsten Mal zu ist
+      this.showingInventory = false;
+      if (state.crawl) state.crawl.showingInventory = false; // Status zurücksetzen
       this.container.style.display = "none";
       if (this.sceneContent && this.wasRenderingEvent) {
         this.sceneContent.innerHTML = "";
@@ -45,33 +50,26 @@ export class CrawlUI {
       return;
     }
 
-    // --- NEU: GIBT ES DAS VOLLBILD-INVENTAR? ---
     if (this.showingInventory) {
       this.renderInventoryScreen(state);
       return;
     }
 
-    // 1. GIBT ES EIN AKTIVES TEXT-EVENT? -> Dann zeige die Geschichte!
     if (state.crawl.activeEvent) {
       this.renderEventScreen(state.crawl.activeEvent);
       return;
     }
 
-    // Clean-Up für vorherige Events
     if (this.sceneContent && this.wasRenderingEvent) {
       this.sceneContent.innerHTML = "";
       this.wasRenderingEvent = false;
     }
 
-    // 2. NORMALER CRAWL (Karten ziehen)
     if (state.crawl.active && !state.combat.active && state.crawl.choices) {
       if (this.sceneContent) {
-        this.sceneContent.innerHTML = this.buildChoicesHTML(
-          state.crawl.choices,
-        );
+        this.sceneContent.innerHTML = this.buildChoicesHTML(state.crawl.choices);
       }
 
-      // --- ÄNDERUNG: Ruft nun showCrawlInventory() anstatt toggleInventory() auf ---
       this.container.innerHTML = `
                 <div class="button-grid single-button">
                     <button class="game-button" onclick="window.gameAPI.showCrawlInventory()">Inventar öffnen</button>
@@ -84,10 +82,9 @@ export class CrawlUI {
     }
   }
 
-  // --- NEU: Rendert das Vollbild-Inventar (Identisch zum Hideout) ---
   renderInventoryScreen(state) {
     this.container.style.display = "block";
-    this.wasRenderingEvent = true; // Markieren, damit die Bildfläche nach dem Schließen aufgeräumt wird
+    this.wasRenderingEvent = true; 
 
     const p = state.player;
     const allLoot = [...(p.inventory || []), ...(p.weapons || [])];
@@ -120,7 +117,6 @@ export class CrawlUI {
             .join("")
         : "<p style='text-align:center; color:#888; font-size: 18px; grid-column: span 2; margin-top: 40px;'>Dein Inventar ist leer.</p>";
 
-    // Szene oben überschreiben
     if (this.sceneContent) {
       this.sceneContent.innerHTML = `
             <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 10; display: flex; flex-direction: column; align-items: center; padding-top: 50px;">
@@ -131,7 +127,6 @@ export class CrawlUI {
             </div>`;
     }
 
-    // Action-Area unten (Zurück-Button)
     this.container.innerHTML = `
             <div class="button-grid single-button">
                 <button class="game-button" onclick="window.gameAPI.hideCrawlInventory()">Zurück</button>
@@ -146,12 +141,10 @@ export class CrawlUI {
     if (this.sceneContent) {
       this.sceneContent.innerHTML = `
             <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;">
-                
                 <div style="background: rgba(0,0,0,0.5); border: 2px solid var(--accent-color); padding: 30px; max-width: 800px; width: 90%; max-height: 90%; overflow-y: auto; text-align: left; box-shadow: 0 0 30px rgba(0,0,0,0.8);">
                     <h2 style="color: var(--accent-color); font-size: 32px; margin-top: 0; margin-bottom: 20px; text-align: center;">${event.name}</h2>
                     <p style="color: #e0e0e0; font-size: 18px; line-height: 1.6; margin: 0;">${event.text}</p>
                 </div>
-
             </div>
         `;
     }

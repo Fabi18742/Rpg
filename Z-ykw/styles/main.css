@@ -36,7 +36,6 @@ body {
   border: 3px solid var(--border-color);
   display: flex;
   flex-direction: column;
-  box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
 }
 
 .visual-area {
@@ -148,7 +147,6 @@ body {
   position: fixed; /* Wichtig: Fixed für freies Bewegen */
   background: #000000;
   border: 2px solid var(--border-color);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.8);
   min-width: 250px;
   min-height: 100px;
   z-index: 100;
@@ -647,7 +645,6 @@ body {
   pointer-events: none;
   transition: opacity 0.2s ease;
   z-index: 1000;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.9);
   text-align: left;
 }
 
@@ -698,7 +695,6 @@ body {
   font-size: 10px !important;
   font-weight: bold;
   margin-left: 5px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   vertical-align: middle;
 }
 
