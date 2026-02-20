@@ -232,10 +232,15 @@ export class HideoutUI {
             ? `<div style="color: #fbbf24; font-weight: bold; text-transform: uppercase; letter-spacing: 2px;">Level Up! ${tokens} Token verfügbar</div>`
             : `<div style="visibility: hidden; font-weight: bold; text-transform: uppercase; letter-spacing: 2px;">Platzhalter</div>`;
 
-        // Die Buttons (Schwebend rechts am Rand positioniert, mit gelbem Text, Rahmen und transparentem gelben Hintergrund)
+        // Die Buttons (inkl. neuem btnCrit)
         const btnStr = `<button class="game-button" onclick="window.gameAPI.investToken('strength')" style="min-height: 30px; height: 30px; padding: 0; width: 45px; font-size: 14px; position: absolute; right: -60px; color: #fbbf24; border-color: #fbbf24; background-color: rgba(251, 191, 36, 0.15); ${tokens > 0 ? "" : "display: none;"}">+1</button>`;
         const btnDef = `<button class="game-button" onclick="window.gameAPI.investToken('defense')" style="min-height: 30px; height: 30px; padding: 0; width: 45px; font-size: 14px; position: absolute; right: -60px; color: #fbbf24; border-color: #fbbf24; background-color: rgba(251, 191, 36, 0.15); ${tokens > 0 ? "" : "display: none;"}">+1</button>`;
+        const btnCrit = `<button class="game-button" onclick="window.gameAPI.investToken('critChance')" style="min-height: 30px; height: 30px; padding: 0; width: 45px; font-size: 14px; position: absolute; right: -60px; color: #fbbf24; border-color: #fbbf24; background-color: rgba(251, 191, 36, 0.15); ${tokens > 0 ? "" : "display: none;"}">+1</button>`;
         const btnHp = `<button class="game-button" onclick="window.gameAPI.investToken('maxHp')" style="min-height: 30px; height: 30px; padding: 0; width: 45px; font-size: 14px; position: absolute; right: -60px; color: #fbbf24; border-color: #fbbf24; background-color: rgba(251, 191, 36, 0.15); ${tokens > 0 ? "" : "display: none;"}">+10</button>`;
+
+        // Krit-Wert sicher abrufen (Fallback 5, wie in definitions.js)
+        const currentCrit =
+          p.stats.critChance !== undefined ? p.stats.critChance : 5;
 
         this.sceneContent.innerHTML = `
             <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;">
@@ -277,6 +282,12 @@ export class HideoutUI {
                             <span style="color: #aaa; font-size: 16px;">Abwehr:</span>
                             <span style="color: #fff; font-weight: bold; font-size: 18px;">${p.stats.defense || 0}</span>
                             ${btnDef}
+                        </div>
+
+                        <div style="position: relative; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding: 10px 0;">
+                            <span style="color: #aaa; font-size: 16px;">Krit-Chance:</span>
+                            <span style="color: #fff; font-weight: bold; font-size: 18px;">${currentCrit}%</span>
+                            ${btnCrit}
                         </div>
 
                     </div>

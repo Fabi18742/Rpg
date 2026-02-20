@@ -217,7 +217,7 @@ class StateManager {
     }
   }
 
-  addItem(itemId, amount = 1) {
+addItem(itemId, amount = 1) {
     if (
       this.state.location === "dungeon" &&
       this.state.crawl &&
@@ -234,13 +234,42 @@ class StateManager {
 
     const itemDef = Definitions.items[itemId] || Definitions.weapons[itemId];
     if (itemDef) {
-      const existingItem = this.state.player.inventory.find(
-        (i) => i.id === itemId,
-      );
-      if (existingItem) {
-        existingItem.quantity = (existingItem.quantity || 1) + amount;
+      // --- NEU: Prüfen, ob es Ausrüstung ist ---
+      const isWeapon = itemDef.type === "weapon" || itemDef.damage !== undefined;
+      const isArmor = itemDef.type === "armor" || itemDef.defense !== undefined;
+
+      if (isWeapon) {
+        // Waffen kommen direkt ins Waffen-Array und bekommen eine einzigartige ID (kein Stacking!)
+        if (!this.state.player.weapons) this.state.player.weapons = [];
+        for (let i = 0; i < amount; i++) {
+          this.state.player.weapons.push({ 
+              ...itemDef, 
+              // Generiert z.B. "rusty_sword_16781293_452"
+              id: `${itemId}_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+              baseId: itemId,
+              quantity: 1 
+          });
+        }
+      } else if (isArmor) {
+        // Rüstungen kommen ins Inventar, bekommen aber ebenfalls eine einzigartige ID
+        for (let i = 0; i < amount; i++) {
+          this.state.player.inventory.push({ 
+              ...itemDef, 
+              id: `${itemId}_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+              baseId: itemId,
+              quantity: 1 
+          });
+        }
       } else {
-        this.state.player.inventory.push({ ...itemDef, quantity: amount });
+        // Normale Items (Tränke, Materialien) stacken wie gewohnt
+        const existingItem = this.state.player.inventory.find(
+          (i) => i.id === itemId,
+        );
+        if (existingItem) {
+          existingItem.quantity = (existingItem.quantity || 1) + amount;
+        } else {
+          this.state.player.inventory.push({ ...itemDef, quantity: amount });
+        }
       }
       this.notify();
       this.saveGame();
@@ -369,6 +398,12 @@ class StateManager {
 
     if (stat === "strength") this.state.player.stats.strength += 1;
     if (stat === "defense") this.state.player.stats.defense += 1;
+    if (stat === 'critChance') {
+        if (this.state.player.stats.critChance === undefined) {
+            this.state.player.stats.critChance = 5; // Standardwert laut definitions.js
+        }
+        this.state.player.stats.critChance += 1;
+    }
     if (stat === "maxHp") {
       this.state.player.maxHp += 10;
       this.state.player.hp += 10; // direkt mitheilen
