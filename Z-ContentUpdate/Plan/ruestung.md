@@ -1,3 +1,0 @@
-Lederwams {
-    wenig schutz
-}
