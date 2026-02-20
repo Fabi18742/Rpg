@@ -1,696 +1,724 @@
 /* styles/main.css - Basierend auf dem Original-Design */
 
 :root {
-    --bg-color: #000000;
-    --visual-bg: #111111;
-    --action-bg: #222222;
-    --button-bg: #333333;
-    --button-hover: #444444;
-    --text-color: #a0a0a0;
-    --accent-color: #fbbf24; /* Gold */
-    --border-color: #808080;
-    --hp-color: #dc2626;
+  --bg-color: #000000;
+  --visual-bg: #111111;
+  --action-bg: #222222;
+  --button-bg: #333333;
+  --button-hover: #444444;
+  --text-color: #a0a0a0;
+  --accent-color: #fbbf24; /* Gold */
+  --border-color: #808080;
+  --hp-color: #dc2626;
 }
 
 * {
-    box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 body {
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    font-family: 'Courier New', monospace;
-    margin: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    overflow: hidden;
-    user-select: none;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-family: "Courier New", monospace;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  overflow: hidden;
+  user-select: none;
 }
 
 #app {
-    width: 100%;
-    max-width: 1200px;
-    height: 90vh;
-    border: 3px solid var(--border-color);
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 0 30px rgba(0,0,0,0.8);
+  width: 100%;
+  max-width: 1200px;
+  height: 90vh;
+  border: 3px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
 }
 
 .visual-area {
-    flex: 0 0 75%;
-    background-color: var(--visual-bg);
-    position: relative;
-    border-bottom: 3px solid var(--border-color);
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  flex: 0 0 75%;
+  background-color: var(--visual-bg);
+  position: relative;
+  border-bottom: 3px solid var(--border-color);
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 /* Das HUD schwebt oben links über dem Bild */
 .hud-overlay {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    background: rgba(0, 0, 0, 0.7);
-    border: 2px solid var(--border-color);
-    padding: 15px;
-    min-width: 200px;
-    z-index: 20;
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: rgba(0, 0, 0, 0.7);
+  border: 2px solid var(--border-color);
+  padding: 15px;
+  min-width: 200px;
+  z-index: 20;
 }
 
 .stat-row {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 5px;
-    font-size: 14px;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 5px;
+  font-size: 14px;
 }
 
-.stat-label { font-weight: bold; color: var(--text-color); }
-.stat-value { color: var(--accent-color); font-weight: bold; }
+.stat-label {
+  font-weight: bold;
+  color: var(--text-color);
+}
+.stat-value {
+  color: var(--accent-color);
+  font-weight: bold;
+}
 
 /* HP Bar im alten Stil */
 .hp-bar-wrapper {
-    width: 100%;
-    height: 15px;
-    background: #000;
-    border: 1px solid var(--border-color);
-    margin-top: 2px;
-    position: relative;
+  width: 100%;
+  height: 15px;
+  background: #000;
+  border: 1px solid var(--border-color);
+  margin-top: 2px;
+  position: relative;
 }
 
 .hp-bar-fill {
-    height: 100%;
-    background-color: var(--hp-color);
-    width: 100%; /* Startet voll */
-    transition: width 0.3s ease;
+  height: 100%;
+  background-color: var(--hp-color);
+  width: 100%; /* Startet voll */
+  transition: width 0.3s ease;
 }
 
 .hp-text {
-    position: absolute;
-    width: 100%;
-    text-align: center;
-    top: -2px;
-    font-size: 11px;
-    color: white;
-    text-shadow: 1px 1px 1px #000;
+  position: absolute;
+  width: 100%;
+  text-align: center;
+  top: -2px;
+  font-size: 11px;
+  color: white;
+  text-shadow: 1px 1px 1px #000;
 }
 
 .action-area {
-    flex: 0 0 25%;
-    background-color: var(--action-bg);
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
+  flex: 0 0 25%;
+  background-color: var(--action-bg);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
 }
 
 #controls {
-    width: 100%;
-    flex: 1;
+  width: 100%;
+  flex: 1;
 }
 
 #controls > div {
-    width: 100%;
-    height: 100%;
+  width: 100%;
+  height: 100%;
 }
 
 .combat-log {
-    flex: 1;
-    overflow-y: auto;
-    font-size: 14px;
-    margin-bottom: 10px;
-    border: 1px solid #444;
-    padding: 10px;
-    background: #000;
-    font-family: monospace;
+  flex: 1;
+  overflow-y: auto;
+  font-size: 14px;
+  margin-bottom: 10px;
+  border: 1px solid #444;
+  padding: 10px;
+  background: #000;
+  font-family: monospace;
 }
 
-.log-entry { margin-bottom: 4px; }
-.log-entry.player { color: #69db7c; }
-.log-entry.enemy { color: #ff6b6b; }
+.log-entry {
+  margin-bottom: 4px;
+}
+.log-entry.player {
+  color: #69db7c;
+}
+.log-entry.enemy {
+  color: #ff6b6b;
+}
 
 /* --- Fenstersystem (Draggable Windows) --- */
 .draggable-window {
-    position: fixed; /* Wichtig: Fixed für freies Bewegen */
-    background: #000000;
-    border: 2px solid var(--border-color);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.8);
-    min-width: 250px;
-    min-height: 100px;
-    z-index: 100;
-    display: flex;
-    flex-direction: column;
+  position: fixed; /* Wichtig: Fixed für freies Bewegen */
+  background: #000000;
+  border: 2px solid var(--border-color);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.8);
+  min-width: 250px;
+  min-height: 100px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Leiste zum Anfassen */
 .window-header {
-    background: var(--button-bg);
-    padding: 5px 10px;
-    cursor: grab;
-    border-bottom: 1px solid var(--border-color);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    height: 30px;
+  background: var(--button-bg);
+  padding: 5px 10px;
+  cursor: grab;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 30px;
 }
 
 .window-header:active {
-    cursor: grabbing;
-    background: var(--button-hover);
+  cursor: grabbing;
+  background: var(--button-hover);
 }
 
 .window-title {
-    font-weight: bold;
-    font-size: 14px;
-    color: var(--accent-color);
-    pointer-events: none; /* Klicks gehen durch zum Header */
+  font-weight: bold;
+  font-size: 14px;
+  color: var(--accent-color);
+  pointer-events: none; /* Klicks gehen durch zum Header */
 }
 
 /* Buttons oben rechts (Minimieren / Schließen) */
 .window-controls {
-    display: flex;
-    gap: 5px;
+  display: flex;
+  gap: 5px;
 }
 
 .win-btn {
-    background: #000;
-    border: 1px solid var(--border-color);
-    color: #fff;
-    width: 20px;
-    height: 20px;
-    font-size: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
+  background: #000;
+  border: 1px solid var(--border-color);
+  color: #fff;
+  width: 20px;
+  height: 20px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
 }
 
-.win-btn:hover { background: #444; }
+.win-btn:hover {
+  background: #444;
+}
 
 /* Inhalt des Fensters */
 .window-content {
-    padding: 10px;
-    overflow-y: auto;
-    overflow-x: hidden;
-    flex: 1; /* Füllt den Rest aus */
-    color: var(--text-color);
+  padding: 10px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1; /* Füllt den Rest aus */
+  color: var(--text-color);
 }
 
 /* Zustand: Minimiert */
 .draggable-window.minimized {
-    height: auto !important;
-    min-height: 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
 }
 
 .draggable-window.minimized .window-content {
-    display: none;
+  display: none;
 }
 
 /* --- Inventar Styles --- */
 .inventory-grid {
-    display: grid;
-    /* 2 Spalten, die sich den Platz teilen */
-    grid-template-columns: 1fr 1fr; 
-    gap: 10px;
-    padding: 5px;
+  display: grid;
+  /* 2 Spalten, die sich den Platz teilen */
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 5px;
 }
 
 .inventory-item {
-    background: #111;
-    border: 1px solid #444;
-    padding: 8px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    transition: background 0.2s;
-    min-width: 0;
+  background: #111;
+  border: 1px solid #444;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: background 0.2s;
+  min-width: 0;
 }
 
 .inventory-item:hover {
-    background: #222;
-    border-color: var(--accent-color);
+  background: #222;
+  border-color: var(--accent-color);
 }
 
 .item-icon {
-    width: 32px;
-    height: 32px;
-    background: #333;
-    border: 1px solid #555;
-    flex-shrink: 0; /* Verhindert Schrumpfen */
+  width: 32px;
+  height: 32px;
+  background: #333;
+  border: 1px solid #555;
+  flex-shrink: 0; /* Verhindert Schrumpfen */
 }
 
 .item-details {
-    flex: 1; /* Füllt Rest aus */
-    overflow: hidden; /* Für lange Namen */
+  flex: 1; /* Füllt Rest aus */
+  overflow: hidden; /* Für lange Namen */
 }
 
 .item-name {
-    font-size: 13px;
-    font-weight: bold;
-    color: #e0e0e0;
-    white-space: normal;
-    word-wrap: break-word;
+  font-size: 13px;
+  font-weight: bold;
+  color: #e0e0e0;
+  white-space: normal;
+  word-wrap: break-word;
 }
 
 .item-type {
-    font-size: 11px;
-    color: #888;
+  font-size: 11px;
+  color: #888;
 }
 
 .item-equipped {
-    border-color: var(--accent-color);
-    background: rgba(251, 191, 36, 0.1);
+  border-color: var(--accent-color);
+  background: rgba(251, 191, 36, 0.1);
 }
 
 .item-equipped .item-type {
-    color: var(--accent-color);
+  color: var(--accent-color);
 }
 
 .menubar {
-    position: absolute;
-    bottom: 10px;
-    right: 10px;
-    display: flex;
-    gap: 10px;
-    z-index: 50;
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  display: flex;
+  gap: 10px;
+  z-index: 50;
 }
 
 /* --- Crawl UI (HUD Erweiterung) --- */
 .crawl-stats {
-    margin-top: 15px;
-    padding-top: 10px;
-    border-top: 1px solid #444;
+  margin-top: 15px;
+  padding-top: 10px;
+  border-top: 1px solid #444;
 }
 
 .bar-label {
-    font-size: 11px;
-    color: #888;
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 2px;
+  font-size: 11px;
+  color: #888;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2px;
 }
 
 .bar-container {
     width: 100%;
-    height: 6px;
-    background: #222;
+    height: 12px; /* Ein kleines bisschen dicker für bessere Sichtbarkeit */
+    
+    /* Das gestreifte Hintergrundmuster (Dunkelrot und Dunkelgrün) */
+    background: repeating-linear-gradient(
+        to right,
+        #3f1616, 
+        #3f1616 10%,
+        #153f1f 10%, 
+        #153f1f 20%
+    );
     border: 1px solid #444;
     margin-bottom: 8px;
 }
 
-/* Sicherheitsleiste: Grün */
+/* Sicherheitsleiste: Dynamische Farbe */
 .security-fill {
     height: 100%;
-    background-color: #4caf50; 
-    transition: width 0.3s;
+    
+    /* Die Nadel ist jetzt Gold (Nutzt deine RPG-Akzentfarbe) */
+    border-right: 2px solid var(--accent-color); 
+    box-sizing: border-box;
+    
+    transition: width 0.3s ease, background-color 0.3s ease;
 }
 
 /* Chaos Indikator: Lila Text */
 .chaos-value {
-    color: #d6bcfa; /* Helles Lila */
-    font-weight: bold;
+  color: #d6bcfa; /* Helles Lila */
+  font-weight: bold;
 }
 
 /* Crawl Selection Cards */
 .crawl-selection-container {
-    padding: 10px;
+  padding: 10px;
 }
 
 .crawl-cards {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
 }
 
 .crawl-card {
-    background: #1a1a1a;
-    border: 1px solid #444;
-    padding: 15px;
-    width: 140px;
-    cursor: pointer;
-    transition: transform 0.2s, border-color 0.2s;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+  background: #1a1a1a;
+  border: 1px solid #444;
+  padding: 15px;
+  width: 140px;
+  cursor: pointer;
+  transition:
+    transform 0.2s,
+    border-color 0.2s;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .crawl-card:hover {
-    transform: translateY(-2px);
-    border-color: var(--accent-color);
-    background: #222;
+  transform: translateY(-2px);
+  border-color: var(--accent-color);
+  background: #222;
 }
 
 .card-title {
-    font-weight: bold;
-    color: #e0e0e0;
-    font-size: 13px;
+  font-weight: bold;
+  color: #e0e0e0;
+  font-size: 13px;
 }
 
 .card-text {
-    font-size: 11px;
-    color: #888;
-    flex-grow: 1;
+  font-size: 11px;
+  color: #888;
+  flex-grow: 1;
 }
 
 .card-cost {
-    font-size: 10px;
-    border-top: 1px solid #333;
-    padding-top: 5px;
+  font-size: 10px;
+  border-top: 1px solid #333;
+  padding-top: 5px;
 }
 
 /* In styles/main.css ergänzen */
 
 .visual-area.hideout-bg {
-    background-image: url('../assets/svg/hideout-bg.png');
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    transition: background 0.5s ease-in-out;
+  background-image: url("../assets/svg/hideout-bg.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transition: background 0.5s ease-in-out;
 }
 
 /* Tab Styling für das Hideout */
 .hideout-tabs {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 15px;
-    border-bottom: 2px solid var(--border-color);
-    padding-bottom: 10px;
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: 10px;
 }
 
 .tab-btn {
-    background: var(--button-bg);
-    border: 1px solid var(--border-color);
-    color: var(--text-color);
-    padding: 8px 15px;
-    cursor: pointer;
+  background: var(--button-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  padding: 8px 15px;
+  cursor: pointer;
 }
 
 .tab-btn.active {
-    background: var(--accent-color);
-    color: #000;
-    font-weight: bold;
+  background: var(--accent-color);
+  color: #000;
+  font-weight: bold;
 }
 
 .adventure-btn {
-    margin-left: auto; /* Push Button nach rechts */
-    background: #2d5a27; /* Wald-Grün */
-    color: white;
+  margin-left: auto; /* Push Button nach rechts */
+  background: #2d5a27; /* Wald-Grün */
+  color: white;
 }
 
 .button-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-    width: 100%;
-    height: 100%; /* WICHTIG: Lässt den Container die Action-Area in der Höhe ausfüllen */
-    position: relative;
-    z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  width: 100%;
+  height: 100%; /* WICHTIG: Lässt den Container die Action-Area in der Höhe ausfüllen */
+  position: relative;
+  z-index: 1;
 }
 
 .hideout-grid,
 .button-grid.single-button {
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(2, 1fr); /* Erzwingt exakt 2 Reihen */
-    gap: 15px;
-    width: 100%;
-    height: 100%; 
-    margin: 0 auto;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr); /* Erzwingt exakt 2 Reihen */
+  gap: 15px;
+  width: 100%;
+  height: 100%;
+  margin: 0 auto;
 }
 
 /* Statische Screens, die über dem Hintergrundbild in der Visual Area liegen */
 .static-screen-overlay {
-    background: rgba(0, 0, 0, 0.8);
-    border: 2px solid var(--border-color);
-    padding: 20px;
-    width: 80%;
-    max-height: 80%;
-    overflow-y: auto;
-    color: var(--text-color);
+  background: rgba(0, 0, 0, 0.8);
+  border: 2px solid var(--border-color);
+  padding: 20px;
+  width: 80%;
+  max-height: 80%;
+  overflow-y: auto;
+  color: var(--text-color);
 }
 
 .static-screen-overlay h2 {
-    color: var(--accent-color);
-    text-align: center;
-    margin-bottom: 20px;
+  color: var(--accent-color);
+  text-align: center;
+  margin-bottom: 20px;
 }
 
 .stat-grid-large {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .stat-entry {
-    display: flex;
-    justify-content: space-between;
-    border-bottom: 1px solid #333;
-    padding: 5px 0;
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid #333;
+  padding: 5px 0;
 }
 
 .static-inventory-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
 }
 
 .static-inv-item {
-    background: #111;
-    border: 1px solid #444;
-    padding: 10px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  background: #111;
+  border: 1px solid #444;
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .game-button {
-    background-color: var(--button-bg);
-    color: var(--text-color);
-    border: 2px solid var(--border-color);
-    padding: 5px 10px;
-    font-size: 22px;
-    font-family: 'Courier New', monospace;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background-color 0.1s ease;
-    text-transform: uppercase;
-    text-shadow: none;
-    box-shadow: none;
-    position: relative;
-    border-radius: 0px;
-    height: 100%;
-    min-height: 0;
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
+  background-color: var(--button-bg);
+  color: var(--text-color);
+  border: 2px solid var(--border-color);
+  padding: 5px 10px;
+  font-size: 22px;
+  font-family: "Courier New", monospace;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.1s ease;
+  text-transform: uppercase;
+  text-shadow: none;
+  box-shadow: none;
+  position: relative;
+  border-radius: 0px;
+  height: 100%;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 
 .game-button:hover {
-    background-color: var(--button-hover);
-    color: var(--accent-color);         /* Text wird beim Hovern Gold */
-    border-color: var(--accent-color);
+  background-color: var(--button-hover);
+  color: var(--accent-color); /* Text wird beim Hovern Gold */
+  border-color: var(--accent-color);
 }
 
 .game-button:active {
-    background-color: #000000;
-    transform: translateY(1px);         /* Kleiner Klick-Effekt */
+  background-color: #000000;
+  transform: translateY(1px); /* Kleiner Klick-Effekt */
 }
 
 /* Spezial-Style für den Abenteuer-Button (Boss-Kämpfe) */
 .adventure-btn {
-    background-color: #1a2e1a;          /* Dunkelgrün */
-    border-color: #2d5a27;
+  background-color: #1a2e1a; /* Dunkelgrün */
+  border-color: #2d5a27;
 }
 
 .adventure-btn:hover {
-    background-color: #2d5a27;
-    border-color: #69db7c;
-    color: #69db7c;
+  background-color: #2d5a27;
+  border-color: #69db7c;
+  color: #69db7c;
 }
 
 /* ===== EQUIPMENT SYSTEM (AUSRÜSTUNG) ===== */
 .equipment-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    padding: 40px;
-    overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 40px;
+  overflow: hidden;
 }
 
 .equipment-slots-wrapper {
-    display: flex;
-    flex-direction: row;
-    gap: 60px;
-    align-items: flex-start;
-    overflow: visible;
+  display: flex;
+  flex-direction: row;
+  gap: 60px;
+  align-items: flex-start;
+  overflow: visible;
 }
 
 .weapon-section {
-    display: flex;
-    flex-direction: column;
+  display: flex;
+  flex-direction: column;
 }
 
 .equipment-slot {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: #000000;
-    border: 2px solid var(--border-color);
-    padding: 12px 15px;
-    height: 90px;
-    width: 350px;
-    cursor: pointer;
-    transition: background-color 0.1s ease;
-    position: relative;
-    overflow: visible;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #000000;
+  border: 2px solid var(--border-color);
+  padding: 12px 15px;
+  height: 90px;
+  width: 350px;
+  cursor: pointer;
+  transition: background-color 0.1s ease;
+  position: relative;
+  overflow: visible;
 }
 
 .equipment-slot.empty {
-    border-style: solid;
-    opacity: 0.7;
-    background: #050505;
+  border-style: solid;
+  opacity: 0.7;
+  background: #050505;
 }
 
 .equipment-slot.filled {
-    background: #111111;
-    border-color: var(--border-color);
+  background: #111111;
+  border-color: var(--border-color);
 }
 
 .equipment-slot:hover {
-    border-color: var(--accent-color);
-    background: #222222;
+  border-color: var(--accent-color);
+  background: #222222;
 }
 
 .item-icon-placeholder {
-    width: 50px;
-    height: 50px;
-    background: var(--border-color);
-    border: 1px solid var(--text-color);
-    flex-shrink: 0;
+  width: 50px;
+  height: 50px;
+  background: var(--border-color);
+  border: 1px solid var(--text-color);
+  flex-shrink: 0;
 }
 
 .equipment-slot .item-info {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
 }
 
 .equipment-slot .item-name {
-    font-size: 15px;
-    color: var(--accent-color);
-    font-weight: bold;
-    line-height: 1.2;
+  font-size: 15px;
+  color: var(--accent-color);
+  font-weight: bold;
+  line-height: 1.2;
 }
 
 .equipment-slot .slot-label {
-    color: var(--placeholder-color);
-    font-style: italic;
-    font-weight: normal;
+  color: var(--placeholder-color);
+  font-style: italic;
+  font-weight: normal;
 }
 
 .equipment-slot .item-stats {
-    font-size: 11px;
-    color: var(--placeholder-color);
-    line-height: 1.2;
+  font-size: 11px;
+  color: var(--placeholder-color);
+  line-height: 1.2;
 }
 
 /* === TOOLTIP === */
 .equipment-tooltip {
-    position: absolute;
-    top: 50%;
-    left: calc(100% + 15px);
-    transform: translateY(-50%);
-    background: #0a0a0a;
-    border: 2px solid var(--accent-color);
-    padding: 15px;
-    min-width: 250px;
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-    transition: opacity 0.2s ease;
-    z-index: 1000;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.9);
-    text-align: left;
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 15px);
+  transform: translateY(-50%);
+  background: #0a0a0a;
+  border: 2px solid var(--accent-color);
+  padding: 15px;
+  min-width: 250px;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 1000;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.9);
+  text-align: left;
 }
 
 .equipment-slot:hover .equipment-tooltip {
-    opacity: 1;
-    visibility: visible;
-    transition-delay: 0.3s;
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 0.3s;
 }
 
 .equipment-tooltip .tooltip-title {
-    font-size: 16px;
-    font-weight: bold;
-    color: var(--accent-color);
-    margin-bottom: 8px;
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 6px;
+  font-size: 16px;
+  font-weight: bold;
+  color: var(--accent-color);
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 6px;
 }
 
 .equipment-tooltip .tooltip-stat {
-    font-size: 12px;
-    color: #4a90e2;
-    margin-bottom: 8px;
+  font-size: 12px;
+  color: #4a90e2;
+  margin-bottom: 8px;
 }
 
 .equipment-tooltip .tooltip-effects {
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid var(--border-color);
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-color);
 }
 
 .equipment-tooltip .tooltip-effect {
-    font-size: 11px;
-    color: var(--text-color);
-    line-height: 1.4;
-    margin-bottom: 6px;
+  font-size: 11px;
+  color: var(--text-color);
+  line-height: 1.4;
+  margin-bottom: 6px;
 }
 
 .equipment-tooltip .tooltip-effect strong {
-    color: #e74c3c;
+  color: #e74c3c;
 }
 
 /* === EFFEKT BADGES === */
 .effect-badge {
-    display: inline-block;
-    background: #000000;
-    color: var(--text-color);
-    padding: 2px 6px;
-    font-size: 10px !important;
-    font-weight: bold;
-    margin-left: 5px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-    vertical-align: middle;
+  display: inline-block;
+  background: #000000;
+  color: var(--text-color);
+  padding: 2px 6px;
+  font-size: 10px !important;
+  font-weight: bold;
+  margin-left: 5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  vertical-align: middle;
 }
 
 /* === WAFFENKAMMER LISTE === */
 .equipment-modal-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .equipment-modal-item {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    padding: 12px 15px;
-    min-height: 70px;
-    cursor: pointer;
-    transition: background-color 0.1s ease;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 12px 15px;
+  min-height: 70px;
+  cursor: pointer;
+  transition: background-color 0.1s ease;
 }
 
 .equipment-modal-item:hover {
-    background: #222 !important;
+  background: #222 !important;
 }

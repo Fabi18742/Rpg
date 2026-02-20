@@ -15,7 +15,7 @@ export class CrawlEngine {
 
     const worldDef = Definitions.worlds[state.crawl.worldId];
 
-    // --- 1. SICHERHEITS-CHECK ---
+    // --- 1. SICHERHEITS-CHECK (Garantiert bei exakt 0) ---
     if (state.crawl.security <= 0) {
       if (worldDef.type !== "story") {
         const bossId = worldDef.bossId;
@@ -25,7 +25,6 @@ export class CrawlEngine {
         );
         ActionEngine.startCombat([bossId], true);
       } else {
-        // Story-Welt: Sicherer Aufruf über die Klasse
         ActionEngine.log(
           "Die Sicherheit ist auf 0 gefallen... Du musstest fliehen!",
           "enemy",
@@ -35,7 +34,50 @@ export class CrawlEngine {
       return;
     }
 
-    // --- 2. CHAOS-FILTER ---
+    // --- 2. ALTERNIERENDE GEFAHRENZONEN (Safe -> Gefahr -> Safe) ---
+    if (worldDef.type !== "story") {
+      const maxSec = worldDef.baseSecurity;
+      const curSec = state.crawl.security;
+
+      const secPercent = (curSec / maxSec) * 100;
+      let spawnChance = 0;
+
+      // Dein alternierendes System mit exponentiellen Gefahrenzonen
+      if (secPercent <= 10) {
+        spawnChance = 0.75; // 10% - 1%: Letzte Gefahrenzone (75%)
+      } else if (secPercent <= 20) {
+        spawnChance = 0.0; // 20% - 11%: SAFE ZONE
+      } else if (secPercent <= 30) {
+        spawnChance = 0.4; // 30% - 21%: Gefahrenzone (40%)
+      } else if (secPercent <= 40) {
+        spawnChance = 0.0; // 40% - 31%: SAFE ZONE
+      } else if (secPercent <= 50) {
+        spawnChance = 0.2; // 50% - 41%: Gefahrenzone (20%)
+      } else if (secPercent <= 60) {
+        spawnChance = 0.0; // 60% - 51%: SAFE ZONE
+      } else if (secPercent <= 70) {
+        spawnChance = 0.08; // 70% - 61%: Gefahrenzone (8%)
+      } else if (secPercent <= 80) {
+        spawnChance = 0.0; // 80% - 71%: SAFE ZONE
+      } else if (secPercent <= 90) {
+        spawnChance = 0.02; // 90% - 81%: Erste Gefahrenzone (2%)
+      } else {
+        spawnChance = 0.0; // 100% - 91%: SAFE ZONE
+      }
+
+      // Zufalls-Check gegen die berechnete Chance
+      if (spawnChance > 0 && Math.random() < spawnChance) {
+        const bossId = worldDef.bossId;
+        ActionEngine.log(
+          `Du warst zu laut... ${Definitions.enemies[bossId].name} hat dich aufgespürt!`,
+          "enemy",
+        );
+        ActionEngine.startCombat([bossId], true);
+        return;
+      }
+    }
+
+    // --- 3. CHAOS-FILTER ---
     const currentChaos = state.crawl.chaos || 0;
 
     const validPoolIds = state.crawl.eventPool.filter((eventId) => {
@@ -49,7 +91,7 @@ export class CrawlEngine {
       return currentChaos >= min && currentChaos <= max;
     });
 
-    // --- 3. KARTEN ZIEHEN ---
+    // --- 4. KARTEN ZIEHEN ---
     const shuffled = [...validPoolIds].sort(() => 0.5 - Math.random());
     const selectedIds = shuffled.slice(0, 3);
     const choices = selectedIds.map((id) => Definitions.events[id]);
