@@ -167,6 +167,7 @@ export const Definitions = {
       name: "Rundumschlag",
       type: "attack",
       damageMult: 0.8,
+      isAoE: true,
       text: "schwingt die Waffe im weiten Bogen",
       apCost: 2,
     },

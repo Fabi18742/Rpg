@@ -26,12 +26,10 @@ export class ResultUI {
     const bgOpacity = isDeath ? "rgba(40, 0, 0, 0.95)" : "rgba(0,0,0,0.9)";
     const borderColor = isDeath ? "#8b0000" : "var(--accent-color)";
     
-    // shadowColor wird nicht mehr benötigt, kann aber stehen bleiben oder gelöscht werden
     const titleColor = isDeath ? "#ff4444" : "var(--accent-color)";
     const textColor = isDeath ? "#ffcccc" : "#fff";
     const buttonStyle = isDeath ? "border-color: #8b0000; color: #ff4444;" : "";
 
-    // HIER WURDE DER BOX-SHADOW ENTFERNT:
     this.container.innerHTML = `
       <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: ${bgOpacity}; z-index: 9999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
         <div style="background: #111; border: 3px solid ${borderColor}; padding: 40px; text-align: center; max-width: 600px; width: 90%;">
