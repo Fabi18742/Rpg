@@ -201,93 +201,119 @@ export class ActionEngine {
 
   static executeAttack(source, sourceIndex = null, skill = null) {
     const state = stateManager.getState();
-    let attacker, defender, attackerName;
+    let attacker, attackerName;
+    let defenders = []; // Neu: Liste aller Ziele für diesen Angriff
 
     const accuracy = skill ? skill.accuracy || 1 : 1;
 
-    // Zielermittlung...
+    // --- 1. ZIELE ERMITTELN ---
     if (source === "player") {
       attacker = state.player;
-      const targetIdx = state.combat.targetIndex;
-      defender = state.combat.enemies[targetIdx];
       attackerName = "Du";
-      if (!defender || defender.hp <= 0) {
-        this.log("Dieses Ziel ist bereits besiegt!", "neutral");
-        return;
+
+      if (skill && skill.isAoE) {
+        // FLÄCHENANGRIFF: Füge alle lebenden Gegner zur Zielliste hinzu
+        state.combat.enemies.forEach((enemy, idx) => {
+          if (enemy.hp > 0) defenders.push({ def: enemy, idx: idx });
+        });
+
+        if (defenders.length === 0) {
+          this.log("Keine Ziele vorhanden!", "neutral");
+          return;
+        }
+      } else {
+        // EINZELANGRIFF
+        const targetIdx = state.combat.targetIndex;
+        const enemy = state.combat.enemies[targetIdx];
+        if (!enemy || enemy.hp <= 0) {
+          this.log("Dieses Ziel ist bereits besiegt!", "neutral");
+          return;
+        }
+        defenders.push({ def: enemy, idx: targetIdx });
       }
     } else {
+      // GEGNER GREIFT AN
       attacker = state.combat.enemies[sourceIndex];
-      defender = state.player;
+      defenders.push({ def: state.player, idx: null });
       attackerName = attacker.name;
     }
 
-    if (Math.random() > accuracy) {
-      this.log(
-        `${attackerName} verfehl${source === "player" ? "st" : "t"} das Ziel!`,
-        "neutral",
-      );
-      if (source === "player") this.checkTurnEnd();
-      return;
-    }
+    // --- 2. FÜR JEDES ZIEL DEN ANGRIFF AUSFÜHREN ---
+    defenders.forEach((targetObj) => {
+      const defender = targetObj.def;
+      const targetIdx = targetObj.idx;
 
-    // Schaden berechnen
-    const attackResult = StatCalculator.calculateAttack(attacker, skill);
-    const defenseResult = StatCalculator.calculateDefense(
-      defender,
-      attackResult.damage,
-      attackResult.damageType,
-    );
-    const finalDamage = defenseResult.damage;
+      const targetName = source === "player" ? defender.name : "";
+      const actionText = skill
+        ? skill.text
+        : source === "player"
+          ? "greifst an"
+          : "greift an";
 
-    // Logging
-    let logMsg = attackResult.isCrit
-      ? " <span style='color: #f87171; font-weight: bold;'>(KRITISCH!)</span>"
-      : "";
+      // Ausweich-Check pro Ziel
+      if (Math.random() > accuracy) {
+        this.log(
+          `${attackerName} verfehl${source === "player" ? "st" : "t"} ${targetName || "das Ziel"}!`,
+          "neutral",
+        );
+        return; // Geht zum nächsten Ziel über (continue)
+      }
 
-    if (defenseResult.effectiveness === "super") {
-      logMsg +=
-        " <span style='color: #22c55e; font-weight: bold; text-shadow: 0 0 5px #052e16;'>[SEHR EFFEKTIV]</span>";
-    } else if (defenseResult.effectiveness === "resist") {
-      logMsg +=
-        " <span style='color: #fb923c; font-weight: bold; text-shadow: 0 0 5px #431407;'>[WIDERSTANDEN]</span>";
-    }
-    const verb = source === "player" ? "triffst" : "trifft";
-    const actionText = skill
-      ? skill.text
-      : source === "player"
-        ? "greifst an"
-        : "greift an";
-    const targetName = source === "player" ? defender.name : "";
-    const type = source === "player" ? "player" : "enemy";
-
-    this.log(
-      `${attackerName} ${source === "player" ? "" : "(" + actionText + ")"} ${verb} ${targetName} für ${finalDamage} Schaden${logMsg}!`,
-      type,
-    );
-
-    // HP Abziehen
-    if (source === "player") {
-      stateManager.modifyEnemyHp(state.combat.targetIndex, -finalDamage);
-    } else {
-      stateManager.modifyPlayerHp(-finalDamage);
-    }
-
-    // Passiert nur, wenn man auch Schaden gemacht hat (> 0)
-    if (
-      attackResult.activeEffects &&
-      attackResult.activeEffects.length > 0 &&
-      finalDamage > 0
-    ) {
-      this.processActiveEffects(
-        attackResult.activeEffects,
-        attacker,
+      // Schaden berechnen
+      const attackResult = StatCalculator.calculateAttack(attacker, skill);
+      const defenseResult = StatCalculator.calculateDefense(
         defender,
-        finalDamage,
-        source === "player",
+        attackResult.damage,
+        attackResult.damageType,
       );
-    }
+      const finalDamage = defenseResult.damage;
 
-    // Runden-Ende & Sieg-Check
+      // Log-Nachricht bauen
+      let logMsg = attackResult.isCrit
+        ? " <span style='color: #f87171; font-weight: bold;'>(KRITISCH!)</span>"
+        : "";
+
+      if (defenseResult.effectiveness === "super") {
+        logMsg +=
+          " <span style='color: #22c55e; font-weight: bold; text-shadow: 0 0 5px #052e16;'>[SEHR EFFEKTIV]</span>";
+      } else if (defenseResult.effectiveness === "resist") {
+        logMsg +=
+          " <span style='color: #fb923c; font-weight: bold; text-shadow: 0 0 5px #431407;'>[WIDERSTANDEN]</span>";
+      }
+
+      const verb = source === "player" ? "triffst" : "trifft";
+      const type = source === "player" ? "player" : "enemy";
+
+      this.log(
+        `${attackerName} ${source === "player" ? "" : "(" + actionText + ")"} ${verb} ${targetName} für ${finalDamage} Schaden${logMsg}!`,
+        type,
+      );
+
+      // HP abziehen
+      if (source === "player") {
+        stateManager.modifyEnemyHp(targetIdx, -finalDamage);
+      } else {
+        stateManager.modifyPlayerHp(-finalDamage);
+      }
+
+      // Effekte (z.B. Lifesteal, Gift) verarbeiten
+      if (
+        attackResult.activeEffects &&
+        attackResult.activeEffects.length > 0 &&
+        finalDamage > 0
+      ) {
+        this.processActiveEffects(
+          attackResult.activeEffects,
+          attacker,
+          defender,
+          finalDamage,
+          source === "player",
+        );
+      }
+    });
+
+    // --- 3. RUNDEN-ENDE & SIEG-CHECK ---
+    // (Wichtig: Das darf nur EINMAL am Ende der Attacke passieren, nicht in der Schleife!)
     if (source === "player") {
       const allDead = state.combat.enemies.every((e) => e.hp <= 0);
       if (allDead) {

@@ -36,9 +36,11 @@ export class ResultUI {
           <h2 style="color: ${titleColor}; font-size: 32px; margin-top: 0; margin-bottom: 30px; text-transform: uppercase; letter-spacing: 2px; ${isDeath ? "text-shadow: 2px 2px 10px #000;" : ""}">
             ${res.title}
           </h2>
-          <div style="font-size: 18px; color: ${textColor}; line-height: 1.5; margin-bottom: 40px; ${isDeath ? "font-style: italic;" : ""}">
+          
+          <div style="font-size: 18px; color: ${textColor}; line-height: 1.5; margin-bottom: 40px; max-height: 50vh; overflow-y: auto; padding-right: 15px; ${isDeath ? "font-style: italic;" : ""}">
             ${messagesHTML}
           </div>
+          
           <button class="game-button" onclick="window.gameAPI.closeResult()" style="width: 250px; margin: 0 auto; min-height: 50px; ${buttonStyle}">WEITER</button>
         </div>
       </div>

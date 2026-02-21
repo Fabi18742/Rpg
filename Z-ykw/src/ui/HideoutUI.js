@@ -1058,6 +1058,13 @@ export class HideoutUI {
         const playerAchs = p.achievements || [];
         let achievementsHTML = "";
 
+        // --- 1. NEU: Scroll-Position VOR dem HTML-Update auslesen ---
+        let achScrollPos = 0;
+        if (this.sceneContent) {
+          const grid = this.sceneContent.querySelector(".achievements-grid");
+          if (grid) achScrollPos = grid.scrollTop;
+        }
+
         Object.values(Definitions.achievements).forEach((ach) => {
           const isUnlocked = playerAchs.includes(ach.id);
 
@@ -1081,7 +1088,6 @@ export class HideoutUI {
           }
         });
 
-        // Overlay für Detail-Ansicht
         let detailOverlayHTML = "";
         if (this.selectedAchievement) {
           const achDef = Definitions.achievements[this.selectedAchievement];
@@ -1092,9 +1098,11 @@ export class HideoutUI {
                             <div style="font-size: 50px; margin-bottom: 20px;">🏆</div>
                             <h2 style="color: var(--accent-color); font-size: 28px; margin-top: 0; margin-bottom: 20px; text-transform: uppercase;">${achDef.name}</h2>
                             <p style="color: #e0e0e0; font-size: 16px; line-height: 1.5; margin-bottom: 30px; font-style: italic;">"${achDef.description}"</p>
+                            
                             <div style="margin-bottom: 30px; padding-top: 20px; border-top: 1px solid #333; color: var(--accent-color); font-size: 16px;">
-                              ${achDef.rewardText}
+                                ✨ ${achDef.rewardText}
                             </div>
+                            
                             <button class="game-button" onclick="window.gameAPI.closeAchievement()" style="width: 200px; margin: 0 auto; min-height: 50px;">Schließen</button>
                         </div>
                     </div>
@@ -1106,12 +1114,17 @@ export class HideoutUI {
             <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 10; display: flex; flex-direction: column; align-items: center; padding-top: 50px;">
                 <h2 style="color: #eee; margin-bottom: 30px; font-size: 32px; text-transform: uppercase; letter-spacing: 2px;">Errungenschaften</h2>
                 
-                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 20px; width: 100%; max-width: 900px; padding: 20px; overflow-y: auto;">
+                <div class="achievements-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 20px; width: 100%; max-width: 900px; padding: 20px; overflow-y: auto;">
                     ${achievementsHTML}
                 </div>
                 
                 ${detailOverlayHTML}
             </div>`;
+
+        requestAnimationFrame(() => {
+          const grid = this.sceneContent.querySelector(".achievements-grid");
+          if (grid && achScrollPos > 0) grid.scrollTop = achScrollPos;
+        });
         break;
 
       default:
