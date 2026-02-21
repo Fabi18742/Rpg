@@ -230,7 +230,7 @@ export const Definitions = {
       description: "Ein dunkler Wald voller Gefahren.",
       baseSecurity: 10,
       bossId: "boss_forest",
-      requiredBoss: null,
+      requiredAchievement: null,
       events: ["combat_goblin", "combat_wolf", "event_shrine"],
     },
     city: {
@@ -239,7 +239,7 @@ export const Definitions = {
       description: "Eine verlassene Stadt voller Diebe und Halsabschneider.",
       baseSecurity: 15,
       bossId: "boss_city",
-      requiredBoss: "boss_forest",
+      requiredAchievement: "boss_forest_kill",
       events: ["combat_goblin", "combat_wolf", "event_shrine"],
     },
     village_story: {
@@ -247,6 +247,7 @@ export const Definitions = {
       type: "story",
       name: "Verlassenes Dorf",
       description: "Folge den Spuren des alten Kults.",
+      requiredAchievement: null,
       baseSecurity: 20,
       bossId: null,
       events: [
@@ -345,9 +346,7 @@ export const Definitions = {
       name: "Der geheime Ausgang",
       text: "Du hast gefunden, wonach du gesucht hast. Ein Pfad führt zurück.",
       securityCost: 0,
-      choices: [
-        { text: "Dungeon verlassen", effect: "exit" },
-      ],
+      choices: [{ text: "Dungeon verlassen", effect: "exit" }],
     },
   },
 
@@ -379,7 +378,7 @@ export const Definitions = {
       description: "Besiege den Großen Wald-Wächter im Düsterwald.",
       triggerType: "boss_kill",
       targetId: "boss_forest",
-      rewardText: "Schaltet Fähigkeit frei: Rundumschlag",
+      rewardText: `Schaltet Fähigkeit frei: Rundumschlag <br> Schaltet Welt 2 Frei`,
       unlocksSkill: "cleave",
     },
     boss_city_kill: {

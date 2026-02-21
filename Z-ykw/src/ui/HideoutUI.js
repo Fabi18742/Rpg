@@ -1022,11 +1022,14 @@ export class HideoutUI {
 
       case "world_selection":
         let worldsHTML = "";
-        const defeated = p.defeatedBosses || [];
+        // NEU: Wir holen uns jetzt die Errungenschaften statt der getöteten Bosse
+        const playerAchievements = p.achievements || [];
 
         Object.values(Definitions.worlds).forEach((world) => {
+          // NEU: Checkt, ob die Welt eine Bedingung hat und ob die ID in den Achievements liegt
           const isUnlocked =
-            !world.requiredBoss || defeated.includes(world.requiredBoss);
+            !world.requiredAchievement ||
+            playerAchievements.includes(world.requiredAchievement);
 
           let footerHTML = "";
           if (world.type === "story") {
@@ -1055,6 +1058,9 @@ export class HideoutUI {
                     </div>
                 `;
           } else {
+            const reqAch = Definitions.achievements[world.requiredAchievement];
+            const reqName = reqAch ? reqAch.name : "Unbekannt";
+
             worldsHTML += `
                     <div style="background: rgba(0,0,0,0.4); border: 2px solid #222; padding: 20px; text-align: center; opacity: 0.6; display: flex; flex-direction: column; justify-content: space-between;">
                         <div>
@@ -1062,7 +1068,7 @@ export class HideoutUI {
                             <p style="color: #444; font-size: 14px; margin-bottom: 15px;">Diese Welt ist noch gesperrt.</p>
                         </div>
                         <div style="border-top: 1px solid #222; padding-top: 10px; font-size: 12px; color: #555;">
-                            Besiege den Boss der vorherigen Welt.
+                            Benötigt: Errungenschaft "${reqName}"
                         </div>
                     </div>
                 `;
