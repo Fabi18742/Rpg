@@ -10,6 +10,7 @@ class StateManager {
     this.state = {
       location: "hideout",
       activeResult: null,
+      confirm: null,
       player: {
         hp: 0,
         maxHp: 0,
@@ -154,6 +155,16 @@ class StateManager {
     this.state.activeResult = null;
     this.notify();
     return context;
+  }
+
+  requestConfirm(actionType, data) {
+    this.state.confirm = { type: actionType, data: data };
+    this.notify();
+  }
+
+  clearConfirm() {
+    this.state.confirm = null;
+    this.notify();
   }
 
   addDefeatedBoss(bossId) {

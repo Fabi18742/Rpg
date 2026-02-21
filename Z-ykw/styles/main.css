@@ -422,12 +422,6 @@ body {
   font-weight: bold;
 }
 
-.adventure-btn {
-  margin-left: auto; /* Push Button nach rechts */
-  background: #2d5a27; /* Wald-Grün */
-  color: white;
-}
-
 .button-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -530,14 +524,14 @@ body {
 
 /* Spezial-Style für den Abenteuer-Button (Boss-Kämpfe) */
 .adventure-btn {
-  background-color: #1a2e1a; /* Dunkelgrün */
-  border-color: #2d5a27;
+  background-color: #3b0a0a; /* Dunkelrot */
+  border-color: #7f1d1d;
 }
 
 .adventure-btn:hover {
-  background-color: #2d5a27;
-  border-color: #69db7c;
-  color: #69db7c;
+  background-color: #7f1d1d;
+  border-color: #ef4444; /* Helles Rot beim Drüberfahren */
+  color: #ef4444;
 }
 
 /* ===== EQUIPMENT SYSTEM (AUSRÜSTUNG) ===== */

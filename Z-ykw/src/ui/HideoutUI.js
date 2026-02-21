@@ -444,7 +444,6 @@ export class HideoutUI {
         }
 
         // --- LINKE SEITE (Verkaufen) ---
-        // --- LINKE SEITE (Verkaufen) ---
         let sellHTML = "";
         sellableList.forEach((entry, index) => {
           const isSelected = sel.side === "sell" && sel.index === index;
@@ -910,7 +909,6 @@ export class HideoutUI {
           allLoot.length > 0
             ? allLoot
                 .map((item) => {
-                  // Prüfen ob ausgerüstet (Waffe oder Rüstung)
                   const isEquipped =
                     p.equipped.weapon?.id === item.id ||
                     p.equipped.armor?.id === item.id;
@@ -918,17 +916,26 @@ export class HideoutUI {
                     ? "var(--accent-color)"
                     : "#fff";
 
-                  // Anzeige-Typ
                   let typeDisplay = item.damage
                     ? "WAFFE"
                     : item.type
                       ? item.type.toUpperCase()
                       : "ITEM";
 
+                  let effectsHTML = "";
+                  if (item.effects && item.effects.length > 0) {
+                    item.effects.forEach((effectId) => {
+                      const effect = Definitions.effects[effectId];
+                      if (effect) {
+                        effectsHTML += `<span class="effect-badge" style="color: #ff9a8a; border: 1px solid #e74c3c; font-size: 10px; padding: 1px 4px; margin-left: 8px; position: relative; top: -2px;">${effect.name}</span>`;
+                      }
+                    });
+                  }
+
                   return `
                 <div class="static-inv-item" style="background: rgba(0,0,0,0.5); border: 1px solid #444; border-left: 4px solid ${isEquipped ? "var(--accent-color)" : "#444"}; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
                     <div style="display:flex; flex-direction:column; gap: 5px;">
-                        <span style="font-weight:bold; font-size: 18px; color:${accentColor}">${item.name}${item.quantity > 1 ? ` <span style="color: #fbbf24; font-size: 14px;">x${item.quantity}</span>` : ""}</span>
+                        <span style="font-weight:bold; font-size: 18px; color:${accentColor}">${item.name}${item.quantity > 1 ? ` <span style="color: #fbbf24; font-size: 14px;">x${item.quantity}</span>` : ""}${effectsHTML}</span>
                         <span style="font-size:12px; color:#888">${typeDisplay}</span>
                     </div>
                     <button class="game-button" onclick="window.gameAPI.useItem('${item.id}')" style="min-height: 40px; padding: 5px 20px; font-size: 14px; width: auto;">
@@ -1095,10 +1102,8 @@ export class HideoutUI {
                     <p style="color: #aaa; margin-bottom: 30px; font-size: 16px; line-height: 1.5;">Bist du sicher, dass du bereit bist? Sobald du diesen Ort betrittst, gibt es kein Zurück mehr, bis du entkommst oder besiegt wirst.</p>
                     <div style="display: flex; gap: 20px; justify-content: center;">
                         <button class="game-button" onclick="window.gameAPI.switchHideoutScreen('world_selection')" style="width: 150px; min-height: 50px;">Abbrechen</button>
-                        <button class="game-button" onclick="window.gameAPI.startWorldCrawl('${worldId}')" style="width: 150px; min-height: 50px;">Betreten</button>
-                    </div>
-                </div>
-            </div>
+                        <button class="game-button" onclick="window.gameAPI.startWorldCrawl('${worldId}')" style="width: 150px; min-height: 50px; border-color: #ef4444; color: #ef4444;">Betreten</button>                </div>
+                   </div>
         `;
         break;
 

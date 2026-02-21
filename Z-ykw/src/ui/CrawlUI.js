@@ -1,4 +1,5 @@
 import { stateManager } from "../engine/StateManager.js";
+import { Definitions } from "../data/definitions.js";
 
 export class CrawlUI {
   constructor(elementId) {
@@ -13,21 +14,20 @@ export class CrawlUI {
       });
     };
 
-    // NEU: Speichert den Inventar-Status im globalen State, damit das kleine HUD-Fenster es merkt
     window.gameAPI.showCrawlInventory = () => {
       this.showingInventory = true;
       if (stateManager.getState().crawl) {
-          stateManager.getState().crawl.showingInventory = true;
+        stateManager.getState().crawl.showingInventory = true;
       }
-      stateManager.notify(); // Sagt allen UIs (auch dem HUD): Bitte neu zeichnen!
+      stateManager.notify();
     };
 
     window.gameAPI.hideCrawlInventory = () => {
       this.showingInventory = false;
       if (stateManager.getState().crawl) {
-          stateManager.getState().crawl.showingInventory = false;
+        stateManager.getState().crawl.showingInventory = false;
       }
-      stateManager.notify(); 
+      stateManager.notify();
     };
 
     stateManager.subscribe((state) => {
@@ -38,10 +38,9 @@ export class CrawlUI {
   render(state) {
     if (!this.container) return;
 
-    // Wenn wir nicht im Dungeon sind, alles unsichtbar machen
     if (state.location !== "dungeon") {
       this.showingInventory = false;
-      if (state.crawl) state.crawl.showingInventory = false; // Status zurücksetzen
+      if (state.crawl) state.crawl.showingInventory = false;
       this.container.style.display = "none";
       if (this.sceneContent && this.wasRenderingEvent) {
         this.sceneContent.innerHTML = "";
@@ -67,7 +66,9 @@ export class CrawlUI {
 
     if (state.crawl.active && !state.combat.active && state.crawl.choices) {
       if (this.sceneContent) {
-        this.sceneContent.innerHTML = this.buildChoicesHTML(state.crawl.choices);
+        this.sceneContent.innerHTML = this.buildChoicesHTML(
+          state.crawl.choices,
+        );
       }
 
       this.container.innerHTML = `
@@ -84,7 +85,7 @@ export class CrawlUI {
 
   renderInventoryScreen(state) {
     this.container.style.display = "block";
-    this.wasRenderingEvent = true; 
+    this.wasRenderingEvent = true;
 
     const p = state.player;
     const allLoot = [...(p.inventory || []), ...(p.weapons || [])];
@@ -103,10 +104,20 @@ export class CrawlUI {
                   ? item.type.toUpperCase()
                   : "ITEM";
 
+              let effectsHTML = "";
+              if (item.effects && item.effects.length > 0) {
+                item.effects.forEach((effectId) => {
+                  const effect = Definitions.effects[effectId];
+                  if (effect) {
+                    effectsHTML += `<span class="effect-badge" style="color: #ff9a8a; border: 1px solid #e74c3c; font-size: 10px; padding: 1px 4px; margin-left: 8px; position: relative; top: -2px;">${effect.name}</span>`;
+                  }
+                });
+              }
+
               return `
             <div class="static-inv-item" style="background: rgba(0,0,0,0.5); border: 1px solid #444; border-left: 4px solid ${isEquipped ? "var(--accent-color)" : "#444"}; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
                 <div style="display:flex; flex-direction:column; gap: 5px;">
-                    <span style="font-weight:bold; font-size: 18px; color:${accentColor}">${item.name}${item.quantity > 1 ? ` <span style="color: #fbbf24; font-size: 14px;">x${item.quantity}</span>` : ""}</span>
+                    <span style="font-weight:bold; font-size: 18px; color:${accentColor}">${item.name}${item.quantity > 1 ? ` <span style="color: #fbbf24; font-size: 14px;">x${item.quantity}</span>` : ""}${effectsHTML}</span>
                     <span style="font-size:12px; color:#888">${typeDisplay}</span>
                 </div>
                 <button class="game-button" onclick="window.gameAPI.useItem('${item.id}')" style="min-height: 40px; padding: 5px 20px; font-size: 14px; width: auto;">

@@ -1,4 +1,4 @@
-// src/main.js
+import { ConfirmUI } from "./ui/ConfirmUI.js";
 import { stateManager } from "./engine/StateManager.js";
 import { ActionEngine } from "./engine/ActionEngine.js";
 import { CrawlEngine } from "./engine/CrawlEngine.js";
@@ -247,9 +247,28 @@ window.gameAPI = {
         `Gekauft: ${qty}x ${Definitions.items[itemId]?.name || Definitions.weapons[itemId]?.name}`,
         "neutral",
       );
-      window.hideoutInstance.shopSelection.qty = 1; // Menge zurücksetzen
+      window.hideoutInstance.shopSelection.qty = 1;
       window.gameAPI.switchHideoutScreen("shop");
     }
+  },
+
+useCombatItem: (event, itemId, itemName) => {
+    if (event.shiftKey) {
+      ActionEngine.useItem(itemId);
+    } else {
+      // API ändert nur den State! Die UI macht den Rest.
+      stateManager.requestConfirm("use_item", { id: itemId, name: itemName });
+    }
+  },
+
+  resolveConfirm: (accepted) => {
+    const req = stateManager.getState().confirm;
+    // Wenn "Nutzen" geklickt wurde, führen wir die Aktion aus
+    if (req && req.type === "use_item" && accepted) {
+      ActionEngine.useItem(req.data.id);
+    }
+    // Danach so oder so das Fenster über den State schließen
+    stateManager.clearConfirm();
   },
 
   cheatXp: (amount) => {
@@ -296,6 +315,7 @@ try {
   window.inventoryWindow = new InventoryUI();
   window.statsWindow = new StatsUI();
   new ResultUI();
+  new ConfirmUI();
 
   // 5. Log-Fenster beim WindowManager registrieren
   const logWindow = document.getElementById("log-window");
