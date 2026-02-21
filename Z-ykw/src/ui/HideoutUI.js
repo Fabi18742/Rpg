@@ -14,6 +14,14 @@ export class HideoutUI {
 
     // API für die Buttons registrieren
     window.gameAPI.switchHideoutScreen = (screen) => this.setScreen(screen);
+    window.gameAPI.selectAchievement = (id) => {
+      this.selectedAchievement = id;
+      this.render(stateManager.getState());
+    };
+    window.gameAPI.closeAchievement = () => {
+      this.selectedAchievement = null;
+      this.render(stateManager.getState());
+    };
 
     stateManager.subscribe((state) => {
       this.render(state);
@@ -205,6 +213,19 @@ export class HideoutUI {
               }
           </div>
       `;
+    } else if (this.activeScreen === "stats") {
+      this.container.innerHTML = `
+          <div class="button-grid hideout-grid">
+              <button class="game-button" onclick="window.gameAPI.switchHideoutScreen('main')">Zurück</button>
+              <div style="visibility: hidden;"></div> <button class="game-button" onclick="window.gameAPI.switchHideoutScreen('achievements')">Errungenschaften</button>
+          </div>
+      `;
+    } else if (this.activeScreen === "achievements") {
+      this.container.innerHTML = `
+          <div class="button-grid single-button">
+              <button class="game-button" onclick="window.gameAPI.switchHideoutScreen('stats')">Zurück</button>
+          </div>
+      `;
     } else if (this.activeScreen === "ritual") {
       const ritualItems = state.ritual.selectedItems;
       const canPerform = ritualItems.length === 6;
@@ -220,7 +241,10 @@ export class HideoutUI {
             </button>
             </div>
     `;
-    } else if (this.activeScreen === "world_selection"|| this.activeScreen === "world_confirm") {
+    } else if (
+      this.activeScreen === "world_selection" ||
+      this.activeScreen === "world_confirm"
+    ) {
       this.container.innerHTML = `
                 <div class="button-grid single-button">
                     <button class="game-button" onclick="window.gameAPI.switchHideoutScreen('main')">Zurück</button>
@@ -509,7 +533,7 @@ export class HideoutUI {
             weaponTooltipHTML = `
                 <div class="equipment-tooltip">
                     <div class="tooltip-title">${equippedWeapon.name}</div>
-                    <div class="tooltip-stat" style="color: #60a5fa;">Typ: ${equippedWeapon.damageType ? equippedWeapon.damageType.toUpperCase() : 'HIEB'}</div>
+                    <div class="tooltip-stat" style="color: #60a5fa;">Typ: ${equippedWeapon.damageType ? equippedWeapon.damageType.toUpperCase() : "HIEB"}</div>
                     <div class="tooltip-stat">Schaden: ${equippedWeapon.damage}</div>
                     ${tooltipEffectsHTML}
                 </div>
@@ -518,7 +542,7 @@ export class HideoutUI {
             weaponTooltipHTML = `
                 <div class="equipment-tooltip">
                     <div class="tooltip-title">${equippedWeapon.name}</div>
-                    <div class="tooltip-stat" style="color: #60a5fa;">Typ: ${equippedWeapon.damageType ? equippedWeapon.damageType.toUpperCase() : 'HIEB'}</div>
+                    <div class="tooltip-stat" style="color: #60a5fa;">Typ: ${equippedWeapon.damageType ? equippedWeapon.damageType.toUpperCase() : "HIEB"}</div>
                     <div class="tooltip-stat">Schaden: ${equippedWeapon.damage}</div>
                 </div>
             `;
@@ -1011,7 +1035,7 @@ export class HideoutUI {
                 </div>
             </div>`;
         break;
-        case "world_confirm":
+      case "world_confirm":
         const worldId = this.selectedWorldId;
         const worldDef = Definitions.worlds[worldId];
         if (!worldDef) return;
@@ -1028,6 +1052,66 @@ export class HideoutUI {
                 </div>
             </div>
         `;
+        break;
+
+      case "achievements":
+        const playerAchs = p.achievements || [];
+        let achievementsHTML = "";
+
+        Object.values(Definitions.achievements).forEach((ach) => {
+          const isUnlocked = playerAchs.includes(ach.id);
+
+          if (isUnlocked) {
+            achievementsHTML += `
+                    <div onclick="window.gameAPI.selectAchievement('${ach.id}')" 
+                         style="background: #111; border: 2px solid var(--accent-color); padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; box-shadow: 0 0 10px rgba(251, 191, 36, 0.2);"
+                         onmouseover="this.style.background='#222';"
+                         onmouseout="this.style.background='#111';">
+                        <div style="font-size: 32px; margin-bottom: 10px;">🏆</div>
+                        <div style="color: var(--accent-color); font-weight: bold; font-size: 14px; text-align: center;">${ach.name}</div>
+                    </div>
+                `;
+          } else {
+            achievementsHTML += `
+                    <div style="background: rgba(0,0,0,0.5); border: 2px solid #333; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0.5;">
+                        <div style="font-size: 32px; margin-bottom: 10px; filter: grayscale(1);">🔒</div>
+                        <div style="color: #666; font-weight: bold; font-size: 14px; text-align: center;">???</div>
+                    </div>
+                `;
+          }
+        });
+
+        // Overlay für Detail-Ansicht
+        let detailOverlayHTML = "";
+        if (this.selectedAchievement) {
+          const achDef = Definitions.achievements[this.selectedAchievement];
+          if (achDef) {
+            detailOverlayHTML = `
+                    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 100; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
+                        <div style="background: #0f0f0f; border: 2px solid var(--accent-color); padding: 40px; text-align: center; max-width: 500px;">
+                            <div style="font-size: 50px; margin-bottom: 20px;">🏆</div>
+                            <h2 style="color: var(--accent-color); font-size: 28px; margin-top: 0; margin-bottom: 20px; text-transform: uppercase;">${achDef.name}</h2>
+                            <p style="color: #e0e0e0; font-size: 16px; line-height: 1.5; margin-bottom: 30px; font-style: italic;">"${achDef.description}"</p>
+                            <div style="margin-bottom: 30px; padding-top: 20px; border-top: 1px solid #333; color: var(--accent-color); font-size: 16px;">
+                              ${achDef.rewardText}
+                            </div>
+                            <button class="game-button" onclick="window.gameAPI.closeAchievement()" style="width: 200px; margin: 0 auto; min-height: 50px;">Schließen</button>
+                        </div>
+                    </div>
+                `;
+          }
+        }
+
+        this.sceneContent.innerHTML = `
+            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 10; display: flex; flex-direction: column; align-items: center; padding-top: 50px;">
+                <h2 style="color: #eee; margin-bottom: 30px; font-size: 32px; text-transform: uppercase; letter-spacing: 2px;">Errungenschaften</h2>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 20px; width: 100%; max-width: 900px; padding: 20px; overflow-y: auto;">
+                    ${achievementsHTML}
+                </div>
+                
+                ${detailOverlayHTML}
+            </div>`;
         break;
 
       default:

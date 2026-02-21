@@ -162,9 +162,17 @@ export const Definitions = {
       text: "verbindet die Wunden",
       apCost: 1,
     },
+    cleave: {
+      id: "cleave",
+      name: "Rundumschlag",
+      type: "attack",
+      damageMult: 0.8,
+      text: "schwingt die Waffe im weiten Bogen",
+      apCost: 2,
+    },
   },
 
-enemies: {
+  enemies: {
     goblin: {
       id: "goblin",
       name: "Frecher Goblin",
@@ -353,6 +361,18 @@ enemies: {
         { id: "rusty_sword", price: 25 },
         { id: "ritual_stone", price: 80 },
       ],
+    },
+  },
+
+  achievements: {
+    boss_forest_kill: {
+      id: "boss_forest_kill",
+      name: "Holzfäller",
+      description: "Besiege den Großen Wald-Wächter im Düsterwald.",
+      triggerType: "boss_kill",
+      targetId: "boss_forest",
+      rewardText: "Schaltet Fähigkeit frei: Rundumschlag",
+      unlocksSkill: "cleave",
     },
   },
 };

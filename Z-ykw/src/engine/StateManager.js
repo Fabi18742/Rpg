@@ -24,6 +24,7 @@ class StateManager {
         equipped: { weapon: null, armor: null },
         skills: ["normal_attack", "heavy_strike", "quick_heal"],
         defeatedBosses: [],
+        achievements: [],
       },
       combat: {
         active: false,
@@ -66,7 +67,8 @@ class StateManager {
       if (!this.state.ritual) {
         this.state.ritual = { selectedItems: [] };
       }
-} else {
+      if (!this.state.player.achievements) this.state.player.achievements = [];
+    } else {
       console.log("✨ Kein Spielstand. Neues Spiel gestartet.");
       this.state.player.maxHp = Definitions.player.baseHp;
       this.state.player.hp = Definitions.player.baseHp;
@@ -76,15 +78,17 @@ class StateManager {
       this.addItem("rusty_sword");
       this.addItem("potion_small");
 
-      const starterSword = this.state.player.weapons.find(w => w.baseId === "rusty_sword" || w.id.startsWith("rusty_sword"));
+      const starterSword = this.state.player.weapons.find(
+        (w) => w.baseId === "rusty_sword" || w.id.startsWith("rusty_sword"),
+      );
       if (starterSword) {
-          this.state.player.equipped.weapon = starterSword;
+        this.state.player.equipped.weapon = starterSword;
       }
 
       this.state.location = "hideout";
       this.state.player.maxAp = Definitions.player.baseActionPoints;
       this.state.player.currentAp = Definitions.player.baseActionPoints;
-      
+
       if (!this.state.player.unlockedSkills) {
         this.state.player.unlockedSkills = [
           "normal_attack",
@@ -163,6 +167,26 @@ class StateManager {
     }
   }
 
+  unlockAchievement(achievementId) {
+    if (!this.state.player.achievements) this.state.player.achievements = [];
+    
+    if (!this.state.player.achievements.includes(achievementId)) {
+      this.state.player.achievements.push(achievementId);
+      
+      const ach = Definitions.achievements[achievementId];
+      if (ach && ach.unlocksSkill) {
+        if (!this.state.player.unlockedSkills.includes(ach.unlocksSkill)) {
+          this.state.player.unlockedSkills.push(ach.unlocksSkill);
+        }
+      }
+      
+      this.saveGame();
+      this.notify();
+      return true;
+    }
+    return false;
+  }
+
   // --- Persistence ---
   saveGame() {
     Storage.save(SAVE_KEY, this.state);
@@ -174,7 +198,7 @@ class StateManager {
   }
   // -------------------
 
-startCombat(enemyIds, isBoss = false, onWinEvent = null) {
+  startCombat(enemyIds, isBoss = false, onWinEvent = null) {
     this.state.combat.active = true;
     this.state.combat.isBoss = isBoss;
     this.state.combat.onWinEvent = onWinEvent;
@@ -225,7 +249,7 @@ startCombat(enemyIds, isBoss = false, onWinEvent = null) {
     }
   }
 
-addItem(itemId, amount = 1) {
+  addItem(itemId, amount = 1) {
     if (
       this.state.location === "dungeon" &&
       this.state.crawl &&
@@ -243,28 +267,29 @@ addItem(itemId, amount = 1) {
     const itemDef = Definitions.items[itemId] || Definitions.weapons[itemId];
     if (itemDef) {
       // --- NEU: Prüfen, ob es Ausrüstung ist ---
-      const isWeapon = itemDef.type === "weapon" || itemDef.damage !== undefined;
+      const isWeapon =
+        itemDef.type === "weapon" || itemDef.damage !== undefined;
       const isArmor = itemDef.type === "armor" || itemDef.defense !== undefined;
 
       if (isWeapon) {
         // Waffen kommen direkt ins Waffen-Array und bekommen eine einzigartige ID (kein Stacking!)
         if (!this.state.player.weapons) this.state.player.weapons = [];
         for (let i = 0; i < amount; i++) {
-          this.state.player.weapons.push({ 
-              ...itemDef,
-              id: `${itemId}_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-              baseId: itemId,
-              quantity: 1 
+          this.state.player.weapons.push({
+            ...itemDef,
+            id: `${itemId}_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+            baseId: itemId,
+            quantity: 1,
           });
         }
       } else if (isArmor) {
         // Rüstungen kommen ins Inventar, bekommen aber ebenfalls eine einzigartige ID
         for (let i = 0; i < amount; i++) {
-          this.state.player.inventory.push({ 
-              ...itemDef, 
-              id: `${itemId}_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-              baseId: itemId,
-              quantity: 1 
+          this.state.player.inventory.push({
+            ...itemDef,
+            id: `${itemId}_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+            baseId: itemId,
+            quantity: 1,
           });
         }
       } else {
@@ -405,11 +430,11 @@ addItem(itemId, amount = 1) {
 
     if (stat === "strength") this.state.player.stats.strength += 1;
     if (stat === "defense") this.state.player.stats.defense += 1;
-    if (stat === 'critChance') {
-        if (this.state.player.stats.critChance === undefined) {
-            this.state.player.stats.critChance = 5; // Standardwert laut definitions.js
-        }
-        this.state.player.stats.critChance += 1;
+    if (stat === "critChance") {
+      if (this.state.player.stats.critChance === undefined) {
+        this.state.player.stats.critChance = 5; // Standardwert laut definitions.js
+      }
+      this.state.player.stats.critChance += 1;
     }
     if (stat === "maxHp") {
       this.state.player.maxHp += 10;
@@ -514,13 +539,15 @@ addItem(itemId, amount = 1) {
   addEventToPool(eventId) {
     if (!this.state.crawl.active) return;
     if (!this.state.crawl.eventPool.includes(eventId)) {
-        this.state.crawl.eventPool.push(eventId);
+      this.state.crawl.eventPool.push(eventId);
     }
   }
 
   removeEventFromPool(eventId) {
     if (!this.state.crawl.active) return;
-    this.state.crawl.eventPool = this.state.crawl.eventPool.filter(id => id !== eventId);
+    this.state.crawl.eventPool = this.state.crawl.eventPool.filter(
+      (id) => id !== eventId,
+    );
   }
 
   updateCrawlStats(securityChange, chaosChange) {

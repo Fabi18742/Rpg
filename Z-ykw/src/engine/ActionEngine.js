@@ -240,12 +240,16 @@ export class ActionEngine {
     const finalDamage = defenseResult.damage;
 
     // Logging
-let logMsg = attackResult.isCrit ? " <span style='color: #f87171; font-weight: bold;'>(KRITISCH!)</span>" : "";
-    
+    let logMsg = attackResult.isCrit
+      ? " <span style='color: #f87171; font-weight: bold;'>(KRITISCH!)</span>"
+      : "";
+
     if (defenseResult.effectiveness === "super") {
-        logMsg += " <span style='color: #22c55e; font-weight: bold; text-shadow: 0 0 5px #052e16;'>[SEHR EFFEKTIV]</span>";
+      logMsg +=
+        " <span style='color: #22c55e; font-weight: bold; text-shadow: 0 0 5px #052e16;'>[SEHR EFFEKTIV]</span>";
     } else if (defenseResult.effectiveness === "resist") {
-        logMsg += " <span style='color: #fb923c; font-weight: bold; text-shadow: 0 0 5px #431407;'>[WIDERSTANDEN]</span>";
+      logMsg +=
+        " <span style='color: #fb923c; font-weight: bold; text-shadow: 0 0 5px #431407;'>[WIDERSTANDEN]</span>";
     }
     const verb = source === "player" ? "triffst" : "trifft";
     const actionText = skill
@@ -483,16 +487,35 @@ let logMsg = attackResult.isCrit ? " <span style='color: #f87171; font-weight: b
     // BOSS-CHECK & DUNGEON-ENDE
     if (state.crawl && state.crawl.active && state.combat.isBoss) {
       const worldDef = Definitions.worlds[state.crawl.worldId];
-      if (worldDef && worldDef.bossId) {
-        stateManager.addDefeatedBoss(worldDef.bossId);
-      }
-      const loot = state.crawl.lootTrack;
+      const loot = state.crawl.lootTrack; // Loot direkt hier oben holen
+
+      // 1. ZUERST die Nachrichten-Liste erstellen!
       const bossMessages = [
         `<div style="font-size: 1.1em; margin-bottom: 20px;">Du hast den Level-Boss besiegt und entkommst mit deiner Beute!</div>`,
         `<div style="border-top: 1px solid #444; margin-bottom: 10px;"></div>`,
         `<div style="color: #aaa; font-size: 0.9em; text-transform: uppercase; margin-bottom: 10px;">Gesamte Ausbeute dieses Dungeons:</div>`,
       ];
 
+      // 2. DANN Boss speichern und Achievements checken
+      if (worldDef && worldDef.bossId) {
+        stateManager.addDefeatedBoss(worldDef.bossId);
+
+        Object.values(Definitions.achievements).forEach((ach) => {
+          if (
+            ach.triggerType === "boss_kill" &&
+            ach.targetId === worldDef.bossId
+          ) {
+            if (stateManager.unlockAchievement(ach.id)) {
+              // Jetzt existiert bossMessages und wir können fehlerfrei pushen!
+              bossMessages.push(
+                `<span style="color: var(--accent-color); font-weight: bold; margin-top: 10px; display: block;">🏆 Errungenschaft: ${ach.name} freigeschaltet!</span>`,
+              );
+            }
+          }
+        });
+      }
+
+      // 3. Loot an die Nachrichten anhängen
       if (loot.xp > 0)
         bossMessages.push(
           `<span style="color: #a855f7; font-weight: bold;">Erfahrung: +${loot.xp} XP</span>`,
