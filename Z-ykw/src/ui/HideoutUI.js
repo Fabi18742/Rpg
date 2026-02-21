@@ -9,7 +9,7 @@ export class HideoutUI {
     this.sceneContent = document.getElementById("scene-content");
 
     this.shopSelection = { side: "buy", index: 0, qty: 1 };
-
+    this.selectedMerchantId = "traveling_merchant";
     this.activeScreen = "main";
 
     // API für die Buttons registrieren
@@ -21,6 +21,11 @@ export class HideoutUI {
     window.gameAPI.closeAchievement = () => {
       this.selectedAchievement = null;
       this.render(stateManager.getState());
+    };
+    window.gameAPI.openShop = (merchantId) => {
+      this.selectedMerchantId = merchantId;
+      this.shopSelection = { side: "buy", index: 0, qty: 1 };
+      this.setScreen("shop");
     };
 
     stateManager.subscribe((state) => {
@@ -70,7 +75,7 @@ export class HideoutUI {
       this.container.innerHTML = `
                 <div class="button-grid hideout-grid">
                     <button class="game-button" onclick="window.gameAPI.switchHideoutScreen('equipment')">Ausrüstung</button>
-                    <button class="game-button" onclick="window.gameAPI.switchHideoutScreen('shop')">Shop</button>
+                    <button class="game-button" onclick="window.gameAPI.switchHideoutScreen('merchant_selection')">Shop</button>
                     <button class="game-button" onclick="window.gameAPI.switchHideoutScreen('stats')">Stats${tokenBadge}</button>
                     <button class="game-button" onclick="window.gameAPI.switchHideoutScreen('inventory')">Inventar</button>
                     <button class="game-button" onclick="window.gameAPI.switchHideoutScreen('ritual')">Das Ritual</button>
@@ -79,7 +84,9 @@ export class HideoutUI {
             `;
     } else if (this.activeScreen === "shop") {
       const p = state.player;
-      const merchant = Definitions.merchants.traveling_merchant;
+      const merchant =
+        Definitions.merchants[this.selectedMerchantId] ||
+        Definitions.merchants.traveling_merchant;
       const sel = this.shopSelection;
 
       let itemDef = null;
@@ -187,7 +194,7 @@ export class HideoutUI {
 
       this.container.innerHTML = `
           <div class="button-grid hideout-grid">
-              <button class="game-button" onclick="window.gameAPI.switchHideoutScreen('main')">Zurück</button>
+              <button class="game-button" onclick="window.gameAPI.switchHideoutScreen('merchant_selection')">Zurück</button>
               
               ${
                 itemDef
@@ -211,6 +218,12 @@ export class HideoutUI {
               `
                   : '<div style="background: #000; border: 2px solid #444; display: flex; justify-content:center; align-items:center; color:#888; grid-column: 2 / 4; grid-row: 1 / 3;">Bitte wähle links oder rechts ein Item aus.</div>'
               }
+          </div>
+      `;
+    } else if (this.activeScreen === "merchant_selection") {
+      this.container.innerHTML = `
+          <div class="button-grid single-button">
+              <button class="game-button" onclick="window.gameAPI.switchHideoutScreen('main')">Zurück zum Versteck</button>
           </div>
       `;
     } else if (this.activeScreen === "stats") {
@@ -354,9 +367,38 @@ export class HideoutUI {
                 </div>
             </div>`;
         break;
+      case "merchant_selection":
+        const unlockedMerchants = p.unlockedMerchants || ["traveling_merchant"];
+        let merchantsHTML = "";
+
+        unlockedMerchants.forEach((mId) => {
+          const mDef = Definitions.merchants[mId];
+          if (mDef) {
+            merchantsHTML += `
+                    <div style="background: rgba(0,0,0,0.8); border: 2px solid #444; padding: 30px 20px; text-align: center; cursor: pointer; transition: all 0.2s;"
+                         onclick="window.gameAPI.openShop('${mId}')"
+                         onmouseover="this.style.background='#1a1a1a'; this.style.borderColor='var(--accent-color)'" 
+                         onmouseout="this.style.background='rgba(0,0,0,0.8)'; this.style.borderColor='#444'">
+                        <h3 style="color: var(--accent-color); margin: 0 0 10px 0; font-size: 24px;">${mDef.name}</h3>
+                        <p style="color: #888; font-size: 14px; margin-bottom: 0;">Waren ansehen</p>
+                    </div>
+                `;
+          }
+        });
+
+        this.sceneContent.innerHTML = `
+            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 10; display: flex; flex-direction: column; align-items: center; padding-top: 50px;">
+                <h2 style="color: #eee; margin-bottom: 30px; font-size: 32px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 2px 2px 4px #000;">Der Marktplatz</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; width: 100%; max-width: 1000px; padding: 20px;">
+                    ${merchantsHTML}
+                </div>
+            </div>`;
+        break;
       case "shop":
         const pShop = state.player;
-        const merchant = Definitions.merchants.traveling_merchant;
+        const merchant =
+          Definitions.merchants[this.selectedMerchantId] ||
+          Definitions.merchants.traveling_merchant;
         const sel = this.shopSelection;
         let leftScrollPos = 0;
         let rightScrollPos = 0;
@@ -1100,7 +1142,7 @@ export class HideoutUI {
                             <p style="color: #e0e0e0; font-size: 16px; line-height: 1.5; margin-bottom: 30px; font-style: italic;">"${achDef.description}"</p>
                             
                             <div style="margin-bottom: 30px; padding-top: 20px; border-top: 1px solid #333; color: var(--accent-color); font-size: 16px;">
-                                ✨ ${achDef.rewardText}
+                              ${achDef.rewardText}
                             </div>
                             
                             <button class="game-button" onclick="window.gameAPI.closeAchievement()" style="width: 200px; margin: 0 auto; min-height: 50px;">Schließen</button>

@@ -169,17 +169,41 @@ class StateManager {
 
   unlockAchievement(achievementId) {
     if (!this.state.player.achievements) this.state.player.achievements = [];
-    
+
+    if (!this.state.player.unlockedSkills) {
+      this.state.player.unlockedSkills = [
+        "normal_attack",
+        "heavy_strike",
+        "quick_heal",
+      ];
+    }
+
+    if (!this.state.player.unlockedMerchants) {
+      this.state.player.unlockedMerchants = ["traveling_merchant"];
+    }
+
     if (!this.state.player.achievements.includes(achievementId)) {
       this.state.player.achievements.push(achievementId);
-      
+
       const ach = Definitions.achievements[achievementId];
-      if (ach && ach.unlocksSkill) {
-        if (!this.state.player.unlockedSkills.includes(ach.unlocksSkill)) {
+      if (ach) {
+        // 1. Skill freischalten (wenn vorhanden)
+        if (
+          ach.unlocksSkill &&
+          !this.state.player.unlockedSkills.includes(ach.unlocksSkill)
+        ) {
           this.state.player.unlockedSkills.push(ach.unlocksSkill);
         }
+
+        // 2. Händler freischalten (wenn vorhanden) - Jetzt völlig unabhängig vom Skill!
+        if (
+          ach.unlocksMerchant &&
+          !this.state.player.unlockedMerchants.includes(ach.unlocksMerchant)
+        ) {
+          this.state.player.unlockedMerchants.push(ach.unlocksMerchant);
+        }
       }
-      
+
       this.saveGame();
       this.notify();
       return true;

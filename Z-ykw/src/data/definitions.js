@@ -330,7 +330,6 @@ export const Definitions = {
       ],
     },
 
-    //(Kampf)
     combat_village_stranger: {
       id: "combat_village_stranger",
       type: "combat",
@@ -340,7 +339,6 @@ export const Definitions = {
       onWinEvent: "story_village_exit",
     },
 
-    //ENDE
     story_village_exit: {
       id: "story_village_exit",
       type: "choice",
@@ -348,7 +346,7 @@ export const Definitions = {
       text: "Du hast gefunden, wonach du gesucht hast. Ein Pfad führt zurück.",
       securityCost: 0,
       choices: [
-        { text: "Dungeon verlassen", effect: "exit" }, // Neues Keyword!
+        { text: "Dungeon verlassen", effect: "exit" },
       ],
     },
   },
@@ -361,6 +359,15 @@ export const Definitions = {
         { id: "potion_small", price: 10 },
         { id: "rusty_sword", price: 25 },
         { id: "ritual_stone", price: 80 },
+      ],
+    },
+    mystic_merchant: {
+      id: "mystic_merchant",
+      name: "Der Kult-Apotheker",
+      offers: [
+        { id: "potion_small", price: 8 },
+        { id: "ritual_shard", price: 40 },
+        { id: "ritual_essence", price: 90 },
       ],
     },
   },
@@ -381,7 +388,8 @@ export const Definitions = {
       description: "Besiege den Boss in der Stadt.",
       triggerType: "boss_kill",
       targetId: "boss_city",
-      rewardText: "Schaltet Fähigkeit glücklich zu sein frei",
+      rewardText: "Schaltet einen neuen Händler frei",
+      unlocksMerchant: "mystic_merchant",
     },
   },
 };
