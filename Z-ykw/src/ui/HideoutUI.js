@@ -27,6 +27,14 @@ export class HideoutUI {
       this.shopSelection = { side: "buy", index: 0, qty: 1 };
       this.setScreen("shop");
     };
+    window.gameAPI.showItemDetails = (itemId) => {
+      this.selectedInventoryItem = itemId;
+      this.render(stateManager.getState());
+    };
+    window.gameAPI.closeItemDetails = () => {
+      this.selectedInventoryItem = null;
+      this.render(stateManager.getState());
+    };
 
     stateManager.subscribe((state) => {
       this.render(state);
@@ -205,7 +213,6 @@ export class HideoutUI {
                       <div style="width: 50px; height: 50px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); flex-shrink: 0;"></div>
                       <div>
                           <div style="font-size: 18px; font-weight: bold; color: var(--accent-color); margin-bottom: 5px;">${name}</div>
-                          <div style="font-size: 14px; color: var(--text-color);">${desc}</div>
                       </div>
                   </div>
 
@@ -902,7 +909,7 @@ export class HideoutUI {
         `;
         break;
 
-      case "inventory":
+      case "inventory": {
         const allLoot = [...(p.inventory || []), ...(p.weapons || [])];
 
         const itemsHTML =
@@ -915,7 +922,6 @@ export class HideoutUI {
                   const accentColor = isEquipped
                     ? "var(--accent-color)"
                     : "#fff";
-
                   let typeDisplay = item.damage
                     ? "WAFFE"
                     : item.type
@@ -933,12 +939,12 @@ export class HideoutUI {
                   }
 
                   return `
-                <div class="static-inv-item" style="background: rgba(0,0,0,0.5); border: 1px solid #444; border-left: 4px solid ${isEquipped ? "var(--accent-color)" : "#444"}; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
+                <div class="static-inv-item" onclick="window.gameAPI.showItemDetails('${item.id}')" style="background: rgba(0,0,0,0.5); border: 1px solid #444; border-left: 4px solid ${isEquipped ? "var(--accent-color)" : "#444"}; padding: 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='rgba(0,0,0,0.5)'">
                     <div style="display:flex; flex-direction:column; gap: 5px;">
                         <span style="font-weight:bold; font-size: 18px; color:${accentColor}">${item.name}${item.quantity > 1 ? ` <span style="color: #fbbf24; font-size: 14px;">x${item.quantity}</span>` : ""}${effectsHTML}</span>
                         <span style="font-size:12px; color:#888">${typeDisplay}</span>
                     </div>
-                    <button class="game-button" onclick="window.gameAPI.useItem('${item.id}')" style="min-height: 40px; padding: 5px 20px; font-size: 14px; width: auto;">
+                    <button class="game-button" onclick="event.stopPropagation(); window.gameAPI.useItem('${item.id}')" style="min-height: 40px; padding: 5px 20px; font-size: 14px; width: auto;">
                         ${isEquipped ? "Ablegen" : item.damage ? "Ausrüsten" : "Nutzen"}
                     </button>
                 </div>`;
@@ -946,14 +952,37 @@ export class HideoutUI {
                 .join("")
             : "<p style='text-align:center; color:#888; font-size: 18px; grid-column: span 2; margin-top: 40px;'>Dein Inventar ist leer.</p>";
 
+        let detailOverlayHTML = "";
+        if (this.selectedInventoryItem) {
+          const selItem = allLoot.find(
+            (i) => i.id === this.selectedInventoryItem,
+          );
+          if (selItem) {
+            const desc =
+              selItem.description ||
+              "Ein gewöhnlicher Gegenstand ohne besondere Eigenschaften.";
+            detailOverlayHTML = `
+                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px);" onclick="window.gameAPI.closeItemDetails()">
+                    <div style="background: #0f0f0f; border: 2px solid var(--accent-color); padding: 30px; text-align: center; max-width: 450px; cursor: default; box-shadow: 0 0 20px rgba(0,0,0,0.8);" onclick="event.stopPropagation()">
+                        <h2 style="color: var(--accent-color); font-size: 24px; margin-top: 0; margin-bottom: 20px; text-transform: uppercase;">${selItem.name}</h2>
+                        <p style="color: #ccc; font-size: 16px; line-height: 1.6; font-style: italic; margin-bottom: 30px;">"${desc}"</p>
+                        <button class="game-button" onclick="window.gameAPI.closeItemDetails()" style="width: 150px; min-height: 40px; margin: 0 auto;">Schließen</button>
+                    </div>
+                </div>
+            `;
+          }
+        }
+
         this.sceneContent.innerHTML = `
             <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 10; display: flex; flex-direction: column; align-items: center; padding-top: 50px;">
                 <h2 style="color: var(--accent-color); margin-bottom: 30px; margin-top: 0;">Inventar</h2>
                 <div class="static-inventory-grid" style="width: 100%; max-width: 1000px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; overflow-y: auto; padding-right: 15px; margin-bottom: 20px;">
                     ${itemsHTML}
                 </div>
+                ${detailOverlayHTML}
             </div>`;
         break;
+      }
 
       case "ritual":
         const ritualItems = state.ritual.selectedItems;

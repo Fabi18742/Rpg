@@ -23,7 +23,7 @@ class StateManager {
         inventory: [],
         weapons: [],
         equipped: { weapon: null, armor: null },
-        skills: ["normal_attack", "heavy_strike", "quick_heal"],
+        skills: ["normal_attack", "heavy_strike"],
         defeatedBosses: [],
         achievements: [],
       },
@@ -76,11 +76,13 @@ class StateManager {
       this.state.player.stats = { ...Definitions.player.baseStats };
 
       // Start-Items ins Inventar/Waffen-Array legen
-      this.addItem("rusty_sword");
-      this.addItem("potion_small");
+      this.addItem("zerbrochene_flasche");
+      this.addItem("stein_in_socke");
+      this.addItem("heil_trank_klein");
+      this.addItem("angeschliffenes_hufeisen");
 
       const starterSword = this.state.player.weapons.find(
-        (w) => w.baseId === "rusty_sword" || w.id.startsWith("rusty_sword"),
+        (w) => w.baseId === "zerbrochene_flasche" || w.id.startsWith("zerbrochene_flasche"),
       );
       if (starterSword) {
         this.state.player.equipped.weapon = starterSword;
@@ -94,9 +96,9 @@ class StateManager {
         this.state.player.unlockedSkills = [
           "normal_attack",
           "heavy_strike",
-          "quick_heal",
         ];
       }
+      this.saveGame();
     }
 
     if (!this.state.player.maxAp) {
@@ -185,7 +187,6 @@ class StateManager {
       this.state.player.unlockedSkills = [
         "normal_attack",
         "heavy_strike",
-        "quick_heal",
       ];
     }
 
