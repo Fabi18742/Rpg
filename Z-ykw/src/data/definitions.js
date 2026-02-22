@@ -304,7 +304,6 @@ export const Definitions = {
         {
           text: "Kampf beginnen",
           effect: "none",
-          nextEvent: "combat_boss_revisionist",
         },
       ],
     },
@@ -318,7 +317,6 @@ export const Definitions = {
         {
           text: "Kampf beginnen",
           effect: "none",
-          nextEvent: "combat_boss_revisionist",
         },
       ],
     },
@@ -332,7 +330,6 @@ export const Definitions = {
         {
           text: "Kampf beginnen",
           effect: "none",
-          nextEvent: "combat_boss_revisionist",
         },
       ],
     },
@@ -346,7 +343,6 @@ export const Definitions = {
         {
           text: "Kampf beginnen",
           effect: "none",
-          nextEvent: "combat_boss_revisionist",
         },
       ],
     },

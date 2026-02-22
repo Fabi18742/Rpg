@@ -9,7 +9,7 @@ export class CrawlEngine {
     this.generateOptions();
   }
 
-static generateOptions() {
+  static generateOptions() {
     const state = stateManager.getState();
     if (!state.crawl.active) return;
 
@@ -37,7 +37,7 @@ static generateOptions() {
           return; // WICHTIG: Hier abbrechen, keine Karten generieren!
         }
       }
-      
+
       // Wenn der Pool leer ist (die Story ist zu Ende), verlässt der Spieler den Dungeon automatisch
       this.processDungeonExit(state);
       return;
@@ -51,25 +51,25 @@ static generateOptions() {
     let spawnChance = 0;
 
     if (secPercent <= 10) {
-      spawnChance = 0.75; 
+      spawnChance = 0.75;
     } else if (secPercent <= 20) {
-      spawnChance = 0.0; 
+      spawnChance = 0.0;
     } else if (secPercent <= 30) {
-      spawnChance = 0.4; 
+      spawnChance = 0.4;
     } else if (secPercent <= 40) {
-      spawnChance = 0.0; 
+      spawnChance = 0.0;
     } else if (secPercent <= 50) {
-      spawnChance = 0.2; 
+      spawnChance = 0.2;
     } else if (secPercent <= 60) {
-      spawnChance = 0.0; 
+      spawnChance = 0.0;
     } else if (secPercent <= 70) {
-      spawnChance = 0.08; 
+      spawnChance = 0.08;
     } else if (secPercent <= 80) {
-      spawnChance = 0.0; 
+      spawnChance = 0.0;
     } else if (secPercent <= 90) {
-      spawnChance = 0.02; 
+      spawnChance = 0.02;
     } else {
-      spawnChance = 0.0; 
+      spawnChance = 0.0;
     }
 
     if (spawnChance > 0 && Math.random() < spawnChance) {
@@ -90,7 +90,8 @@ static generateOptions() {
       if (!eventDef) return false;
 
       const min = eventDef.minChaos || 0;
-      const max = eventDef.maxChaos !== undefined ? eventDef.maxChaos : Infinity;
+      const max =
+        eventDef.maxChaos !== undefined ? eventDef.maxChaos : Infinity;
 
       return currentChaos >= min && currentChaos <= max;
     });
@@ -176,7 +177,7 @@ static generateOptions() {
     }
   }
 
-static resolveChoice(choiceIndex) {
+  static resolveChoice(choiceIndex) {
     const state = stateManager.getState();
     const event = state.crawl.activeEvent;
     if (!event || !event.choices || !event.choices[choiceIndex]) return;
@@ -213,7 +214,18 @@ static resolveChoice(choiceIndex) {
       const effectType = parts[0];
       const amount = parseInt(parts[1]) || 0;
 
-      if (effectType === "heal") {
+      if (effectType === "death") {
+        stateManager.modifyPlayerHp(-state.player.maxHp); 
+        
+        const deathMessages = [
+          `<span style="color: #ff4444; font-weight: bold; font-size: 1.2em;">Du bist in eine tödliche Falle getappt!</span>`,
+          `Dein Abenteuer endet hier...`
+        ];
+        
+        stateManager.setResult("DU BIST GESTORBEN", deathMessages, "combat_loss");
+        return;
+      } 
+      else if (effectType === "heal") {
         stateManager.modifyPlayerHp(amount);
         messages.push(`<span style="color: #22c55e; font-weight: bold;">+${amount} HP geheilt</span>`);
       } else if (effectType === "damage") {
@@ -242,13 +254,13 @@ static resolveChoice(choiceIndex) {
     }
   }
 
-static processDungeonExit(state) {
+  static processDungeonExit(state) {
     const worldDef = Definitions.worlds[state.crawl.worldId];
     const isStory = worldDef && worldDef.type === "story";
 
     if (isStory) {
       const exitMessages = [
-        `<div style="font-size: 1.2em; margin-bottom: 20px; color: var(--accent-color); font-style: italic;">Du hast dieses Kapitel deiner Reise abgeschlossen.</div>`
+        `<div style="font-size: 1.2em; margin-bottom: 20px; color: var(--accent-color); font-style: italic;">Du hast dieses Kapitel deiner Reise abgeschlossen.</div>`,
       ];
       stateManager.setResult("GESCHICHTE BEENDET", exitMessages, "story_exit");
       return;
