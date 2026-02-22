@@ -68,6 +68,7 @@ export class CrawlUI {
       if (this.sceneContent) {
         this.sceneContent.innerHTML = this.buildChoicesHTML(
           state.crawl.choices,
+          state.crawl.worldId
         );
       }
 
@@ -177,7 +178,10 @@ export class CrawlUI {
         `;
   }
 
-  buildChoicesHTML(choices) {
+buildChoicesHTML(choices, worldId) {
+    const worldDef = Definitions.worlds[worldId];
+    const isStory = worldDef && worldDef.type === "story";
+
     return `
             <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center;">
                 <h2 style="color: var(--accent-color); margin-bottom: 40px; font-size: 32px; text-transform: uppercase; letter-spacing: 2px;">Wähle deinen Weg</h2>
@@ -193,7 +197,7 @@ export class CrawlUI {
                                 <div style="color: var(--accent-color); font-weight: bold; font-size: 18px; margin-bottom: 15px;">${event.name || "Ereignis"}</div>
                                 <div style="color: #aaa; font-size: 14px; line-height: 1.5;">${event.text.substring(0, 80)}...</div>
                             </div>
-                            <div style="font-size: 12px; color: #ff6b6b; border-top: 1px solid #333; padding-top: 15px; margin-top: 15px; font-weight: bold; ${event.securityCost ? "" : "display:none;"}">
+                            <div style="font-size: 12px; color: #ff6b6b; border-top: 1px solid #333; padding-top: 15px; margin-top: 15px; font-weight: bold; ${(!isStory && event.securityCost) ? "" : "display:none;"}">
                                Verlust: -${event.securityCost || 0}% Sicherheit
                             </div>
                         </div>

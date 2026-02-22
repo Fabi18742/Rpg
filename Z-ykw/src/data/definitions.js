@@ -164,9 +164,8 @@ export const Definitions = {
       name: 'Düsterwald',
       description: 'Ein dunkler Wald voller Gefahren.',
       type: 'story',
-      baseSecurity: 100,
       requiredAchievement: null,
-      events: ['test'],
+      events: ['story_forest_01_entrance'],
     },
     boss_forest: {
       id: "boss_forest",
@@ -181,6 +180,178 @@ export const Definitions = {
 
   //================================================ Events
   events: {
+    //---------------------------------------------- Forest Story Events
+    story_forest_01_entrance: {
+      id: 'story_forest_01_entrance',
+      name: 'Der unnatürliche Wald',
+      text: 'Der Wald begrüßt dich nicht mit Vogelgesang, sondern mit einer bedrückenden Stille. Die Bäume wachsen hier nicht wild. Jemand hat das Unterholz mit brutaler Gewalt gezwungen, sich einem unsichtbaren Raster zu beugen. Vor dir gabelt sich der modrige Pfad. Zu deiner Linken ist der Boden mit perfekten, hauchdünnen Holzspänen bedeckt. Zu deiner Rechten spannt sich eine straffe Schnur aus getrockneten Därmen genau auf Kniehöhe in das Dickicht.',
+      type: 'choice',
+      choices: [
+        {
+          text: "Folge den Holzspänen.",
+          effect: "none",
+          nextEvent: "story_forest_02_shavings",
+        },
+        {
+          text: "Folge der Darmschnur.",
+          effect: "none",
+          nextEvent: "story_forest_03_gutstring",
+        },
+      ],
+    },
+
+    story_forest_02_shavings: {
+      id: 'story_forest_02_shavings',
+      name: 'Der verworfene Rest',
+      text: 'Deine Stiefel zerdrücken die makellosen Späne mit einem Geräusch, das in der Stille wie Knochenbrechen klingt. Im Gestrüpp findest du einen ledernen Stiefel. Er ist nicht leer – ein sauber abgetrennter Fuß steckt noch darin. Ein kleines Pergament ist mit einem massiven, goldenen Nagel an die Ferse geheftet: "Asymmetrie des Knöchels. Unverwertbares Gefälle. Aussortiert."',
+      type: 'choice',
+      choices: [
+        {
+          text: "Den goldenen Nagel herausziehen und einstecken.",
+          effect: "none",
+          nextEvent: "story_forest_04_boot",
+        },
+        {
+          text: "Den Stiefel ignorieren und tiefer in den Wald gehen.",
+          effect: "none",
+          nextEvent: "story_forest_05_tree",
+        },
+      ],
+    },
+
+    story_forest_03_gutstring: {
+      id: 'story_forest_03_gutstring',
+      name: 'Die Vermessung der Leere',
+      text: 'Du folgst der straffen Darmschnur. Sie weicht keinem Hindernis aus; wo ein massiver Fels im Weg lag, wurde eine exakte, quadratische Schneise hineingeschlagen. Am Ende der Schnur hängt ein toter Plünderer, mit einem Eisennagel an einen Baumstamm fixiert. Ihm wurde der Unterkiefer entfernt. Auf seiner Stirn steht in feiner Schrift: "Kieferstellung mangelhaft. Platzverschwendung."',
+      type: 'choice',
+      choices: [
+        {
+          text: "Die Taschen des Toten durchsuchen.",
+          effect: "none",
+          nextEvent: "story_forest_06_thief",
+        },
+        {
+          text: "Einen weiten Bogen um die Leiche machen.",
+          effect: "none",
+          nextEvent: "story_forest_05_tree",
+        },
+      ],
+    },
+
+    story_forest_04_boot: {
+      id: 'story_forest_04_boot',
+      name: 'Das blutende Gold',
+      text: 'Als du den Nagel herausziehst, tropft keine Fäulnis aus der Wunde, sondern ein nach Pinien duftender Holzleim. Das Gold in deiner Tasche ist schwer und beruhigend – in dieser Welt nimmt man, was man kriegen kann. Plötzlich durchbricht ein rhythmisches, schabendes Geräusch die Stille. Jemand arbeitet ganz in der Nähe.',
+      type: 'choice',
+      choices: [
+        {
+          text: "Mit gezogener Waffe auf das Geräusch zustürmen.",
+          effect: "none",
+          nextEvent: "story_forest_07_end_greedy",
+        },
+        {
+          text: "Geduckt und leise näher schleichen.",
+          effect: "none",
+          nextEvent: "story_forest_08_end_cautious",
+        },
+      ],
+    },
+
+    story_forest_05_tree: {
+      id: 'story_forest_05_tree',
+      name: 'Die absolute Symmetrie',
+      text: 'Der Wald verändert sich. Die Rinde der Bäume hier wurde nicht einfach abgeschält, sie wurde so lange gehobelt, bis die Stämme perfekte, quadratische Säulen bildeten. Der Geruch von frischem Sägemehl und altem Blut ist hier so dicht, dass er fast auf der Zunge brennt. Ein monotones Klopfen hallt durch die quadratischen Baumreihen.',
+      type: 'choice',
+      choices: [
+        {
+          text: "Vorsichtig von Deckung zu Deckung huschen.",
+          effect: "none",
+          nextEvent: "story_forest_08_end_cautious",
+        },
+        {
+          text: "Achtlos über die polierten Wurzeln stampfen.",
+          effect: "none",
+          nextEvent: "story_forest_09_end_vandal",
+        },
+      ],
+    },
+
+    story_forest_06_thief: {
+      id: 'story_forest_06_thief',
+      name: 'Der Lohn der Gier',
+      text: 'In den Taschen des Toten findest du ein filigranes Maßband aus polierten Fingerknochen. Ein meisterhaftes, wenn auch makabres Werkzeug. Du steckst es ein. Doch als du weitergehst, spürst du eine subtile Veränderung in der Luft. Die Schatten scheinen sich exakt nach geometrischen Mustern auszurichten. Am Ende des Pfades siehst du den flackernden Schein einer Laterne.',
+      type: 'choice',
+      choices: [
+        {
+          text: "Lautlos näher treten, um das Maßband zu verbergen.",
+          effect: "none",
+          nextEvent: "story_forest_10_end_flawed",
+        },
+        {
+          text: "Selbstsicher ins Licht treten.",
+          effect: "none",
+          nextEvent: "story_forest_09_end_vandal",
+        },
+      ],
+    },
+
+    story_forest_07_end_greedy: {
+      id: 'story_forest_07_end_greedy',
+      name: 'Das Ende: Der Gierige',
+      text: 'Du stürmst auf eine perfekt kreisrunde Lichtung. In der Mitte steht eine pechschwarze Werkbank. Der Mann dahinter trägt eine pergamentene Maske. Er legt seinen Hobel beiseite und betrachtet dich mit klinischer Kälte. "Das Gewicht in eurer Tasche," flüstert er verächtlich, "es ruiniert eure gesamte Haltung. Eine solche Asymmetrie der Schultern... ich werde euch aufbrechen müssen, um das auszugleichen." Er greift nach seinem Maßhammer.',
+      type: 'choice',
+      choices: [
+        {
+          text: "Kampf beginnen",
+          effect: "none",
+          nextEvent: "combat_boss_revisionist",
+        },
+      ],
+    },
+
+    story_forest_08_end_cautious: {
+      id: 'story_forest_08_end_cautious',
+      name: 'Das Ende: Der Geduckte',
+      text: 'Du schleichst auf eine perfekt kreisrunde Lichtung und hältst dich in den Schatten. Doch der Mann an der schwarzen Werkbank blickt sofort in deine Richtung, als hättest du das Raster seiner Welt gestört. Hinter seiner pergamentenen Maske entweicht ein enttäuschter Seufzer. "Warum krümmt ihr die Wirbelsäule so erbärmlich? Angst ist keine Entschuldigung für schlechte Proportionen. Kommt her. Ich werde euch begradigen." Er greift nach seinem Maßhammer.',
+      type: 'choice',
+      choices: [
+        {
+          text: "Kampf beginnen",
+          effect: "none",
+          nextEvent: "combat_boss_revisionist",
+        },
+      ],
+    },
+
+    story_forest_09_end_vandal: {
+      id: 'story_forest_09_end_vandal',
+      name: 'Das Ende: Der Respektlose',
+      text: 'Du betrittst eine kreisrunde, makellos saubere Lichtung. Der Mann an der schwarzen Werkbank hält in seiner Arbeit inne. Er dreht den Kopf, und obwohl seine Maske keine Augen hat, spürst du seinen bohrenden Blick. "Ihr tretet auf mein poliertes Holz wie ein wildes Tier. Ihr tragt den Schmutz des Chaos an euren Sohlen." Er nimmt einen massiven Hammer von der Bank. "Eure Ignoranz ist ein Konstruktionsfehler. Ich werde ihn beheben."',
+      type: 'choice',
+      choices: [
+        {
+          text: "Kampf beginnen",
+          effect: "none",
+          nextEvent: "combat_boss_revisionist",
+        },
+      ],
+    },
+
+    story_forest_10_end_flawed: {
+      id: 'story_forest_10_end_flawed',
+      name: 'Das Ende: Der Fehlerhafte',
+      text: 'Als du die perfekt kreisrunde Lichtung betrittst, riecht die Luft nach Blut und Pinien. Der Mann hinter der dunklen Werkbank dreht sich langsam zu dir um. Er lauscht. "Euer Herzschlag," flüstert er durch seine Maske, "er ist völlig aus dem Takt. Ein arrhythmischer Störfaktor in meiner Stille. Es widert mich an." Er hebt einen langen Sargnagel und einen schweren Hammer. "Lasst mich dieses störende Pochen für euch beenden."',
+      type: 'choice',
+      choices: [
+        {
+          text: "Kampf beginnen",
+          effect: "none",
+          nextEvent: "combat_boss_revisionist",
+        },
+      ],
+    },
+
+    //---------------------------------------------- Tests
     test: {
       id: 'test',
       name: 'test',

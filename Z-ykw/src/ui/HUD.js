@@ -15,18 +15,28 @@ export class HUD {
     this.render(state);
   }
 
-  render(state) {
+render(state) {
     if (!this.container) return;
 
     let html = "";
 
-    // HIER IST DER TRICK: Wenn showingInventory "true" ist, wird das kleine Fenster nicht gezeichnet!
+    
+    let isStoryWorld = false;
+    if (state.crawl && state.crawl.active && state.crawl.worldId) {
+        const worldDef = Definitions.worlds[state.crawl.worldId];
+        if (worldDef && worldDef.type === "story") {
+            isStoryWorld = true;
+        }
+    }
+
+    
     if (
       state.crawl &&
       state.crawl.active &&
       (!state.combat || !state.combat.active) &&
       !state.crawl.activeEvent &&
-      !state.crawl.showingInventory 
+      !state.crawl.showingInventory &&
+      !isStoryWorld
     ) {
       const chaos = state.crawl.chaos || 0;
       const curSec = state.crawl.security || 0;

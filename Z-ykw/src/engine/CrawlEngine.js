@@ -15,22 +15,14 @@ export class CrawlEngine {
 
     const worldDef = Definitions.worlds[state.crawl.worldId];
 
-    // --- 1. SICHERHEITS-CHECK (Garantiert bei exakt 0) ---
-    if (state.crawl.security <= 0) {
-      if (worldDef.type !== "story") {
-        const bossId = worldDef.bossId;
-        ActionEngine.log(
-          `Die Sicherheit ist auf 0 gefallen... ${Definitions.enemies[bossId].name} erscheint!`,
-          "enemy",
-        );
-        ActionEngine.startCombat([bossId], true);
-      } else {
-        ActionEngine.log(
-          "Die Sicherheit ist auf 0 gefallen... Du musstest fliehen!",
-          "enemy",
-        );
-        CrawlEngine.processDungeonFail(state);
-      }
+    // --- 1. SICHERHEITS-CHECK (Gilt nur für Dungeons, NICHT für Story!) ---
+    if (worldDef.type !== "story" && state.crawl.security <= 0) {
+      const bossId = worldDef.bossId;
+      ActionEngine.log(
+        `Die Sicherheit ist auf 0 gefallen... ${Definitions.enemies[bossId].name} erscheint!`,
+        "enemy",
+      );
+      ActionEngine.startCombat([bossId], true);
       return;
     }
 
